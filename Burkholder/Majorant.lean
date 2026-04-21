@@ -27,6 +27,17 @@ def A2 (p x y : ℝ) : Prop := 0 < x ∧ -x < y ∧ y < a p * x
 def uA1 (p x y : ℝ) : ℝ :=
   alpha p * Real.rpow x p * (1 - (p * (x - y)) / (2 * x))
 
+def uCandidate (p x y : ℝ) : ℝ :=
+  if A1 p x y then
+    uA1 p x y
+  else if A2 p x y then
+    vGeTwo p x y
+  else
+    vGeTwo p x y
+
+
+
+
 theorem exists_majorant_geTwo (p : ℝ) (hp : 2 ≤ p) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, u x y = u y x) ∧
