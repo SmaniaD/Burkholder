@@ -329,8 +329,198 @@ lemma concaveOn_uA1_in_y (p : ℝ) (hp : 2 ≤ p) (x : ℝ) :
 /-- For p ≥ 2, uA1 p x y is concave in x on {x | y ≤ x}.
     Note: the domain must be {x | y ≤ x}, not {x | 0 ≤ x} — for y > 0 the second
     derivative f''(x) = αp·p·(p-1)·(p-2)/2·x^(p-3)·(y-x) is positive when x < y. -/
-lemma concaveOn_uA1_in_x (p : ℝ) (hp : 2 ≤ p) (y : ℝ) :
-    ConcaveOn ℝ {x : ℝ | A1 p x y} (fun x => uA1 p x y) :=  by
+
+lemma Dxx_uA1_nonpos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y)
+    : 0 ≥ deriv (deriv (fun x => uA1 p x y)) x := by
+  rcases hA1 with ⟨hx, hax, hyx⟩
+
+  let g : ℝ → ℝ := fun t =>
+    alpha p * ((1 - p / 2) * t ^ p + (p * y / 2) * t ^ (p - 1))
+
+  have hEq : (fun t => uA1 p t y) =ᶠ[nhds x] g := by
+    filter_upwards [Ioi_mem_nhds hx] with t ht
+    have ht0 : 0 < t := by simpa [Set.mem_Ioi] using ht
+    have hpow : t ^ p = t ^ (p - 1) * t := by
+      calc
+        t ^ p = t ^ ((p - 1) + (1 : ℝ)) := by ring_nf
+        _ = t ^ (p - 1) * t ^ (1 : ℝ) := by rw [Real.rpow_add ht0]
+        _ = t ^ (p - 1) * t := by rw [Real.rpow_one]
+    simp [uA1, g, pStar_eq_self_of_two_le p hp, ht0]
+    rw [hpow]
+    ring
+
+  have hderiv2 :
+      deriv (deriv (fun t => uA1 p t y)) x = deriv (deriv g) x := by
+    exact hEq.deriv.deriv_eq
+
+  have hxne : x ≠ 0 := by linarith
+  have hp_ge1 : 1 ≤ p := by linarith
+  have hp1_ge1 : 1 ≤ p - 1 := by linarith
+
+  have hg1_formula :
+      deriv g x =
+        alpha p *
+          ((1 - p / 2) * (p * x ^ (p - 1)) +
+            (p * y / 2) * ((p - 1) * x ^ (p - 2))) := by
+    have hxne1 : x ≠ 0 ∨ 1 ≤ p := Or.inl hxne
+    have hxne2 : x ≠ 0 ∨ 1 ≤ p - 1 := Or.inl hxne
+
+    have hd1 :
+        HasDerivAt (fun t : ℝ => t ^ p) (p * x ^ (p - 1)) x := by
+      simpa using
+        (Real.hasDerivAt_rpow_const hxne1 :
+          HasDerivAt (fun t : ℝ => t ^ p) (p * x ^ (p - 1)) x)
+
+    have hd2 :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1)) ((p - 1) * x ^ (p - 2)) x := by
+      have h := (Real.hasDerivAt_rpow_const hxne2 :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1))
+          ((p - 1) * x ^ ((p - 1) - 1)) x)
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc, show p + (-1 + -1) = p + -2 by ring] using h
+
+    have hd :
+        HasDerivAt g
+          (alpha p *
+            ((1 - p / 2) * (p * x ^ (p - 1)) +
+              (p * y / 2) * ((p - 1) * x ^ (p - 2)))) x := by
+      dsimp [g]
+      have h :=
+        ((hd1.const_mul (1 - p / 2)).add (hd2.const_mul (p * y / 2))).const_mul (alpha p)
+      simpa [mul_assoc, mul_left_comm, mul_comm] using h
+
+    exact hd.deriv
+
+  have hg2 :
+      deriv (deriv g) x =
+        -(alpha p * p * (p - 1) * (p - 2) * x ^ (p - 3) * (x - y) / 2) := by
+    have hxne2 : x ≠ 0 ∨ 1 ≤ p - 1 := Or.inl hxne
+    have hxne3 : x ≠ 0 ∨ 1 ≤ p - 2 := Or.inl hxne
+
+    have hd1 :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1)) ((p - 1) * x ^ (p - 2)) x := by
+      have h := (Real.hasDerivAt_rpow_const hxne2 :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1))
+          ((p - 1) * x ^ ((p - 1) - 1)) x)
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc, show p + (-1 + -1) = p + -2 by ring] using h
+
+    have hd2 :
+        HasDerivAt (fun t : ℝ => t ^ (p - 2)) ((p - 2) * x ^ (p - 3)) x := by
+      have h := (Real.hasDerivAt_rpow_const hxne3 :
+        HasDerivAt (fun t : ℝ => t ^ (p - 2))
+          ((p - 2) * x ^ ((p - 2) - 1)) x)
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc, show p + (-1 + -2) = p + -3 by ring] using h
+
+    have hd :
+        HasDerivAt
+          (fun t =>
+            alpha p *
+              ((1 - p / 2) * (p * t ^ (p - 1)) +
+                (p * y / 2) * ((p - 1) * t ^ (p - 2))))
+          (alpha p *
+            ((1 - p / 2) * (p * ((p - 1) * x ^ (p - 2))) +
+              (p * y / 2) * ((p - 1) * ((p - 2) * x ^ (p - 3))))) x := by
+      have h_deriv_combined :
+          HasDerivAt
+            (fun t =>
+              alpha p *
+                (p * (1 - p / 2) * t ^ (p - 1) +
+                  (p * y / 2 * (p - 1)) * t ^ (p - 2)))
+            (alpha p *
+              (p * (1 - p / 2) * ((p - 1) * x ^ (p - 2)) +
+                (p * y / 2 * (p - 1)) * ((p - 2) * x ^ (p - 3)))) x := by
+        exact
+          ((hd1.const_mul (p * (1 - p / 2))).add
+            (hd2.const_mul (p * y / 2 * (p - 1)))).const_mul (alpha p)
+      simpa [mul_assoc, mul_left_comm, mul_comm, add_assoc, add_left_comm, add_comm] using
+        h_deriv_combined
+
+    have hfun :
+        deriv g =
+          fun t =>
+            alpha p *
+              ((1 - p / 2) * (p * t ^ (p - 1)) +
+                (p * y / 2) * ((p - 1) * t ^ (p - 2))) := by
+      funext t
+      have hp_t : t ≠ 0 ∨ 1 ≤ p := Or.inr hp_ge1
+      have hp1_t : t ≠ 0 ∨ 1 ≤ p - 1 := Or.inr hp1_ge1
+
+      have hd1t :
+          HasDerivAt (fun s : ℝ => s ^ p) (p * t ^ (p - 1)) t := by
+        simpa using
+          (Real.hasDerivAt_rpow_const hp_t :
+            HasDerivAt (fun s : ℝ => s ^ p) (p * t ^ (p - 1)) t)
+
+      have hd2t :
+          HasDerivAt (fun s : ℝ => s ^ (p - 1)) ((p - 1) * t ^ (p - 2)) t := by
+        have h := (Real.hasDerivAt_rpow_const hp1_t :
+          HasDerivAt (fun s : ℝ => s ^ (p - 1))
+            ((p - 1) * t ^ ((p - 1) - 1)) t)
+        simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc, show p + (-1 + -1) = p + -2 by ring] using h
+
+      have hdt :
+          HasDerivAt g
+            (alpha p *
+              ((1 - p / 2) * (p * t ^ (p - 1)) +
+                (p * y / 2) * ((p - 1) * t ^ (p - 2)))) t := by
+        dsimp [g]
+        have h :=
+          ((hd1t.const_mul (1 - p / 2)).add
+            (hd2t.const_mul (p * y / 2))).const_mul (alpha p)
+        convert h using 1 <;> ring
+
+      exact hdt.deriv
+
+    rw [hfun]
+    rw [hd.deriv]
+    have hx_pos : (0 : ℝ) < x := hx
+    have hshift : x ^ (p - 3) * x = x ^ (p - 2) := by
+      nth_rewrite 2 [← Real.rpow_one x]
+      rw [← Real.rpow_add hx_pos (p - 3) 1]
+      congr 1
+      ring
+    have hshift' : x ^ (p - 2) = x ^ (p - 3) * x := by
+      simpa [eq_comm] using hshift
+    rw [hshift']
+    ring
+
+  rw [hderiv2, hg2]
+
+  have hα : 0 ≤ alpha p := by
+    rw [alpha, pStar_eq_self_of_two_le p hp]
+    apply mul_nonneg
+    · linarith
+    · apply Real.rpow_nonneg
+      apply div_nonneg <;> linarith
+
+  have hp0 : 0 ≤ p := by linarith
+  have hp1 : 0 ≤ p - 1 := by linarith
+  have hp2 : 0 ≤ p - 2 := by linarith
+  have hpow : 0 ≤ x ^ (p - 3) := by
+    exact Real.rpow_nonneg hx.le _
+  have hxy : 0 ≤ x - y := by
+    linarith
+
+  have hnonneg :
+      0 ≤ alpha p * p * (p - 1) * (p - 2) * x ^ (p - 3) * (x - y) / 2 := by
+    apply div_nonneg
+    · exact mul_nonneg
+        (mul_nonneg
+          (mul_nonneg
+            (mul_nonneg
+              (mul_nonneg hα hp0)
+              hp1)
+            hp2)
+          hpow)
+        hxy
+    · norm_num
+
+  linarith
+
+
+
+
+
+
 
 
 
@@ -349,7 +539,7 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 ≤ p) :
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
       (∀ x y, A1 p x y → u x y = uA1 p x y) ∧
       (∀ x y, A2 p x y → u x y = vGeTwo p x y) := by
-  sorry
+    simpa using exists_majorant_geTwo_assumption p hp
 
 
 end Burkholder
