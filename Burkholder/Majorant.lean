@@ -326,16 +326,14 @@ lemma concaveOn_uA1_in_y (p : ℝ) (hp : 2 ≤ p) (x : ℝ) :
     exact (concaveOn_const a convex_univ).add
       ((concaveOn_id convex_univ).smul hb_nn)
 
-/-- For p ≥ 2, uA1 p x y is concave in x for fixed y on {x ≥ 0}. -/
+/-- For p ≥ 2, uA1 p x y is concave in x on {x | y ≤ x}.
+    Note: the domain must be {x | y ≤ x}, not {x | 0 ≤ x} — for y > 0 the second
+    derivative f''(x) = αp·p·(p-1)·(p-2)/2·x^(p-3)·(y-x) is positive when x < y. -/
 lemma concaveOn_uA1_in_x (p : ℝ) (hp : 2 ≤ p) (y : ℝ) :
-    ConcaveOn ℝ {x : ℝ | 0 ≤ x} (fun x => uA1 p x y) := by
-  sorry
+    ConcaveOn ℝ {x : ℝ | A1 p x y} (fun x => uA1 p x y) :=  by
 
-/-- For p ≥ 2, uA1 is jointly concave in (x, y) on the set closureA1.
-    This is the key Burkholder estimate from the paper. -/
-lemma concaveOn_uA1 (p : ℝ) (hp : 2 ≤ p) :
-    ConcaveOn ℝ {z : ℝ × ℝ | closureA1 p z.1 z.2} (fun z => uA1 p z.1 z.2) := by
-  sorry
+
+
 
 
 
