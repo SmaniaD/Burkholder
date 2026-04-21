@@ -466,7 +466,7 @@ lemma Dxx_uA1_nonpos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y)
         have h :=
           ((hd1t.const_mul (1 - p / 2)).add
             (hd2t.const_mul (p * y / 2))).const_mul (alpha p)
-        convert h using 1 <;> ring
+        simpa using h
 
       exact hdt.deriv
 
@@ -516,18 +516,92 @@ lemma Dxx_uA1_nonpos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y)
 
   linarith
 
+lemma Dyy_uA1_nonpos (p : ℝ) (_hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y)
+    : 0 ≥ deriv (deriv (fun y => uA1 p x y)) y := by
+  rcases hA1 with ⟨hx, -, -⟩
+  let c : ℝ := alpha p * x ^ (p - 1) * (x - pStar p * x / 2)
+  let m : ℝ := alpha p * x ^ (p - 1) * (pStar p / 2)
 
+  have hrepr : (fun t => uA1 p x t) = fun t => c + m * t := by
+    funext t
+    simp [uA1, hx, c, m]
+    ring
 
+  rw [hrepr]
 
+  have hderiv_lin : deriv (fun t => c + m * t) = fun _ => m := by
+    funext t
+    have hlin : HasDerivAt (fun s : ℝ => c + m * s) m t := by
+      simpa [one_mul] using (((hasDerivAt_id t).const_mul m).const_add c)
+    exact hlin.deriv
 
+  rw [hderiv_lin]
+  simp
 
+  lemma Dxy_uA1_nonneg (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y) :
+    0 ≤ deriv (fun x => deriv (fun y => uA1 p x y) y) x := by
+    rcases hA1 with ⟨hx, -, -⟩
+    have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
 
+    let g : ℝ → ℝ := fun t => alpha p * (p / 2) * t ^ (p - 1)
 
+    have hEq :
+        (fun t => deriv (fun y => uA1 p t y) y) =ᶠ[nhds x] g := by
+      filter_upwards [Ioi_mem_nhds hx] with t ht
+      have ht0 : 0 < t := by simpa [Set.mem_Ioi] using ht
+      let c : ℝ := alpha p * t ^ (p - 1) * (t - pStar p * t / 2)
+      let m : ℝ := alpha p * t ^ (p - 1) * (pStar p / 2)
+      have hrepr : (fun s => uA1 p t s) = fun s => c + m * s := by
+        funext s
+        simp [uA1, ht0, c, m]
+        ring
+      have hderiv_lin : deriv (fun s => c + m * s) = fun _ => m := by
+        funext s
+        have hlin : HasDerivAt (fun z : ℝ => c + m * z) m s := by
+          simpa [one_mul] using (((hasDerivAt_id s).const_mul m).const_add c)
+        exact hlin.deriv
+      calc
+        deriv (fun y => uA1 p t y) y = deriv (fun s => c + m * s) y := by rw [hrepr]
+        _ = m := by rw [hderiv_lin]
+        _ = g t := by
+          simp [g, m, hpStar]; ring
 
+    have hderiv_outer :
+        deriv (fun x => deriv (fun y => uA1 p x y) y) x = deriv g x :=
+      hEq.deriv_eq
 
+    have hxne : x ≠ 0 := by linarith
+    have hg :
+        deriv g x = alpha p * (p / 2) * ((p - 1) * x ^ (p - 2)) := by
+      have hxne1 : x ≠ 0 ∨ 1 ≤ p - 1 := Or.inl hxne
+      have hrpow :
+          HasDerivAt (fun t : ℝ => t ^ (p - 1)) ((p - 1) * x ^ (p - 2)) x := by
+        have h := (Real.hasDerivAt_rpow_const hxne1 :
+          HasDerivAt (fun t : ℝ => t ^ (p - 1))
+            ((p - 1) * x ^ ((p - 1) - 1)) x)
+        simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+          show p + (-1 + -1) = p + -2 by ring] using h
+      have hg' :
+          HasDerivAt g (alpha p * (p / 2) * ((p - 1) * x ^ (p - 2))) x := by
+        simpa [g, mul_assoc, mul_left_comm, mul_comm] using
+          (hrpow.const_mul (alpha p * (p / 2)))
+      exact hg'.deriv
 
+    rw [hderiv_outer, hg]
 
+    have hα : 0 ≤ alpha p := by
+      rw [alpha, hpStar]
+      apply mul_nonneg
+      · linarith
+      · apply Real.rpow_nonneg
+        apply div_nonneg <;> linarith
+    have hp0 : 0 ≤ p / 2 := by linarith
+    have hp1 : 0 ≤ p - 1 := by linarith
+    have hpow : 0 ≤ x ^ (p - 2) := Real.rpow_nonneg hx.le _
 
+    exact mul_nonneg
+      (mul_nonneg hα hp0)
+      (mul_nonneg hp1 hpow)
 
 theorem exists_majorant_geTwo (p : ℝ) (hp : 2 ≤ p) :
     ∃ u : ℝ → ℝ → ℝ,
