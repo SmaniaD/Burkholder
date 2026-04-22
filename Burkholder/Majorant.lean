@@ -613,7 +613,8 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 ≤ p) :
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
       (∀ x y, A1 p x y → u x y = uA1 p x y) ∧
       (∀ x y, A2 p x y → u x y = vGeTwo p x y) := by
-    simpa using exists_majorant_geTwo_assumption p hp
+       sorry
+
 
 
 end Burkholder
