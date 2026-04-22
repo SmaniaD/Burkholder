@@ -523,6 +523,35 @@ lemma continuousuCandidate (p : ℝ) (hp : 2 ≤ p) :
   exact hcover hz
 
 
+
+lemma continuousDxuCandidate (p : ℝ) (hp : 2 ≤ p)
+    : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Set.univ := by
+  -- We show that the map (x, y) ↦ deriv_x uCandidate p x y is continuous on ℝ × ℝ
+  -- by using the explicit formula for the derivative in each region (Q1, Q2, Q3, Q4)
+  -- and the fact that uCandidate is C^1 piecewise with continuous derivatives.
+  -- The proof is analogous to the continuity proof for uCandidate itself.
+  have : ∀ z, ∃ (i : Fin 4), z ∈ (Q1 ∪ Q2 ∪ Q3 ∪ Q4) := by
+    intro z
+    apply hcover
+  have hcont1 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Q1 := continuousOn_deriv_uCandidate_Q1 p hp
+  have hcont2 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Q2 := continuousOn_deriv_uCandidate_Q2 p hp
+  have hcont3 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Q3 := continuousOn_deriv_uCandidate_Q3 p hp
+  have hcont4 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Q4 := continuousOn_deriv_uCandidate_Q4 p hp
+  have hcl1 : IsClosed Q1 := hcl1
+  have hcl2 : IsClosed Q2 := hcl2
+  have hcl3 : IsClosed Q3 := hcl3
+  have hcl4 : IsClosed Q4 := hcl4
+  have hc12 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) (Q1 ∪ Q2) :=
+    hcont1.union_of_isClosed hcont2 hcl1 hcl2
+  have hc123 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) (Q1 ∪ Q2 ∪ Q3) :=
+    hc12.union_of_isClosed hcont3 (hcl1.union hcl2) hcl3
+  have hc1234 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) (Q1 ∪ Q2 ∪ Q3 ∪ Q4) :=
+    hc123.union_of_isClosed hcont4 (hcl1.union hcl2).union hcl3 hcl4
+  apply ContinuousOn.mono hc1234
+  intro z hz
+  exact hcover hz
+
+
 /-- For p ≥ 2, uA1 p x y is linear (hence concave) in y for fixed x. -/
 lemma concaveOn_uA1_in_y (p : ℝ) (hp : 2 ≤ p) (x : ℝ) :
     ConcaveOn ℝ Set.univ (fun y => uA1 p x y) := by
