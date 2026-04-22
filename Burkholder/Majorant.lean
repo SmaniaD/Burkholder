@@ -66,6 +66,8 @@ def auxFunction1 (p x y : ℝ) : ℝ :=
 
 def QuarterPlane (x y : ℝ) : Prop := 0 ≤ x ∧ y ≤ x ∧ -x ≤ y
 
+def QuarterPlaneOpen (x y : ℝ) : Prop := 0 < x ∧ y < x ∧ -x < y
+
 def QuarterPlane2 (x y : ℝ) : Prop := x ≤ 0 ∧ y ≤ -x ∧ x ≤ y
 
 def QuarterPlane3 (x y : ℝ) : Prop := y ≥  0 ∧ -y ≤ x ∧ x ≤ y
@@ -521,6 +523,7 @@ lemma continuousuCandidate (p : ℝ) (hp : 2 ≤ p) :
   apply ContinuousOn.mono hc1234
   intro z hz
   exact hcover hz
+
 
 
 
