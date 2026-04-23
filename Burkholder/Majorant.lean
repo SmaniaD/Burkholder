@@ -1364,6 +1364,75 @@ lemma deriv_uA1_eq_DxuA1Fun_on_A1 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1
     _ = alpha p * (p / 2) * x ^ (p - 2) * ((2 - p) * x + (p - 1) * y) := hg
     _ = DxuA1Fun p (x, y) := by simp [DxuA1Fun, DxuA1, hx]
 
+lemma hasDerivAt_uA1_x_of_pos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hx : 0 < x) :
+    HasDerivAt (fun t => uA1 p t y) (DxuA1Fun p (x, y)) x := by
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+
+  let g : ℝ → ℝ := fun t =>
+    alpha p * ((1 - p / 2) * t ^ p + (p * y / 2) * t ^ (p - 1))
+
+  have hEq : (fun t => uA1 p t y) =ᶠ[nhds x] g := by
+    filter_upwards [Ioi_mem_nhds hx] with t ht
+    have ht0 : 0 < t := by simpa [Set.mem_Ioi] using ht
+    have hpow : t ^ p = t ^ (p - 1) * t := by
+      calc
+        t ^ p = t ^ ((p - 1) + (1 : ℝ)) := by ring_nf
+        _ = t ^ (p - 1) * t ^ (1 : ℝ) := by rw [Real.rpow_add ht0]
+        _ = t ^ (p - 1) * t := by rw [Real.rpow_one]
+    simp [uA1, g, hpStar, ht0]
+    rw [hpow]
+    ring
+
+  have hxne : x ≠ 0 := by linarith
+  have hxne1 : x ≠ 0 ∨ 1 ≤ p := Or.inl hxne
+  have hxne2 : x ≠ 0 ∨ 1 ≤ p - 1 := Or.inl hxne
+
+  have hd1 :
+      HasDerivAt (fun t : ℝ => t ^ p) (p * x ^ (p - 1)) x := by
+    simpa using
+      (Real.hasDerivAt_rpow_const hxne1 :
+        HasDerivAt (fun t : ℝ => t ^ p) (p * x ^ (p - 1)) x)
+
+  have hd2 :
+      HasDerivAt (fun t : ℝ => t ^ (p - 1)) ((p - 1) * x ^ (p - 2)) x := by
+    have h := (Real.hasDerivAt_rpow_const hxne2 :
+      HasDerivAt (fun t : ℝ => t ^ (p - 1))
+        ((p - 1) * x ^ ((p - 1) - 1)) x)
+    simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
+      show p + (-1 + -1) = p + -2 by ring] using h
+
+  have hd :
+      HasDerivAt g
+        (alpha p *
+          ((1 - p / 2) * (p * x ^ (p - 1)) +
+            (p * y / 2) * ((p - 1) * x ^ (p - 2)))) x := by
+    dsimp [g]
+    have hsum :=
+      ((hd1.const_mul (1 - p / 2)).add (hd2.const_mul (p * y / 2))).const_mul (alpha p)
+    simpa [mul_add, mul_assoc, mul_left_comm, mul_comm] using hsum
+
+  have hpow : x ^ (p - 1) = x ^ (p - 2) * x := by
+    calc
+      x ^ (p - 1) = x ^ ((p - 2) + (1 : ℝ)) := by ring_nf
+      _ = x ^ (p - 2) * x ^ (1 : ℝ) := by rw [Real.rpow_add hx]
+      _ = x ^ (p - 2) * x := by rw [Real.rpow_one]
+
+  have hg :
+      HasDerivAt g
+        (alpha p * (p / 2) * x ^ (p - 2) * ((2 - p) * x + (p - 1) * y)) x := by
+    refine hd.congr_deriv ?_
+    calc
+      alpha p *
+          ((1 - p / 2) * (p * x ^ (p - 1)) +
+            (p * y / 2) * ((p - 1) * x ^ (p - 2)))
+        = alpha p *
+            ((1 - p / 2) * (p * (x ^ (p - 2) * x)) +
+              (p * y / 2) * ((p - 1) * x ^ (p - 2))) := by rw [hpow]
+      _ = alpha p * (p / 2) * x ^ (p - 2) * ((2 - p) * x + (p - 1) * y) := by ring_nf
+
+  refine (hg.congr_of_eventuallyEq hEq).congr_deriv ?_
+  simp [DxuA1Fun, DxuA1, hx]
+
 lemma Dxx_uA1_nonpos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y)
     : 0 ≥ deriv (deriv (fun x => uA1 p x y)) x := by
   rcases hA1 with ⟨hx, hax, hyx⟩
@@ -1597,6 +1666,24 @@ lemma deriv_uA1_eq_DyuA1Fun_on_A1 (p : ℝ) (hp : 2 < p) (x y : ℝ) (hA1 : A1 p
     _ = DyuA1Fun p (x, y) := by
         simp [DyuA1Fun, DyuA1, m, hx, hpStar]
 
+lemma hasDerivAt_uA1_y_of_pos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hx : 0 < x) :
+    HasDerivAt (fun s => uA1 p x s) (DyuA1Fun p (x, y)) y := by
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+  let c : ℝ := alpha p * x ^ (p - 1) * (x - pStar p * x / 2)
+  let m : ℝ := alpha p * x ^ (p - 1) * (pStar p / 2)
+
+  have hrepr : (fun s => uA1 p x s) = fun s => c + m * s := by
+    funext s
+    simp [uA1, hx, c, m]
+    ring
+
+  have hderiv_lin : HasDerivAt (fun s => c + m * s) m y := by
+    simpa [one_mul] using (((hasDerivAt_id y).const_mul m).const_add c)
+
+  rw [hrepr]
+  convert hderiv_lin using 1
+  simp [DyuA1Fun, DyuA1, m, hx, hpStar]
+
   lemma Dxy_uA1_nonneg (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y) :
     0 ≤ deriv (fun x => deriv (fun y => uA1 p x y) y) x := by
     rcases hA1 with ⟨hx, -, -⟩
@@ -1748,6 +1835,69 @@ lemma deriv_vGeTwo_eq_DxvGeTwo_on_A2 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 :
     _ = DxvGeTwo p x y := by
       simp [DxvGeTwo, hx, abs_of_pos hsum, abs_of_pos hdiff]
 
+lemma hasDerivAt_vGeTwo_x_of_pos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ)
+    (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
+    HasDerivAt (fun t => vGeTwo p t y) (DxvGeTwo p x y) x := by
+  let g : ℝ → ℝ := fun t =>
+    ((t + y) / 2) ^ p - (p - 1) ^ p * (((t - y) / 2) ^ p)
+
+  have hsum_nhds : {t : ℝ | 0 < (t + y) / 2} ∈ nhds x := by
+    exact ((((continuous_id'.add continuous_const).div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hsum))
+  have hdiff_nhds : {t : ℝ | 0 < (t - y) / 2} ∈ nhds x := by
+    exact ((((continuous_id'.sub continuous_const).div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hdiff))
+
+  have hEq : (fun t => vGeTwo p t y) =ᶠ[nhds x] g := by
+    filter_upwards [hsum_nhds, hdiff_nhds] with t ht_sum ht_diff
+    simp [vGeTwo, g, abs_of_pos ht_sum, abs_of_pos ht_diff]
+
+  have hbase_sum :
+      HasDerivAt (fun t : ℝ => (t + y) / 2) (1 / 2) x := by
+    simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      (((hasDerivAt_id x).add_const y).const_mul (1 / 2 : ℝ))
+  have hbase_diff :
+      HasDerivAt (fun t : ℝ => (t - y) / 2) (1 / 2) x := by
+    simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      (((hasDerivAt_id x).add_const (-y)).const_mul (1 / 2 : ℝ))
+
+  have hpow_sum :
+      HasDerivAt (fun t : ℝ => ((t + y) / 2) ^ p)
+        (p * (((x + y) / 2) ^ (p - 1)) * (1 / 2)) x := by
+    have hrpow :
+        HasDerivAt (fun s : ℝ => s ^ p) (p * (((x + y) / 2) ^ (p - 1))) ((x + y) / 2) := by
+      simpa using
+        (Real.hasDerivAt_rpow_const (Or.inl (ne_of_gt hsum)) :
+          HasDerivAt (fun s : ℝ => s ^ p) (p * ((x + y) / 2) ^ (p - 1)) ((x + y) / 2))
+    simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp x hbase_sum
+
+  have hpow_diff :
+      HasDerivAt (fun t : ℝ => ((t - y) / 2) ^ p)
+        (p * (((x - y) / 2) ^ (p - 1)) * (1 / 2)) x := by
+    have hrpow :
+        HasDerivAt (fun s : ℝ => s ^ p) (p * (((x - y) / 2) ^ (p - 1))) ((x - y) / 2) := by
+      simpa using
+        (Real.hasDerivAt_rpow_const (Or.inl (ne_of_gt hdiff)) :
+          HasDerivAt (fun s : ℝ => s ^ p) (p * ((x - y) / 2) ^ (p - 1)) ((x - y) / 2))
+    simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp x hbase_diff
+
+  have hd :
+      HasDerivAt g
+        (((x + y) / 2) ^ (p - 1) * (p / 2) -
+          (p - 1) ^ p * (((x - y) / 2) ^ (p - 1)) * (p / 2)) x := by
+    have htmp :
+        HasDerivAt g
+          (p * (((x + y) / 2) ^ (p - 1)) * (1 / 2) -
+            (p - 1) ^ p * (p * (((x - y) / 2) ^ (p - 1)) * (1 / 2))) x := by
+      dsimp [g]
+      exact hpow_sum.sub (hpow_diff.const_mul ((p - 1) ^ p))
+    refine htmp.congr_deriv ?_
+    ring
+
+  have hx : 0 < x := by linarith
+  refine (hd.congr_of_eventuallyEq hEq).congr_deriv ?_
+  simp [DxvGeTwo, hx, abs_of_pos hsum, abs_of_pos hdiff]
+
 lemma deriv_vGeTwo_eq_DyvGeTwo_on_A2 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 : A2 p x y) :
     deriv (fun s => vGeTwo p x s) y = DyvGeTwo p x y := by
   rcases hA2 with ⟨hx, hneg, hay⟩
@@ -1833,6 +1983,316 @@ lemma deriv_vGeTwo_eq_DyvGeTwo_on_A2 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 :
           (p - 1) ^ p * (((x - y) / 2) ^ (p - 1)) * (p / 2) := hg
     _ = DyvGeTwo p x y := by
       simp [DyvGeTwo, hx, abs_of_pos hsum, abs_of_pos hdiff]
+
+lemma hasDerivAt_vGeTwo_y_of_pos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ)
+    (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
+    HasDerivAt (fun s => vGeTwo p x s) (DyvGeTwo p x y) y := by
+  let g : ℝ → ℝ := fun s =>
+    ((x + s) / 2) ^ p - (p - 1) ^ p * (((x - s) / 2) ^ p)
+
+  have hsum_nhds : {s : ℝ | 0 < (x + s) / 2} ∈ nhds y := by
+    exact ((((continuous_const.add continuous_id').div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hsum))
+  have hdiff_nhds : {s : ℝ | 0 < (x - s) / 2} ∈ nhds y := by
+    exact ((((continuous_const.sub continuous_id').div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hdiff))
+
+  have hEq : (fun s => vGeTwo p x s) =ᶠ[nhds y] g := by
+    filter_upwards [hsum_nhds, hdiff_nhds] with s hs_sum hs_diff
+    simp [vGeTwo, g, abs_of_pos hs_sum, abs_of_pos hs_diff]
+
+  have hbase_sum :
+      HasDerivAt (fun s : ℝ => (x + s) / 2) (1 / 2) y := by
+    simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      (((hasDerivAt_id y).const_add x).const_mul (1 / 2 : ℝ))
+  have hbase_diff :
+      HasDerivAt (fun s : ℝ => (x - s) / 2) (-(1 / 2)) y := by
+    simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      ((((hasDerivAt_id y).neg).const_add x).const_mul (1 / 2 : ℝ))
+
+  have hpow_sum :
+      HasDerivAt (fun s : ℝ => ((x + s) / 2) ^ p)
+        (p * (((x + y) / 2) ^ (p - 1)) * (1 / 2)) y := by
+    have hrpow :
+        HasDerivAt (fun t : ℝ => t ^ p) (p * (((x + y) / 2) ^ (p - 1))) ((x + y) / 2) := by
+      simpa using
+        (Real.hasDerivAt_rpow_const (Or.inl (ne_of_gt hsum)) :
+          HasDerivAt (fun t : ℝ => t ^ p) (p * ((x + y) / 2) ^ (p - 1)) ((x + y) / 2))
+    simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp y hbase_sum
+
+  have hpow_diff :
+      HasDerivAt (fun s : ℝ => ((x - s) / 2) ^ p)
+        (p * (((x - y) / 2) ^ (p - 1)) * (-(1 / 2))) y := by
+    have hrpow :
+        HasDerivAt (fun t : ℝ => t ^ p) (p * (((x - y) / 2) ^ (p - 1))) ((x - y) / 2) := by
+      simpa using
+        (Real.hasDerivAt_rpow_const (Or.inl (ne_of_gt hdiff)) :
+          HasDerivAt (fun t : ℝ => t ^ p) (p * ((x - y) / 2) ^ (p - 1)) ((x - y) / 2))
+    simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp y hbase_diff
+
+  have hd :
+      HasDerivAt g
+        (((x + y) / 2) ^ (p - 1) * (p / 2) +
+          (p - 1) ^ p * (((x - y) / 2) ^ (p - 1)) * (p / 2)) y := by
+    have htmp :
+        HasDerivAt g
+          (p * (((x + y) / 2) ^ (p - 1)) * (1 / 2) -
+            (p - 1) ^ p * (p * (((x - y) / 2) ^ (p - 1)) * (-(1 / 2)))) y := by
+      dsimp [g]
+      exact hpow_sum.sub (hpow_diff.const_mul ((p - 1) ^ p))
+    refine htmp.congr_deriv ?_
+    ring
+
+  have hx : 0 < x := by linarith
+  refine (hd.congr_of_eventuallyEq hEq).congr_deriv ?_
+  simp [DyvGeTwo, hx, abs_of_pos hsum, abs_of_pos hdiff]
+
+lemma a_nonneg_of_two_le (p : ℝ) (hp : 2 ≤ p) : 0 ≤ a p := by
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+  have hp_pos : 0 < p := by linarith
+  rw [a, hpStar]
+  field_simp [hp_pos.ne]
+  nlinarith
+
+lemma a_lt_one_of_two_le (p : ℝ) (hp : 2 ≤ p) : a p < 1 := by
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+  have hp_pos : 0 < p := by linarith
+  rw [a, hpStar]
+  have hdiv : 0 < 2 / p := by positivity
+  linarith
+
+lemma deriv_auxFunction1_eq_DxauxFunction1_on_A1 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ)
+    (hA1 : A1 p x y) :
+    deriv (fun t => auxFunction1 p t y) x = DxauxFunction1 p x y := by
+  rcases hA1 with ⟨hx, hay, hyx⟩
+  have hEq : (fun t => auxFunction1 p t y) =ᶠ[nhds x] fun t => uA1 p t y := by
+    have h0 : {t : ℝ | 0 < t} ∈ nhds x := Ioi_mem_nhds hx
+    have hA : {t : ℝ | a p * t < y} ∈ nhds x := by
+      have hcont : ContinuousAt (fun t : ℝ => y - a p * t) x :=
+        (continuous_const.sub (continuous_const.mul continuous_id')).continuousAt
+      have hypos : 0 < y - a p * x := by linarith
+      simpa [Set.preimage, sub_pos] using hcont.preimage_mem_nhds (Ioi_mem_nhds hypos)
+    have hY : {t : ℝ | y < t} ∈ nhds x := Ioi_mem_nhds hyx
+    filter_upwards [h0, hA, hY] with t ht0 htA htY
+    exact auxFunction1_eq_uA1 p t y ⟨le_of_lt ht0, le_of_lt htA, le_of_lt htY⟩
+  calc
+    deriv (fun t => auxFunction1 p t y) x = deriv (fun t => uA1 p t y) x := hEq.deriv_eq
+    _ = DxuA1Fun p (x, y) := deriv_uA1_eq_DxuA1Fun_on_A1 p hp x y ⟨hx, hay, hyx⟩
+    _ = DxauxFunction1 p x y := by
+          symm
+          exact auxFunction1_Dx_eq_DxuA1 p x y ⟨le_of_lt hx, le_of_lt hay, le_of_lt hyx⟩
+
+lemma deriv_auxFunction1_eq_DxauxFunction1_on_A2 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ)
+    (hA2 : A2 p x y) :
+    deriv (fun t => auxFunction1 p t y) x = DxauxFunction1 p x y := by
+  rcases hA2 with ⟨hx, hneg, hay⟩
+  have hEq : (fun t => auxFunction1 p t y) =ᶠ[nhds x] fun t => vGeTwo p t y := by
+    have h0 : {t : ℝ | 0 < t} ∈ nhds x := Ioi_mem_nhds hx
+    have hN : {t : ℝ | -t < y} ∈ nhds x := by
+      have hxy : -y < x := by linarith
+      simpa [neg_lt] using (Ioi_mem_nhds hxy : Set.Ioi (-y) ∈ nhds x)
+    have hA : {t : ℝ | y < a p * t} ∈ nhds x := by
+      have hcont : ContinuousAt (fun t : ℝ => a p * t - y) x :=
+        ((continuous_const.mul continuous_id').sub continuous_const).continuousAt
+      have hapos : 0 < a p * x - y := by linarith
+      simpa [Set.preimage, sub_pos] using hcont.preimage_mem_nhds (Ioi_mem_nhds hapos)
+    filter_upwards [h0, hN, hA] with t ht0 htN htA
+    exact auxFunction1_eq_vGeTwo p hp t y ⟨le_of_lt ht0, le_of_lt htN, le_of_lt htA⟩
+  calc
+    deriv (fun t => auxFunction1 p t y) x = deriv (fun t => vGeTwo p t y) x := hEq.deriv_eq
+    _ = DxvGeTwo p x y := deriv_vGeTwo_eq_DxvGeTwo_on_A2 p hp x y ⟨hx, hneg, hay⟩
+    _ = DxauxFunction1 p x y := by
+          symm
+          exact auxFunction1_Dx_eq_DxvGeTwo p hp x y ⟨le_of_lt hx, le_of_lt hneg, le_of_lt hay⟩
+
+lemma hasDerivAt_auxFunction1_x_on_boundary (p x : ℝ) (hp : 2 ≤ p) (hx : 0 < x) :
+    HasDerivAt (fun t => auxFunction1 p t ((a p) * x))
+      (DxauxFunction1 p x ((a p) * x)) x := by
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp
+  have hy_nonneg : 0 ≤ a p * x := mul_nonneg ha_nonneg hx.le
+  have hyx : a p * x < x := by
+    have hlt : a p < 1 := a_lt_one_of_two_le p hp
+    simpa using mul_lt_mul_of_pos_right hlt hx
+  have hsum : 0 < (x + a p * x) / 2 := by
+    have : 0 < x + a p * x := by nlinarith
+    linarith
+  have hdiff : 0 < (x - a p * x) / 2 := by
+    have : 0 < x - a p * x := by nlinarith
+    linarith
+  have hleftEq :
+      (fun t => auxFunction1 p t ((a p) * x)) =ᶠ[𝓝[Set.Iic x] x]
+        fun t => uA1 p t ((a p) * x) := by
+    have hmem : {t : ℝ | t ≤ x ∧ a p * x < t} ∈ 𝓝[Set.Iic x] x := by
+      simpa [Set.Iic, Set.setOf_and] using inter_mem_nhdsWithin (Set.Iic x) (Ioi_mem_nhds hyx)
+    filter_upwards [hmem] with t ht
+    rcases ht with ⟨htle, hty⟩
+    have hmul : a p * t ≤ a p * x := mul_le_mul_of_nonneg_left htle ha_nonneg
+    have hcl : closureA1 p t ((a p) * x) := by
+      refine ⟨le_of_lt (lt_of_le_of_lt hy_nonneg hty), hmul, le_of_lt hty⟩
+    exact auxFunction1_eq_uA1 p t ((a p) * x) hcl
+  have hrightEq :
+      (fun t => auxFunction1 p t ((a p) * x)) =ᶠ[𝓝[Set.Ici x] x]
+        fun t => vGeTwo p t ((a p) * x) := by
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    have hcl : closureA2 p t ((a p) * x) := by
+      refine ⟨le_trans hx.le ht, ?_, ?_⟩
+      · have htpos : 0 < t := lt_of_lt_of_le hx ht
+        linarith
+      · exact mul_le_mul_of_nonneg_left ht ha_nonneg
+    exact auxFunction1_eq_vGeTwo p hp t ((a p) * x) hcl
+  have hleft :
+      HasDerivWithinAt (fun t => auxFunction1 p t ((a p) * x))
+        (DxauxFunction1 p x ((a p) * x)) (Set.Iic x) x := by
+    have hbase :
+        HasDerivWithinAt (fun t => uA1 p t ((a p) * x))
+          (DxuA1Fun p (x, (a p) * x)) (Set.Iic x) x :=
+      (hasDerivAt_uA1_x_of_pos p hp x ((a p) * x) hx).hasDerivWithinAt
+    refine (hbase.congr_of_eventuallyEq_of_mem hleftEq (Set.mem_Iic.mpr le_rfl)).congr_deriv ?_
+    exact (auxFunction1_Dx_eq_DxuA1 p x ((a p) * x)
+      ⟨hx.le, le_rfl, le_of_lt hyx⟩).symm
+  have hright :
+      HasDerivWithinAt (fun t => auxFunction1 p t ((a p) * x))
+        (DxauxFunction1 p x ((a p) * x)) (Set.Ici x) x := by
+    have hbase :
+        HasDerivWithinAt (fun t => vGeTwo p t ((a p) * x))
+          (DxvGeTwo p x ((a p) * x)) (Set.Ici x) x :=
+      (hasDerivAt_vGeTwo_x_of_pos p hp x ((a p) * x) hsum hdiff).hasDerivWithinAt
+    refine (hbase.congr_of_eventuallyEq_of_mem hrightEq (Set.mem_Ici.mpr le_rfl)).congr_deriv ?_
+    exact (auxFunction1_Dx_eq_DxvGeTwo p hp x ((a p) * x)
+      ⟨hx.le, by linarith, le_rfl⟩).symm
+  simpa [Set.Iic_union_Ici] using hleft.union hright
+
+lemma deriv_auxFunction1_eq_DyauxFunction1_on_A1 (p : ℝ) (hp : 2 < p) (x y : ℝ)
+    (hA1 : A1 p x y) :
+    deriv (fun s => auxFunction1 p x s) y = DyauxFunction1 p x y := by
+  rcases hA1 with ⟨hx, hay, hyx⟩
+  have hEq : (fun s => auxFunction1 p x s) =ᶠ[nhds y] fun s => uA1 p x s := by
+    have h1 : {s : ℝ | a p * x < s} ∈ nhds y := Ioi_mem_nhds hay
+    have h2 : {s : ℝ | s < x} ∈ nhds y := Iio_mem_nhds hyx
+    filter_upwards [h1, h2] with s hs1 hs2
+    exact auxFunction1_eq_uA1 p x s ⟨le_of_lt hx, le_of_lt hs1, le_of_lt hs2⟩
+  calc
+    deriv (fun s => auxFunction1 p x s) y = deriv (fun s => uA1 p x s) y := hEq.deriv_eq
+    _ = DyuA1Fun p (x, y) := deriv_uA1_eq_DyuA1Fun_on_A1 p hp x y ⟨hx, hay, hyx⟩
+    _ = DyauxFunction1 p x y := by
+          symm
+          exact auxFunction1_Dy_eq_DyuA1 p x y ⟨le_of_lt hx, le_of_lt hay, le_of_lt hyx⟩
+
+lemma deriv_auxFunction1_eq_DyauxFunction1_on_A2 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ)
+    (hA2 : A2 p x y) :
+    deriv (fun s => auxFunction1 p x s) y = DyauxFunction1 p x y := by
+  rcases hA2 with ⟨hx, hneg, hay⟩
+  have hEq : (fun s => auxFunction1 p x s) =ᶠ[nhds y] fun s => vGeTwo p x s := by
+    have h1 : {s : ℝ | -x < s} ∈ nhds y := Ioi_mem_nhds hneg
+    have h2 : {s : ℝ | s < a p * x} ∈ nhds y := Iio_mem_nhds hay
+    filter_upwards [h1, h2] with s hs1 hs2
+    exact auxFunction1_eq_vGeTwo p hp x s ⟨le_of_lt hx, le_of_lt hs1, le_of_lt hs2⟩
+  calc
+    deriv (fun s => auxFunction1 p x s) y = deriv (fun s => vGeTwo p x s) y := hEq.deriv_eq
+    _ = DyvGeTwo p x y := deriv_vGeTwo_eq_DyvGeTwo_on_A2 p hp x y ⟨hx, hneg, hay⟩
+    _ = DyauxFunction1 p x y := by
+          symm
+          exact auxFunction1_Dy_eq_DyvGeTwo p hp x y ⟨le_of_lt hx, le_of_lt hneg, le_of_lt hay⟩
+
+lemma hasDerivAt_auxFunction1_y_on_boundary (p x : ℝ) (hp : 2 < p) (hx : 0 < x) :
+    HasDerivAt (fun s => auxFunction1 p x s)
+      (DyauxFunction1 p x ((a p) * x)) ((a p) * x) := by
+  have hp' : 2 ≤ p := by linarith
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+  have hy_nonneg : 0 ≤ a p * x := mul_nonneg ha_nonneg hx.le
+  have hneg : -x < a p * x := by linarith
+  have hyx : a p * x < x := by
+    have hlt : a p < 1 := a_lt_one_of_two_le p hp'
+    simpa using mul_lt_mul_of_pos_right hlt hx
+  have hsum : 0 < (x + a p * x) / 2 := by
+    have : 0 < x + a p * x := by nlinarith
+    linarith
+  have hdiff : 0 < (x - a p * x) / 2 := by
+    have : 0 < x - a p * x := by nlinarith
+    linarith
+  have hleftEq :
+      (fun s => auxFunction1 p x s) =ᶠ[𝓝[Set.Iic (a p * x)] (a p * x)]
+        fun s => vGeTwo p x s := by
+    have hmem : {s : ℝ | -x < s ∧ s ≤ a p * x} ∈ 𝓝[Set.Iic (a p * x)] (a p * x) := by
+      exact Filter.inter_mem
+        (mem_nhdsWithin_of_mem_nhds (Ioi_mem_nhds hneg))
+        self_mem_nhdsWithin
+    filter_upwards [hmem] with s hs
+    rcases hs with ⟨hs1, hs2⟩
+    have hcl : closureA2 p x s := ⟨hx.le, le_of_lt hs1, hs2⟩
+    exact auxFunction1_eq_vGeTwo p hp' x s hcl
+  have hrightEq :
+      (fun s => auxFunction1 p x s) =ᶠ[𝓝[Set.Ici (a p * x)] (a p * x)]
+        fun s => uA1 p x s := by
+    have hmem : {s : ℝ | a p * x ≤ s ∧ s < x} ∈ 𝓝[Set.Ici (a p * x)] (a p * x) := by
+      simpa [Set.Ici, Set.setOf_and] using
+        inter_mem_nhdsWithin (Set.Ici (a p * x)) (Iio_mem_nhds hyx)
+    filter_upwards [hmem] with s hs
+    rcases hs with ⟨hs1, hs2⟩
+    have hcl : closureA1 p x s := ⟨hx.le, hs1, le_of_lt hs2⟩
+    exact auxFunction1_eq_uA1 p x s hcl
+  have hleft :
+      HasDerivWithinAt (fun s => auxFunction1 p x s)
+        (DyauxFunction1 p x ((a p) * x)) (Set.Iic ((a p) * x)) ((a p) * x) := by
+    have hbase :
+        HasDerivWithinAt (fun s => vGeTwo p x s)
+          (DyvGeTwo p x ((a p) * x)) (Set.Iic ((a p) * x)) ((a p) * x) :=
+      (hasDerivAt_vGeTwo_y_of_pos p hp' x ((a p) * x) hsum hdiff).hasDerivWithinAt
+    refine (hbase.congr_of_eventuallyEq_of_mem hleftEq (Set.mem_Iic.mpr le_rfl)).congr_deriv ?_
+    exact (auxFunction1_Dy_eq_DyvGeTwo p hp' x ((a p) * x)
+      ⟨hx.le, le_of_lt hneg, le_rfl⟩).symm
+  have hright :
+      HasDerivWithinAt (fun s => auxFunction1 p x s)
+        (DyauxFunction1 p x ((a p) * x)) (Set.Ici ((a p) * x)) ((a p) * x) := by
+    have hbase :
+        HasDerivWithinAt (fun s => uA1 p x s)
+          (DyuA1Fun p (x, (a p) * x)) (Set.Ici ((a p) * x)) ((a p) * x) :=
+      (hasDerivAt_uA1_y_of_pos p hp' x ((a p) * x) hx).hasDerivWithinAt
+    refine (hbase.congr_of_eventuallyEq_of_mem hrightEq (Set.mem_Ici.mpr le_rfl)).congr_deriv ?_
+    exact (auxFunction1_Dy_eq_DyuA1 p x ((a p) * x)
+      ⟨hx.le, le_rfl, le_of_lt hyx⟩).symm
+  simpa [Set.Iic_union_Ici] using hleft.union hright
+
+lemma deriv_auxFunction1_eq_DxauxFunction1_on_QuarterPlaneOpen (p : ℝ) (hp : 2 ≤ p)
+    (x y : ℝ) (hQ : QuarterPlaneOpen x y) :
+    deriv (fun t => auxFunction1 p t y) x = DxauxFunction1 p x y := by
+  rcases hQ with ⟨hx, hyx, hneg⟩
+  by_cases h1 : a p * x < y
+  · exact deriv_auxFunction1_eq_DxauxFunction1_on_A1 p hp x y ⟨hx, h1, hyx⟩
+  · by_cases h2 : y < a p * x
+    · exact deriv_auxFunction1_eq_DxauxFunction1_on_A2 p hp x y ⟨hx, hneg, h2⟩
+    · have hy : y = a p * x := le_antisymm (not_lt.mp h1) (not_lt.mp h2)
+      rw [hy]
+      exact (hasDerivAt_auxFunction1_x_on_boundary p x hp hx).deriv
+
+lemma deriv_auxFunction1_eq_DyauxFunction1_on_QuarterPlaneOpen (p : ℝ) (hp : 2 < p)
+    (x y : ℝ) (hQ : QuarterPlaneOpen x y) :
+    deriv (fun s => auxFunction1 p x s) y = DyauxFunction1 p x y := by
+  rcases hQ with ⟨hx, hyx, hneg⟩
+  have hp' : 2 ≤ p := by linarith
+  by_cases h1 : a p * x < y
+  · exact deriv_auxFunction1_eq_DyauxFunction1_on_A1 p hp x y ⟨hx, h1, hyx⟩
+  · by_cases h2 : y < a p * x
+    · exact deriv_auxFunction1_eq_DyauxFunction1_on_A2 p hp' x y ⟨hx, hneg, h2⟩
+    · have hy : y = a p * x := le_antisymm (not_lt.mp h1) (not_lt.mp h2)
+      rw [hy]
+      exact (hasDerivAt_auxFunction1_y_on_boundary p x hp hx).deriv
+
+lemma continuousOn_DxauxFunction1_on_QuarterPlaneOpen (p : ℝ) (hp : 2 ≤ p) :
+    ContinuousOn (fun z : ℝ × ℝ => DxauxFunction1 p z.1 z.2)
+      {z | QuarterPlaneOpen z.1 z.2} := by
+  exact (continuousOn_DxauxFunction1 p hp).mono (by
+    intro z hz
+    rcases hz with ⟨hz1, hz2, hz3⟩
+    exact ⟨le_of_lt hz1, le_of_lt hz2, le_of_lt hz3⟩)
+
+lemma continuousOn_DyauxFunction1_on_QuarterPlaneOpen (p : ℝ) (hp : 2 < p) :
+    ContinuousOn (fun z : ℝ × ℝ => DyauxFunction1 p z.1 z.2)
+      {z | QuarterPlaneOpen z.1 z.2} := by
+  exact (continuousOn_DyauxFunction1 p hp).mono (by
+    intro z hz
+    rcases hz with ⟨hz1, hz2, hz3⟩
+    exact ⟨le_of_lt hz1, le_of_lt hz2, le_of_lt hz3⟩)
 
 theorem exists_majorant_geTwo (p : ℝ) (hp : 2 ≤ p) :
     ∃ u : ℝ → ℝ → ℝ,
