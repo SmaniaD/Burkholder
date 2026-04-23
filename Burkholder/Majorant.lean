@@ -1,4 +1,9 @@
-import Mathlib
+import Mathlib.Analysis.Convex.Function
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 noncomputable section
 
@@ -329,9 +334,75 @@ lemma continuousOn_DxuA1_closureA1
 
 
 lemma continuousOn_DyuA1_closureA1
-    (p : ℝ) (hp : 1 < p) :
+    (p : ℝ) (hp : 2 < p) :
     ContinuousOn (DyuA1Fun p) (closureA1Set p) := by
-    sorry
+  intro z hz
+  rcases z with ⟨x, y⟩
+  rcases hz with ⟨hx, hlow, hup⟩
+  by_cases hx0 : 0 < x
+  · have hpos : {w : ℝ × ℝ | 0 < w.1} ∈ nhds (x, y) := by
+      exact continuous_fst.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hx0)
+    have hEvent :
+        DyuA1Fun p =ᶠ[nhds (x, y)]
+          (fun w : ℝ × ℝ => alpha p * Real.rpow w.1 (p - 2) * (pStar p / 2)) := by
+      filter_upwards [hpos] with w hw
+      simp [DyuA1Fun, DyuA1, hw]
+    have hcont_rpow :
+        ContinuousAt (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2)) (x, y) := by
+      exact continuous_fst.continuousAt.rpow_const (Or.inl (ne_of_gt hx0))
+    have hcont :
+        ContinuousAt
+          (fun w : ℝ × ℝ => alpha p * Real.rpow w.1 (p - 2) * (pStar p / 2))
+          (x, y) := by
+      simpa [mul_assoc] using
+        (continuous_const.continuousAt.mul hcont_rpow).mul continuous_const.continuousAt
+    exact (hcont.congr_of_eventuallyEq hEvent).continuousWithinAt
+  · have h00 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
+    rcases h00 with ⟨rfl, rfl⟩
+    rw [ContinuousWithinAt, DyuA1Fun]
+    simp only [DyuA1, lt_irrefl, ite_false]
+    rw [tendsto_zero_iff_abs_tendsto_zero]
+    let C : ℝ := |alpha p * (pStar p / 2)|
+    have hbound :
+        ∀ᶠ w : ℝ × ℝ in nhdsWithin (0, 0) (closureA1Set p),
+          |DyuA1Fun p w| ≤ C * Real.rpow w.1 (p - 2) := by
+      refine Filter.mem_of_superset self_mem_nhdsWithin ?_
+      intro w hw
+      rcases hw with ⟨hwx, hwlow, hwup⟩
+      by_cases hw0 : 0 < w.1
+      · have habs :
+            |DyuA1Fun p w| =
+              C * Real.rpow w.1 (p - 2) := by
+          calc
+            |DyuA1Fun p w|
+                = |alpha p| * Real.rpow w.1 (p - 2) * |pStar p / 2| := by
+                    simp [DyuA1Fun, DyuA1, hw0, abs_mul, Real.rpow_nonneg hwx, mul_assoc]
+            _ = (|alpha p| * |pStar p / 2|) * Real.rpow w.1 (p - 2) := by ring
+            _ = C * Real.rpow w.1 (p - 2) := by
+                    simp [C, abs_mul, mul_assoc, mul_left_comm, mul_comm]
+        exact le_of_eq habs
+      · have h00 := closureA1_x0_y0 p w.1 w.2 ⟨hwx, hwlow, hwup⟩ hw0
+        rcases h00 with ⟨hw1, hw2⟩
+        simp [hw1, hw2, DyuA1Fun, DyuA1, C]
+        positivity
+    have hrpow :
+        Filter.Tendsto (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2))
+          (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
+      have hcont :
+          ContinuousAt (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2)) (0, 0) := by
+        exact continuous_fst.continuousAt.rpow_const (Or.inr (by linarith : 0 ≤ p - 2))
+      have hzero : Real.rpow (0 : ℝ) (p - 2) = 0 := by
+        exact Real.zero_rpow (by linarith)
+      have ht :
+          Filter.Tendsto (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2)) (nhds (0, 0)) (nhds 0) := by
+        convert hcont.tendsto using 1
+        simpa using hzero.symm
+      exact ht.mono_left nhdsWithin_le_nhds
+    have hmajor :
+        Filter.Tendsto (fun w : ℝ × ℝ => C * Real.rpow w.1 (p - 2))
+          (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
+      simpa using tendsto_const_nhds.mul hrpow
+    exact squeeze_zero' (Filter.Eventually.of_forall fun _ => abs_nonneg _) hbound hmajor
 
 
 
