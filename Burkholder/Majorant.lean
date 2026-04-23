@@ -61,12 +61,12 @@ def uA1 (p x y : ℝ) : ℝ :=
 
 def DxuA1 (p x y : ℝ) : ℝ :=
   if x > 0 then
-     alpha p * Real.rpow x (p-2) * (x - (pStar p) * (x - y) /2)
+     alpha p * (p / 2) * Real.rpow x (p - 2) * ((2 - p) * x + (p - 1) * y)
      else 0
 
 def DyuA1 (p x _y : ℝ) : ℝ :=
   if x > 0 then
-     alpha p * Real.rpow x (p-2) * (pStar p / 2)
+     alpha p * Real.rpow x (p - 1) * (pStar p / 2)
      else 0
 
 def DxvGeTwo (p x y : ℝ) : ℝ :=
@@ -94,10 +94,16 @@ def DyuA1Fun (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z => DyuA1 p z.1 z.2
 
 def DxuA1Formula (p : ℝ) : ℝ × ℝ → ℝ :=
-  fun z => alpha p * Real.rpow z.1 (p - 2) * (z.1 - (pStar p) * (z.1 - z.2) / 2)
+  fun z => alpha p * (p / 2) * Real.rpow z.1 (p - 2) * ((2 - p) * z.1 + (p - 1) * z.2)
+
+def DyuA1Formula (p : ℝ) : ℝ × ℝ → ℝ :=
+  fun z => alpha p * Real.rpow z.1 (p - 1) * (pStar p / 2)
 
 
 open Topology
+
+
+
 
 lemma continuousAt_DxuA1_interior
     (p x y : ℝ) (hx : 0 < x) :
@@ -119,19 +125,20 @@ lemma continuousAt_DxuA1_interior
 
   have hcont_lin :
       ContinuousAt
-        (fun z : ℝ × ℝ => z.1 - pStar p * (z.1 - z.2) / 2)
+        (fun z : ℝ × ℝ => (2 - p) * z.1 + (p - 1) * z.2)
         (x, y) := by
     exact
-      continuous_fst.continuousAt.sub
-        (((continuous_const.continuousAt.mul hcont_sub).div_const 2))
+      (continuous_const.continuousAt.mul continuous_fst.continuousAt).add
+        (continuous_const.continuousAt.mul continuous_snd.continuousAt)
 
   have hcont : ContinuousAt (DxuA1Formula p) (x, y) := by
     change ContinuousAt
       (fun z : ℝ × ℝ =>
-        alpha p * z.1 ^ (p - 2) * (z.1 - pStar p * (z.1 - z.2) / 2))
+        alpha p * (p / 2) * z.1 ^ (p - 2) * ((2 - p) * z.1 + (p - 1) * z.2))
       (x, y)
-    simpa [mul_assoc] using
-      continuous_const.continuousAt.mul (hcont_rpow.mul hcont_lin)
+    simpa [mul_assoc, mul_left_comm, mul_comm] using
+      (continuous_const.continuousAt.mul continuous_const.continuousAt).mul
+        (hcont_rpow.mul hcont_lin)
 
   exact hcont.congr_of_eventuallyEq hEvent
 
@@ -146,17 +153,17 @@ by
 
   have hEvent :
       DyuA1Fun p =ᶠ[nhds (x, y)]
-        (fun z : ℝ × ℝ => alpha p * Real.rpow z.1 (p - 2) * (pStar p / 2)) := by
+        (fun z : ℝ × ℝ => alpha p * Real.rpow z.1 (p - 1) * (pStar p / 2)) := by
     filter_upwards [hpos] with z hz
     simp [DyuA1Fun, DyuA1, hz]
 
   have hcont_rpow :
-      ContinuousAt (fun z : ℝ × ℝ => z.1 ^ (p - 2)) (x, y) := by
+      ContinuousAt (fun z : ℝ × ℝ => z.1 ^ (p - 1)) (x, y) := by
     exact continuous_fst.continuousAt.rpow_const (Or.inl (ne_of_gt hx))
 
   have hcont :
       ContinuousAt
-        (fun z : ℝ × ℝ => alpha p * Real.rpow z.1 (p - 2) * (pStar p / 2))
+        (fun z : ℝ × ℝ => alpha p * Real.rpow z.1 (p - 1) * (pStar p / 2))
         (x, y) := by
     simpa [mul_assoc] using
       (continuous_const.continuousAt.mul hcont_rpow).mul continuous_const.continuousAt
@@ -206,42 +213,31 @@ lemma abs_y_le_const_mul_x
 lemma abs_DxuA1_le
     (p x y : ℝ) (h : closureA1 p x y) :
     |DxuA1 p x y|
-      ≤ |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * Real.rpow x (p - 1) := by
+      ≤ |alpha p| * (|p| / 2) * (|2 - p| + |p - 1| * max 1 |a p|) * Real.rpow x (p - 1) := by
   rcases h with ⟨hx, hlow, hup⟩
   by_cases hx0 : 0 < x
   · have hxnonneg : 0 ≤ x := le_of_lt hx0
     have hyabs : |y| ≤ (max 1 |a p|) * x := by
       exact abs_y_le_const_mul_x p x y ⟨hx, hlow, hup⟩
     have hx_abs : |x| = x := abs_of_nonneg hxnonneg
-    have hxy :
-        |x - (pStar p) * (x - y) / 2|
-          ≤ (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * x := by
-      have htmp1 :
-          |x - (pStar p) * (x - y) / 2|
-            ≤ |x| + |(pStar p) * (x - y) / 2| := by
-        simpa using abs_sub x ((pStar p) * (x - y) / 2)
-      have htmp2 :
-          |(pStar p) * (x - y) / 2|
-            = (|pStar p| / 2) * |x - y| := by
-        rw [abs_div, abs_mul, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
-        ring
-      have hxy2 : |x - y| ≤ |x| + |y| := by
-        simpa using abs_sub x y
-      have hxy3 : |x - y| ≤ (1 + max 1 |a p|) * x := by
-        rw [hx_abs] at hxy2
-        calc
-          |x - y| ≤ x + |y| := hxy2
-          _ ≤ x + max 1 |a p| * x := by gcongr
-          _ = (1 + max 1 |a p|) * x := by ring
-      rw [htmp2] at htmp1
+    have hlin :
+        |(2 - p) * x + (p - 1) * y|
+          ≤ (|2 - p| + |p - 1| * max 1 |a p|) * x := by
+      have htmp :
+          |(2 - p) * x + (p - 1) * y|
+            ≤ |(2 - p) * x| + |(p - 1) * y| := by
+        simpa using abs_add_le ((2 - p) * x) ((p - 1) * y)
+      have hmulx : |(2 - p) * x| = |2 - p| * x := by
+        rw [abs_mul, hx_abs]
+      have hmuly : |(p - 1) * y| = |p - 1| * |y| := by
+        rw [abs_mul]
+      rw [hmulx, hmuly] at htmp
       calc
-        |x - (pStar p) * (x - y) / 2|
-            ≤ |x| + (|pStar p| / 2) * |x - y| := htmp1
-        _ ≤ |x| + (|pStar p| / 2) * ((1 + max 1 |a p|) * x) := by
+        |(2 - p) * x + (p - 1) * y|
+            ≤ |2 - p| * x + |p - 1| * |y| := htmp
+        _ ≤ |2 - p| * x + |p - 1| * (max 1 |a p| * x) := by
             gcongr
-        _ = x + (|pStar p| / 2) * ((1 + max 1 |a p|) * x) := by
-            rw [hx_abs]
-        _ = (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * x := by
+        _ = (|2 - p| + |p - 1| * max 1 |a p|) * x := by
             ring
     have hrpow_nonneg : 0 ≤ Real.rpow x (p - 2) := Real.rpow_nonneg hxnonneg _
     have hpow :
@@ -254,37 +250,39 @@ lemma abs_DxuA1_le
                 simpa using (Real.rpow_add hx0 (p - 2) 1).symm
         _ = Real.rpow x (p - 1) := by simpa [hexp]
     have habs :
-        |alpha p * Real.rpow x (p - 2) * (x - (pStar p) * (x - y) / 2)|
-          = |alpha p| * Real.rpow x (p - 2) * |x - (pStar p) * (x - y) / 2| := by
+        |alpha p * (p / 2) * Real.rpow x (p - 2) * ((2 - p) * x + (p - 1) * y)|
+          = |alpha p| * (|p| / 2) * Real.rpow x (p - 2) * |(2 - p) * x + (p - 1) * y| := by
       have hmul :
-          |alpha p * Real.rpow x (p - 2)| = |alpha p| * Real.rpow x (p - 2) := by
-        rw [abs_mul, abs_of_nonneg hrpow_nonneg]
+          |alpha p * (p / 2) * Real.rpow x (p - 2)|
+            = |alpha p| * (|p| / 2) * Real.rpow x (p - 2) := by
+        rw [abs_mul, abs_mul, abs_of_nonneg hrpow_nonneg, abs_div, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
       calc
-        |alpha p * Real.rpow x (p - 2) * (x - (pStar p) * (x - y) / 2)|
-            = |(alpha p * Real.rpow x (p - 2)) * (x - (pStar p) * (x - y) / 2)| := by ring_nf
-        _ = |alpha p * Real.rpow x (p - 2)| * |x - (pStar p) * (x - y) / 2| := by
+        |alpha p * (p / 2) * Real.rpow x (p - 2) * ((2 - p) * x + (p - 1) * y)|
+            = |(alpha p * (p / 2) * Real.rpow x (p - 2)) * ((2 - p) * x + (p - 1) * y)| := by
+                ring_nf
+        _ = |alpha p * (p / 2) * Real.rpow x (p - 2)| * |(2 - p) * x + (p - 1) * y| := by
             rw [abs_mul]
-        _ = (|alpha p| * Real.rpow x (p - 2)) * |x - (pStar p) * (x - y) / 2| := by
+        _ = (|alpha p| * (|p| / 2) * Real.rpow x (p - 2)) * |(2 - p) * x + (p - 1) * y| := by
             rw [hmul]
-        _ = |alpha p| * Real.rpow x (p - 2) * |x - (pStar p) * (x - y) / 2| := by ring
+        _ = |alpha p| * (|p| / 2) * Real.rpow x (p - 2) * |(2 - p) * x + (p - 1) * y| := by ring
     calc
       |DxuA1 p x y|
-          = |alpha p * Real.rpow x (p - 2) * (x - (pStar p) * (x - y) / 2)| := by
+          = |alpha p * (p / 2) * Real.rpow x (p - 2) * ((2 - p) * x + (p - 1) * y)| := by
               simp [DxuA1, hx0]
-      _ = |alpha p| * Real.rpow x (p - 2) * |x - (pStar p) * (x - y) / 2| := habs
-      _ ≤ |alpha p| * Real.rpow x (p - 2) *
-            ((1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * x) := by
+      _ = |alpha p| * (|p| / 2) * Real.rpow x (p - 2) * |(2 - p) * x + (p - 1) * y| := habs
+      _ ≤ |alpha p| * (|p| / 2) * Real.rpow x (p - 2) *
+            ((|2 - p| + |p - 1| * max 1 |a p|) * x) := by
               gcongr
-      _ = |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) *
+      _ = |alpha p| * (|p| / 2) * (|2 - p| + |p - 1| * max 1 |a p|) *
             (Real.rpow x (p - 2) * x) := by
               ring
-      _ = |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) *
+      _ = |alpha p| * (|p| / 2) * (|2 - p| + |p - 1| * max 1 |a p|) *
             Real.rpow x (p - 1) := by
               rw [hpow]
   · have h00 : x = 0 ∧ y = 0 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
     rcases h00 with ⟨rfl, rfl⟩
     have hnonneg :
-        0 ≤ |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * Real.rpow 0 (p - 1) := by
+        0 ≤ |alpha p| * (|p| / 2) * (|2 - p| + |p - 1| * max 1 |a p|) * Real.rpow 0 (p - 1) := by
       have hrpow_nonneg : 0 ≤ Real.rpow (0 : ℝ) (p - 1) := Real.zero_rpow_nonneg (p - 1)
       positivity
     simpa [DxuA1] using hnonneg
@@ -303,7 +301,7 @@ lemma continuousOn_DxuA1_closureA1
     rw [ContinuousWithinAt, DxuA1Fun]
     simp only [DxuA1, lt_irrefl, ite_false]
     rw [tendsto_zero_iff_abs_tendsto_zero]
-    let C : ℝ := |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|))
+    let C : ℝ := |alpha p| * (|p| / 2) * (|2 - p| + |p - 1| * max 1 |a p|)
     have hC_nonneg : 0 ≤ C := by
       dsimp [C]
       positivity
@@ -344,15 +342,15 @@ lemma continuousOn_DyuA1_closureA1
       exact continuous_fst.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hx0)
     have hEvent :
         DyuA1Fun p =ᶠ[nhds (x, y)]
-          (fun w : ℝ × ℝ => alpha p * Real.rpow w.1 (p - 2) * (pStar p / 2)) := by
+          (fun w : ℝ × ℝ => alpha p * Real.rpow w.1 (p - 1) * (pStar p / 2)) := by
       filter_upwards [hpos] with w hw
       simp [DyuA1Fun, DyuA1, hw]
     have hcont_rpow :
-        ContinuousAt (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2)) (x, y) := by
+        ContinuousAt (fun w : ℝ × ℝ => Real.rpow w.1 (p - 1)) (x, y) := by
       exact continuous_fst.continuousAt.rpow_const (Or.inl (ne_of_gt hx0))
     have hcont :
         ContinuousAt
-          (fun w : ℝ × ℝ => alpha p * Real.rpow w.1 (p - 2) * (pStar p / 2))
+          (fun w : ℝ × ℝ => alpha p * Real.rpow w.1 (p - 1) * (pStar p / 2))
           (x, y) := by
       simpa [mul_assoc] using
         (continuous_const.continuousAt.mul hcont_rpow).mul continuous_const.continuousAt
@@ -365,41 +363,41 @@ lemma continuousOn_DyuA1_closureA1
     let C : ℝ := |alpha p * (pStar p / 2)|
     have hbound :
         ∀ᶠ w : ℝ × ℝ in nhdsWithin (0, 0) (closureA1Set p),
-          |DyuA1Fun p w| ≤ C * Real.rpow w.1 (p - 2) := by
+          |DyuA1Fun p w| ≤ C * Real.rpow w.1 (p - 1) := by
       refine Filter.mem_of_superset self_mem_nhdsWithin ?_
       intro w hw
       rcases hw with ⟨hwx, hwlow, hwup⟩
       by_cases hw0 : 0 < w.1
       · have habs :
             |DyuA1Fun p w| =
-              C * Real.rpow w.1 (p - 2) := by
+              C * Real.rpow w.1 (p - 1) := by
           calc
             |DyuA1Fun p w|
-                = |alpha p| * Real.rpow w.1 (p - 2) * |pStar p / 2| := by
+                = |alpha p| * Real.rpow w.1 (p - 1) * |pStar p / 2| := by
                     simp [DyuA1Fun, DyuA1, hw0, abs_mul, Real.rpow_nonneg hwx, mul_assoc]
-            _ = (|alpha p| * |pStar p / 2|) * Real.rpow w.1 (p - 2) := by ring
-            _ = C * Real.rpow w.1 (p - 2) := by
-                    simp [C, abs_mul, mul_assoc, mul_left_comm, mul_comm]
+            _ = (|alpha p| * |pStar p / 2|) * Real.rpow w.1 (p - 1) := by ring
+            _ = C * Real.rpow w.1 (p - 1) := by
+                    simp [C, abs_mul, mul_assoc]
         exact le_of_eq habs
       · have h00 := closureA1_x0_y0 p w.1 w.2 ⟨hwx, hwlow, hwup⟩ hw0
         rcases h00 with ⟨hw1, hw2⟩
         simp [hw1, hw2, DyuA1Fun, DyuA1, C]
         positivity
     have hrpow :
-        Filter.Tendsto (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2))
+        Filter.Tendsto (fun w : ℝ × ℝ => Real.rpow w.1 (p - 1))
           (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
       have hcont :
-          ContinuousAt (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2)) (0, 0) := by
-        exact continuous_fst.continuousAt.rpow_const (Or.inr (by linarith : 0 ≤ p - 2))
-      have hzero : Real.rpow (0 : ℝ) (p - 2) = 0 := by
+          ContinuousAt (fun w : ℝ × ℝ => Real.rpow w.1 (p - 1)) (0, 0) := by
+        exact continuous_fst.continuousAt.rpow_const (Or.inr (by linarith : 0 ≤ p - 1))
+      have hzero : Real.rpow (0 : ℝ) (p - 1) = 0 := by
         exact Real.zero_rpow (by linarith)
       have ht :
-          Filter.Tendsto (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2)) (nhds (0, 0)) (nhds 0) := by
+          Filter.Tendsto (fun w : ℝ × ℝ => Real.rpow w.1 (p - 1)) (nhds (0, 0)) (nhds 0) := by
         convert hcont.tendsto using 1
         simpa using hzero.symm
       exact ht.mono_left nhdsWithin_le_nhds
     have hmajor :
-        Filter.Tendsto (fun w : ℝ × ℝ => C * Real.rpow w.1 (p - 2))
+        Filter.Tendsto (fun w : ℝ × ℝ => C * Real.rpow w.1 (p - 1))
           (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
       simpa using tendsto_const_nhds.mul hrpow
     exact squeeze_zero' (Filter.Eventually.of_forall fun _ => abs_nonneg _) hbound hmajor
@@ -919,6 +917,82 @@ lemma concaveOn_uA1_in_y (p : ℝ) (hp : 2 ≤ p) (x : ℝ) :
     Note: the domain must be {x | y ≤ x}, not {x | 0 ≤ x} — for y > 0 the second
     derivative f''(x) = αp·p·(p-1)·(p-2)/2·x^(p-3)·(y-x) is positive when x < y. -/
 
+lemma deriv_uA1_eq_DxuA1Fun_on_A1 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y) :
+    deriv (fun t => uA1 p t y) x = DxuA1Fun p (x, y) := by
+  rcases hA1 with ⟨hx, -, -⟩
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+
+  let g : ℝ → ℝ := fun t =>
+    alpha p * ((1 - p / 2) * t ^ p + (p * y / 2) * t ^ (p - 1))
+
+  have hEq : (fun t => uA1 p t y) =ᶠ[nhds x] g := by
+    filter_upwards [Ioi_mem_nhds hx] with t ht
+    have ht0 : 0 < t := by simpa [Set.mem_Ioi] using ht
+    have hpow : t ^ p = t ^ (p - 1) * t := by
+      calc
+        t ^ p = t ^ ((p - 1) + (1 : ℝ)) := by ring_nf
+        _ = t ^ (p - 1) * t ^ (1 : ℝ) := by rw [Real.rpow_add ht0]
+        _ = t ^ (p - 1) * t := by rw [Real.rpow_one]
+    simp [uA1, g, hpStar, ht0]
+    rw [hpow]
+    ring
+
+  have hderiv :
+      deriv (fun t => uA1 p t y) x = deriv g x := hEq.deriv_eq
+
+  have hxne : x ≠ 0 := by linarith
+  have hg :
+      deriv g x =
+        alpha p * (p / 2) * x ^ (p - 2) * ((2 - p) * x + (p - 1) * y) := by
+    have hxne1 : x ≠ 0 ∨ 1 ≤ p := Or.inl hxne
+    have hxne2 : x ≠ 0 ∨ 1 ≤ p - 1 := Or.inl hxne
+
+    have hd1 :
+        HasDerivAt (fun t : ℝ => t ^ p) (p * x ^ (p - 1)) x := by
+      simpa using
+        (Real.hasDerivAt_rpow_const hxne1 :
+          HasDerivAt (fun t : ℝ => t ^ p) (p * x ^ (p - 1)) x)
+
+    have hd2 :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1)) ((p - 1) * x ^ (p - 2)) x := by
+      have h := (Real.hasDerivAt_rpow_const hxne2 :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1))
+          ((p - 1) * x ^ ((p - 1) - 1)) x)
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
+        show p + (-1 + -1) = p + -2 by ring] using h
+
+    have hd :
+        HasDerivAt g
+          (alpha p *
+            ((1 - p / 2) * (p * x ^ (p - 1)) +
+              (p * y / 2) * ((p - 1) * x ^ (p - 2)))) x := by
+      dsimp [g]
+      have hsum :=
+        ((hd1.const_mul (1 - p / 2)).add (hd2.const_mul (p * y / 2))).const_mul (alpha p)
+      simpa [mul_add, mul_assoc, mul_left_comm, mul_comm] using hsum
+
+    have hpow : x ^ (p - 1) = x ^ (p - 2) * x := by
+      calc
+        x ^ (p - 1) = x ^ ((p - 2) + (1 : ℝ)) := by ring_nf
+        _ = x ^ (p - 2) * x ^ (1 : ℝ) := by rw [Real.rpow_add hx]
+        _ = x ^ (p - 2) * x := by rw [Real.rpow_one]
+
+    calc
+      deriv g x
+          = alpha p *
+              ((1 - p / 2) * (p * x ^ (p - 1)) +
+                (p * y / 2) * ((p - 1) * x ^ (p - 2))) := hd.deriv
+      _ = alpha p *
+            ((1 - p / 2) * (p * (x ^ (p - 2) * x)) +
+              (p * y / 2) * ((p - 1) * x ^ (p - 2))) := by rw [hpow]
+      _ = alpha p * (p / 2) * x ^ (p - 2) * ((2 - p) * x + (p - 1) * y) := by
+          ring_nf
+
+  calc
+    deriv (fun t => uA1 p t y) x = deriv g x := hderiv
+    _ = alpha p * (p / 2) * x ^ (p - 2) * ((2 - p) * x + (p - 1) * y) := hg
+    _ = DxuA1Fun p (x, y) := by simp [DxuA1Fun, DxuA1, hx]
+
 lemma Dxx_uA1_nonpos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y)
     : 0 ≥ deriv (deriv (fun x => uA1 p x y)) x := by
   rcases hA1 with ⟨hx, hax, hyx⟩
@@ -1126,6 +1200,31 @@ lemma Dyy_uA1_nonpos (p : ℝ) (_hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y)
 
   rw [hderiv_lin]
   simp
+
+lemma deriv_uA1_eq_DyuA1Fun_on_A1 (p : ℝ) (hp : 2 < p) (x y : ℝ) (hA1 : A1 p x y) :
+    deriv (fun s => uA1 p x s) y = DyuA1Fun p (x, y) := by
+  rcases hA1 with ⟨hx, -, -⟩
+  have hp' : 2 ≤ p := by linarith
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp'
+  let c : ℝ := alpha p * x ^ (p - 1) * (x - pStar p * x / 2)
+  let m : ℝ := alpha p * x ^ (p - 1) * (pStar p / 2)
+
+  have hrepr : (fun s => uA1 p x s) = fun s => c + m * s := by
+    funext s
+    simp [uA1, hx, c, m]
+    ring
+
+  have hderiv_lin : deriv (fun s => c + m * s) = fun _ => m := by
+    funext s
+    have hlin : HasDerivAt (fun z : ℝ => c + m * z) m s := by
+      simpa [one_mul] using (((hasDerivAt_id s).const_mul m).const_add c)
+    exact hlin.deriv
+
+  calc
+    deriv (fun s => uA1 p x s) y = deriv (fun s => c + m * s) y := by rw [hrepr]
+    _ = m := by rw [hderiv_lin]
+    _ = DyuA1Fun p (x, y) := by
+        simp [DyuA1Fun, DyuA1, m, hx, hpStar]
 
   lemma Dxy_uA1_nonneg (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA1 : A1 p x y) :
     0 ≤ deriv (fun x => deriv (fun y => uA1 p x y) y) x := by
