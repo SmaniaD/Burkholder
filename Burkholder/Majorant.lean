@@ -79,8 +79,14 @@ def DyvGeTwo (p x y : ℝ) : ℝ :=
 def closureA1Set (p : ℝ) : Set (ℝ × ℝ) :=
   {z | closureA1 p z.1 z.2}
 
+def closureA2Set (p : ℝ) : Set (ℝ × ℝ) :=
+  {z | closureA2 p z.1 z.2}
+
 def DxuA1Fun (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z => DxuA1 p z.1 z.2
+
+def DyuA1Fun (p : ℝ) : ℝ × ℝ → ℝ :=
+  fun z => DyuA1 p z.1 z.2
 
 def DxuA1Formula (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z => alpha p * Real.rpow z.1 (p - 2) * (z.1 - (pStar p) * (z.1 - z.2) / 2)
@@ -126,6 +132,31 @@ lemma continuousAt_DxuA1_interior
 
 
 
+lemma continuousAt_DyuA1_interior
+    (p x y : ℝ) (hx : 0 < x) :
+    ContinuousAt (DyuA1Fun p) (x, y):=
+by
+  have hpos : {z : ℝ × ℝ | 0 < z.1} ∈ nhds (x, y) := by
+    exact continuous_fst.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hx)
+
+  have hEvent :
+      DyuA1Fun p =ᶠ[nhds (x, y)]
+        (fun z : ℝ × ℝ => alpha p * Real.rpow z.1 (p - 2) * (pStar p / 2)) := by
+    filter_upwards [hpos] with z hz
+    simp [DyuA1Fun, DyuA1, hz]
+
+  have hcont_rpow :
+      ContinuousAt (fun z : ℝ × ℝ => z.1 ^ (p - 2)) (x, y) := by
+    exact continuous_fst.continuousAt.rpow_const (Or.inl (ne_of_gt hx))
+
+  have hcont :
+      ContinuousAt
+        (fun z : ℝ × ℝ => alpha p * Real.rpow z.1 (p - 2) * (pStar p / 2))
+        (x, y) := by
+    simpa [mul_assoc] using
+      (continuous_const.continuousAt.mul hcont_rpow).mul continuous_const.continuousAt
+
+  exact hcont.congr_of_eventuallyEq hEvent
 
 
 
@@ -253,7 +284,7 @@ lemma abs_DxuA1_le
       positivity
     simpa [DxuA1] using hnonneg
 
-    
+
 lemma continuousOn_DxuA1_closureA1
     (p : ℝ) (hp : 1 < p) :
     ContinuousOn (DxuA1Fun p) (closureA1Set p) := by
@@ -297,7 +328,10 @@ lemma continuousOn_DxuA1_closureA1
 
 
 
-
+lemma continuousOn_DyuA1_closureA1
+    (p : ℝ) (hp : 1 < p) :
+    ContinuousOn (DyuA1Fun p) (closureA1Set p) := by
+    sorry
 
 
 
