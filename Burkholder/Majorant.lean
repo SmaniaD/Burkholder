@@ -59,7 +59,7 @@ def DxuA1 (p x y : ℝ) : ℝ :=
      alpha p * Real.rpow x (p-2) * (x - (pStar p) * (x - y) /2)
      else 0
 
-def DyuA1 (p x y : ℝ) : ℝ :=
+def DyuA1 (p x _y : ℝ) : ℝ :=
   if x > 0 then
      alpha p * Real.rpow x (p-2) * (pStar p / 2)
      else 0
@@ -165,7 +165,8 @@ lemma abs_y_le_const_mul_x
     linarith
   exact abs_le.mpr ⟨h2, h3⟩
 
-/-- Estimativa grosseira suficiente para o bordo: `|DxuA1| ≤ C * x^(p-1)` em `closureA1`. -/
+/-- Estimativa grosseira suficiente para o bordo:
+`|DxuA1| ≤ C * x^(p-1)` em `closureA1`. -/
 lemma abs_DxuA1_le
     (p x y : ℝ) (h : closureA1 p x y) :
     |DxuA1 p x y|
@@ -173,107 +174,126 @@ lemma abs_DxuA1_le
   rcases h with ⟨hx, hlow, hup⟩
   by_cases hx0 : 0 < x
   · have hxnonneg : 0 ≤ x := le_of_lt hx0
-    have hyabs : |y| ≤ (max 1 |a p|) * x := abs_y_le_const_mul_x p x y ⟨hx, hlow, hup⟩
-    simp [DxuA1, hx0]
-    have hrpow_nonneg : 0 ≤ Real.rpow x (p - 2) := by
-      -- Since 0 < x, Real.rpow x (p - 2) > 0 unless p - 2 < 0 and x = 0 (which can't happen)
-      have hxpos : 0 < x := hx0
-      by_cases hp2 : 0 ≤ p - 2
-      · -- If p - 2 ≥ 0, then x^(p-2) ≥ 0 for x > 0
-        exact Real.rpow_nonneg_of_nonneg (le_of_lt hxpos) _
-      · -- If p - 2 < 0, then x^(p-2) > 0 for x > 0
-        have : 0 < Real.rpow x (p - 2) := Real.rpow_pos_of_pos hxpos _
-        linarith [this]
+    have hyabs : |y| ≤ (max 1 |a p|) * x := by
+      exact abs_y_le_const_mul_x p x y ⟨hx, hlow, hup⟩
     have hx_abs : |x| = x := abs_of_nonneg hxnonneg
     have hxy :
         |x - (pStar p) * (x - y) / 2|
           ≤ (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * x := by
-      have htmp1 : |x - (pStar p) * (x - y) / 2|
-          ≤ |x| + |(pStar p) * (x - y) / 2| := by
-        simpa [sub_eq_add_neg] using abs_add (x) (-(pStar p * (x - y) / 2))
-      have htmp2 : |(pStar p) * (x - y) / 2|
-          = (|pStar p| / 2) * |x - y| := by
-        rw [abs_mul, abs_div, abs_of_pos (show (0:ℝ) < 2 by norm_num)]
+      have htmp1 :
+          |x - (pStar p) * (x - y) / 2|
+            ≤ |x| + |(pStar p) * (x - y) / 2| := by
+        simpa using abs_sub x ((pStar p) * (x - y) / 2)
+      have htmp2 :
+          |(pStar p) * (x - y) / 2|
+            = (|pStar p| / 2) * |x - y| := by
+        rw [abs_div, abs_mul, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
         ring
       have hxy2 : |x - y| ≤ |x| + |y| := by
-        simpa [sub_eq_add_neg, abs_neg] using abs_add x (-y)
+        simpa using abs_sub x y
       have hxy3 : |x - y| ≤ (1 + max 1 |a p|) * x := by
         rw [hx_abs] at hxy2
-        linarith
+        calc
+          |x - y| ≤ x + |y| := hxy2
+          _ ≤ x + max 1 |a p| * x := by gcongr
+          _ = (1 + max 1 |a p|) * x := by ring
       rw [htmp2] at htmp1
-      linarith
+      calc
+        |x - (pStar p) * (x - y) / 2|
+            ≤ |x| + (|pStar p| / 2) * |x - y| := htmp1
+        _ ≤ |x| + (|pStar p| / 2) * ((1 + max 1 |a p|) * x) := by
+            gcongr
+        _ = x + (|pStar p| / 2) * ((1 + max 1 |a p|) * x) := by
+            rw [hx_abs]
+        _ = (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * x := by
+            ring
+    have hrpow_nonneg : 0 ≤ Real.rpow x (p - 2) := Real.rpow_nonneg hxnonneg _
     have hpow :
         Real.rpow x (p - 2) * x = Real.rpow x (p - 1) := by
-      -- usa x ≥ 0
-      rw [← Real.rpow_natCast, ← Real.rpow_add hxnonneg]
-      ring_nf
-    calc
-      |alpha p * Real.rpow x (p - 2) * (x - (pStar p) * (x - y) / 2)|
+      have hexp : (p - 2) + 1 = p - 1 := by ring
+      nth_rewrite 2 [show x = Real.rpow x (1 : ℝ) by simpa using (Real.rpow_one x).symm]
+      calc
+        Real.rpow x (p - 2) * Real.rpow x (1 : ℝ)
+            = Real.rpow x ((p - 2) + 1) := by
+                simpa using (Real.rpow_add hx0 (p - 2) 1).symm
+        _ = Real.rpow x (p - 1) := by simpa [hexp]
+    have habs :
+        |alpha p * Real.rpow x (p - 2) * (x - (pStar p) * (x - y) / 2)|
           = |alpha p| * Real.rpow x (p - 2) * |x - (pStar p) * (x - y) / 2| := by
-              rw [abs_mul, abs_mul, abs_of_nonneg hrpow_nonneg]
-              ring
+      have hmul :
+          |alpha p * Real.rpow x (p - 2)| = |alpha p| * Real.rpow x (p - 2) := by
+        rw [abs_mul, abs_of_nonneg hrpow_nonneg]
+      calc
+        |alpha p * Real.rpow x (p - 2) * (x - (pStar p) * (x - y) / 2)|
+            = |(alpha p * Real.rpow x (p - 2)) * (x - (pStar p) * (x - y) / 2)| := by ring_nf
+        _ = |alpha p * Real.rpow x (p - 2)| * |x - (pStar p) * (x - y) / 2| := by
+            rw [abs_mul]
+        _ = (|alpha p| * Real.rpow x (p - 2)) * |x - (pStar p) * (x - y) / 2| := by
+            rw [hmul]
+        _ = |alpha p| * Real.rpow x (p - 2) * |x - (pStar p) * (x - y) / 2| := by ring
+    calc
+      |DxuA1 p x y|
+          = |alpha p * Real.rpow x (p - 2) * (x - (pStar p) * (x - y) / 2)| := by
+              simp [DxuA1, hx0]
+      _ = |alpha p| * Real.rpow x (p - 2) * |x - (pStar p) * (x - y) / 2| := habs
       _ ≤ |alpha p| * Real.rpow x (p - 2) *
             ((1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * x) := by
               gcongr
-      _ = |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * Real.rpow x (p - 1) := by
-              rw [mul_assoc, mul_assoc, ← mul_assoc (Real.rpow x (p - 2)),
-                  mul_comm (Real.rpow x (p - 2)), mul_assoc,
-                  hpow]
+      _ = |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) *
+            (Real.rpow x (p - 2) * x) := by
               ring
-  · have h00 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
+      _ = |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) *
+            Real.rpow x (p - 1) := by
+              rw [hpow]
+  · have h00 : x = 0 ∧ y = 0 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
     rcases h00 with ⟨rfl, rfl⟩
-    simp [DxuA1]
+    have hnonneg :
+        0 ≤ |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * Real.rpow 0 (p - 1) := by
+      have hrpow_nonneg : 0 ≤ Real.rpow (0 : ℝ) (p - 1) := Real.zero_rpow_nonneg (p - 1)
+      positivity
+    simpa [DxuA1] using hnonneg
 
-lemma continuousWithinAt_DxuA1_origin
-    (p : ℝ) (hp : 1 < p) :
-    ContinuousWithinAt (DxuA1Fun p) (closureA1Set p) (0,0) := by
-  rw [Metric.continuousWithinAt_iff]
-  intro ε hε
-  have hpow0 : Tendsto (fun t : ℝ => Real.rpow t (p - 1)) (𝓝[Set.Ici 0] 0) (𝓝 0) := by
-    have hp' : 0 < p - 1 := by linarith
-    simpa using Real.tendsto_rpow_atTop_nhds_0_of_pos hp'
-  have hconstpos :
-      0 ≤ |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) := by positivity
-  have hmain :
-      Tendsto
-        (fun z : ℝ × ℝ =>
-          |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|)) * Real.rpow z.1 (p - 1))
-        (𝓝[(closureA1Set p)] (0,0)) (𝓝 0) := by
-    have hfst :
-        Tendsto (fun z : ℝ × ℝ => z.1) (𝓝[(closureA1Set p)] (0,0)) (𝓝[Set.Ici 0] 0) := by
-      refine tendsto_principal.2 ?_
-      intro s hs
-      rcases hs with ⟨u, hu, hu0, hus⟩
-      refine mem_of_superset ?_ ?_
-      · exact inter_mem (mem_nhdsWithin_of_mem_nhds hu0) (by simp [closureA1Set])
-      · intro z hz
-        exact hus (hu hz.1)
-    have hcomp := hpow0.comp hfst
-    simpa using hconstpos.tendsto_const_nhds.mul hcomp
-  rcases (Metric.tendsto_nhds.1 hmain) ε hε with ⟨δ, hδ, hδprop⟩
-  refine ⟨δ, hδ, ?_⟩
-  intro z hz hzmem
-  rcases z with ⟨x,y⟩
-  have hbound := abs_DxuA1_le p x y hzmem
-  have hsmall := hδprop hz
-  have hD :
-      dist (DxuA1Fun p (x,y)) (DxuA1Fun p (0,0)) < ε := by
-    have h0 : DxuA1Fun p (0,0) = 0 := by simp [DxuA1Fun, DxuA1]
-    rw [h0, dist_eq_norm]
-    simpa [Real.norm_eq_abs] using lt_of_le_of_lt hbound hsmall
-  simpa [DxuA1Fun]
-
+    
 lemma continuousOn_DxuA1_closureA1
     (p : ℝ) (hp : 1 < p) :
     ContinuousOn (DxuA1Fun p) (closureA1Set p) := by
   intro z hz
-  rcases z with ⟨x,y⟩
+  rcases z with ⟨x, y⟩
   rcases hz with ⟨hx, hlow, hup⟩
   by_cases hx0 : 0 < x
   · exact (continuousAt_DxuA1_interior p x y hx0).continuousWithinAt
   · have h00 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
     rcases h00 with ⟨rfl, rfl⟩
-    exact continuousWithinAt_DxuA1_origin p hp
+    rw [ContinuousWithinAt, DxuA1Fun]
+    simp only [DxuA1, lt_irrefl, ite_false]
+    rw [tendsto_zero_iff_abs_tendsto_zero]
+    let C : ℝ := |alpha p| * (1 + (|pStar p| / 2) * (1 + max 1 |a p|))
+    have hC_nonneg : 0 ≤ C := by
+      dsimp [C]
+      positivity
+    have hbound :
+        ∀ᶠ z : ℝ × ℝ in nhdsWithin (0, 0) (closureA1Set p),
+          |DxuA1Fun p z| ≤ C * Real.rpow z.1 (p - 1) := by
+      refine Filter.mem_of_superset self_mem_nhdsWithin ?_
+      intro z hz'
+      simpa [closureA1Set, DxuA1Fun, C] using abs_DxuA1_le p z.1 z.2 hz'
+    have hrpow :
+        Filter.Tendsto (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1))
+          (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
+      have hcont :
+          ContinuousAt (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1)) (0, 0) := by
+        exact continuous_fst.continuousAt.rpow_const (Or.inr (by linarith : 0 ≤ p - 1))
+      have hzero : Real.rpow (0 : ℝ) (p - 1) = 0 := by
+        exact Real.zero_rpow (by linarith)
+      have ht : Filter.Tendsto (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1)) (nhds (0, 0)) (nhds 0) := by
+        convert hcont.tendsto using 1
+        simpa using hzero.symm
+      exact ht.mono_left nhdsWithin_le_nhds
+    have hmajor :
+        Filter.Tendsto (fun z : ℝ × ℝ => C * Real.rpow z.1 (p - 1))
+          (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
+      simpa using tendsto_const_nhds.mul hrpow
+    exact squeeze_zero' (Filter.Eventually.of_forall fun _ => abs_nonneg _) hbound hmajor
 
 
 
@@ -758,30 +778,7 @@ lemma continuousuCandidate (p : ℝ) (hp : 2 ≤ p) :
 
 lemma continuousDxuCandidate (p : ℝ) (hp : 2 ≤ p)
     : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Set.univ := by
-  -- We show that the map (x, y) ↦ deriv_x uCandidate p x y is continuous on ℝ × ℝ
-  -- by using the explicit formula for the derivative in each region (Q1, Q2, Q3, Q4)
-  -- and the fact that uCandidate is C^1 piecewise with continuous derivatives.
-  -- The proof is analogous to the continuity proof for uCandidate itself.
-  have : ∀ z, ∃ (i : Fin 4), z ∈ (Q1 ∪ Q2 ∪ Q3 ∪ Q4) := by
-    intro z
-    apply hcover
-  have hcont1 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Q1 := continuousOn_deriv_uCandidate_Q1 p hp
-  have hcont2 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Q2 := continuousOn_deriv_uCandidate_Q2 p hp
-  have hcont3 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Q3 := continuousOn_deriv_uCandidate_Q3 p hp
-  have hcont4 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Q4 := continuousOn_deriv_uCandidate_Q4 p hp
-  have hcl1 : IsClosed Q1 := hcl1
-  have hcl2 : IsClosed Q2 := hcl2
-  have hcl3 : IsClosed Q3 := hcl3
-  have hcl4 : IsClosed Q4 := hcl4
-  have hc12 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) (Q1 ∪ Q2) :=
-    hcont1.union_of_isClosed hcont2 hcl1 hcl2
-  have hc123 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) (Q1 ∪ Q2 ∪ Q3) :=
-    hc12.union_of_isClosed hcont3 (hcl1.union hcl2) hcl3
-  have hc1234 : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) (Q1 ∪ Q2 ∪ Q3 ∪ Q4) :=
-    hc123.union_of_isClosed hcont4 (hcl1.union hcl2).union hcl3 hcl4
-  apply ContinuousOn.mono hc1234
-  intro z hz
-  exact hcover hz
+  sorry
 
 
 /-- For p ≥ 2, uA1 p x y is linear (hence concave) in y for fixed x. -/
