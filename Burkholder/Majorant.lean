@@ -1724,7 +1724,7 @@ lemma continuousDyuCandidate (p : ℝ) (hp : 2 < p) :
   have hcl123 : IsClosed (Q1 ∪ Q2 ∪ Q3) := hcl12.union hcl3
   have hc1234 := hc123.union_of_isClosed hc4 hcl123 hcl4
   exact ContinuousOn.mono hc1234 hcover
-
+</-- For p > 2, DxuCandidate p x y is continuous in (x, y) on all of ℝ².  -/
 lemma continuous_firstPartials_uCandidate (p : ℝ) (hp : 2 < p) :
     ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Set.univ ∧
     ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Set.univ := by
