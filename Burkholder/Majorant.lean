@@ -1724,7 +1724,7 @@ lemma continuousDyuCandidate (p : ℝ) (hp : 2 < p) :
   have hcl123 : IsClosed (Q1 ∪ Q2 ∪ Q3) := hcl12.union hcl3
   have hc1234 := hc123.union_of_isClosed hc4 hcl123 hcl4
   exact ContinuousOn.mono hc1234 hcover
-</-- For p > 2, DxuCandidate p x y is continuous in (x, y) on all of ℝ².  -/
+/-- For p > 2, DxuCandidate p x y is continuous in (x, y) on all of ℝ².  -/
 lemma continuous_firstPartials_uCandidate (p : ℝ) (hp : 2 < p) :
     ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Set.univ ∧
     ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Set.univ := by
@@ -2522,6 +2522,478 @@ lemma hasDerivAt_vGeTwo_y_of_pos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ)
   have hx : 0 < x := by linarith
   refine (hd.congr_of_eventuallyEq hEq).congr_deriv ?_
   simp [DyvGeTwo, hx, abs_of_pos hsum, abs_of_pos hdiff]
+
+lemma vGeTwo_A2_second_bracket_nonpos (p : ℝ) (hp : 2 ≤ p)
+    (x y : ℝ) (hA2 : A2 p x y) :
+    ((x + y) / 2) ^ (p - 2) -
+      (p - 1) ^ p * ((x - y) / 2) ^ (p - 2) ≤ 0 := by
+  rcases hA2 with ⟨hx, hneg, hay⟩
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+  have hp_pos : 0 < p := by linarith
+  have hp1_nonneg : 0 ≤ p - 1 := by linarith
+  have hp1_one : 1 ≤ p - 1 := by linarith
+  have hp2_nonneg : 0 ≤ p - 2 := by linarith
+  have hsum_pos : 0 < (x + y) / 2 := by linarith
+  have hdiff_pos : 0 < (x - y) / 2 := by
+    have hyx : y < x := by
+      rw [a, hpStar] at hay
+      have hcoeff : 1 - 2 / p < (1 : ℝ) := by
+        have hdiv : 0 < 2 / p := by positivity
+        linarith
+      have hax_lt_x : (1 - 2 / p) * x < x := by
+        simpa using mul_lt_mul_of_pos_right hcoeff hx
+      linarith
+    linarith
+  have hay' : p * y < (p - 2) * x := by
+    rw [a, hpStar] at hay
+    have h := mul_lt_mul_of_pos_left hay hp_pos
+    field_simp [hp_pos.ne] at h
+    linarith
+  have hAB : (x + y) / 2 ≤ (p - 1) * ((x - y) / 2) := by
+    nlinarith [le_of_lt hay']
+  have hpow_le :
+      ((x + y) / 2) ^ (p - 2) ≤
+        ((p - 1) * ((x - y) / 2)) ^ (p - 2) :=
+    Real.rpow_le_rpow hsum_pos.le hAB hp2_nonneg
+  have hsplit :
+      ((p - 1) * ((x - y) / 2)) ^ (p - 2) =
+        (p - 1) ^ (p - 2) * ((x - y) / 2) ^ (p - 2) := by
+    rw [Real.mul_rpow hp1_nonneg hdiff_pos.le]
+  have hbase :
+      (p - 1) ^ (p - 2) ≤ (p - 1) ^ p :=
+    Real.rpow_le_rpow_of_exponent_le hp1_one (by linarith)
+  have hright :
+      (p - 1) ^ (p - 2) * ((x - y) / 2) ^ (p - 2) ≤
+        (p - 1) ^ p * ((x - y) / 2) ^ (p - 2) :=
+    mul_le_mul_of_nonneg_right hbase (Real.rpow_nonneg hdiff_pos.le _)
+  linarith
+
+lemma Dxx_vGeTwo_formula_on_A2 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 : A2 p x y) :
+    deriv (deriv (fun t => vGeTwo p t y)) x =
+      (p * (p - 1) / 4) *
+        (((x + y) / 2) ^ (p - 2) -
+          (p - 1) ^ p * ((x - y) / 2) ^ (p - 2)) := by
+  rcases hA2 with ⟨hx, hneg, hay⟩
+  have hp_ge1 : 1 ≤ p := by linarith
+  have hp1_ge1 : 1 ≤ p - 1 := by linarith
+  have hyx : y < x := by
+    rw [a, pStar_eq_self_of_two_le p hp] at hay
+    have hp0 : 0 < p := by linarith
+    have hcoeff : 1 - 2 / p < (1 : ℝ) := by
+      have hdiv : 0 < 2 / p := by positivity
+      linarith
+    have hax_lt_x : (1 - 2 / p) * x < x := by
+      simpa using mul_lt_mul_of_pos_right hcoeff hx
+    linarith
+  have hsum : 0 < (x + y) / 2 := by linarith
+  have hdiff : 0 < (x - y) / 2 := by linarith
+  let g : ℝ → ℝ := fun t =>
+    ((t + y) / 2) ^ p - (p - 1) ^ p * (((t - y) / 2) ^ p)
+  have hsum_nhds : {t : ℝ | 0 < (t + y) / 2} ∈ nhds x := by
+    exact ((((continuous_id'.add continuous_const).div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hsum))
+  have hdiff_nhds : {t : ℝ | 0 < (t - y) / 2} ∈ nhds x := by
+    exact ((((continuous_id'.sub continuous_const).div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hdiff))
+  have hEq : (fun t => vGeTwo p t y) =ᶠ[nhds x] g := by
+    filter_upwards [hsum_nhds, hdiff_nhds] with t ht_sum ht_diff
+    simp [vGeTwo, g, abs_of_pos ht_sum, abs_of_pos ht_diff]
+  have hderiv2 :
+      deriv (deriv (fun t => vGeTwo p t y)) x = deriv (deriv g) x :=
+    hEq.deriv.deriv_eq
+  have hfun :
+      deriv g =
+        fun t =>
+          ((t + y) / 2) ^ (p - 1) * (p / 2) -
+            (p - 1) ^ p * (((t - y) / 2) ^ (p - 1)) * (p / 2) := by
+    funext t
+    have hbase_sum :
+        HasDerivAt (fun s : ℝ => (s + y) / 2) (1 / 2) t := by
+      simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        (((hasDerivAt_id t).add_const y).const_mul (1 / 2 : ℝ))
+    have hbase_diff :
+        HasDerivAt (fun s : ℝ => (s - y) / 2) (1 / 2) t := by
+      simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        (((hasDerivAt_id t).add_const (-y)).const_mul (1 / 2 : ℝ))
+    have hpow_sum :
+        HasDerivAt (fun s : ℝ => ((s + y) / 2) ^ p)
+          (p * (((t + y) / 2) ^ (p - 1)) * (1 / 2)) t := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ p) (p * (((t + y) / 2) ^ (p - 1)))
+            ((t + y) / 2) := by
+        simpa using
+          (Real.hasDerivAt_rpow_const (Or.inr hp_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ p) (p * ((t + y) / 2) ^ (p - 1))
+              ((t + y) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp t hbase_sum
+    have hpow_diff :
+        HasDerivAt (fun s : ℝ => ((s - y) / 2) ^ p)
+          (p * (((t - y) / 2) ^ (p - 1)) * (1 / 2)) t := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ p) (p * (((t - y) / 2) ^ (p - 1)))
+            ((t - y) / 2) := by
+        simpa using
+          (Real.hasDerivAt_rpow_const (Or.inr hp_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ p) (p * ((t - y) / 2) ^ (p - 1))
+              ((t - y) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp t hbase_diff
+    have hd :
+        HasDerivAt g
+          (p * (((t + y) / 2) ^ (p - 1)) * (1 / 2) -
+            (p - 1) ^ p * (p * (((t - y) / 2) ^ (p - 1)) * (1 / 2))) t := by
+      dsimp [g]
+      exact hpow_sum.sub (hpow_diff.const_mul ((p - 1) ^ p))
+    calc
+      deriv g t =
+          p * (((t + y) / 2) ^ (p - 1)) * (1 / 2) -
+            (p - 1) ^ p * (p * (((t - y) / 2) ^ (p - 1)) * (1 / 2)) := hd.deriv
+      _ = ((t + y) / 2) ^ (p - 1) * (p / 2) -
+            (p - 1) ^ p * (((t - y) / 2) ^ (p - 1)) * (p / 2) := by ring
+  have hd2 :
+      HasDerivAt
+        (fun t =>
+          ((t + y) / 2) ^ (p - 1) * (p / 2) -
+            (p - 1) ^ p * (((t - y) / 2) ^ (p - 1)) * (p / 2))
+        ((p * (p - 1) / 4) *
+          (((x + y) / 2) ^ (p - 2) -
+            (p - 1) ^ p * ((x - y) / 2) ^ (p - 2))) x := by
+    have hbase_sum :
+        HasDerivAt (fun t : ℝ => (t + y) / 2) (1 / 2) x := by
+      simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        (((hasDerivAt_id x).add_const y).const_mul (1 / 2 : ℝ))
+    have hbase_diff :
+        HasDerivAt (fun t : ℝ => (t - y) / 2) (1 / 2) x := by
+      simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        (((hasDerivAt_id x).add_const (-y)).const_mul (1 / 2 : ℝ))
+    have hpow_sum :
+        HasDerivAt (fun t : ℝ => ((t + y) / 2) ^ (p - 1))
+          ((p - 1) * (((x + y) / 2) ^ (p - 2)) * (1 / 2)) x := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ (p - 1))
+            ((p - 1) * (((x + y) / 2) ^ (p - 2))) ((x + y) / 2) := by
+        simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+          show p + (-1 + -1) = p + -2 by ring] using
+          (Real.hasDerivAt_rpow_const (Or.inr hp1_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ (p - 1))
+              ((p - 1) * ((x + y) / 2) ^ ((p - 1) - 1)) ((x + y) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp x hbase_sum
+    have hpow_diff :
+        HasDerivAt (fun t : ℝ => ((t - y) / 2) ^ (p - 1))
+          ((p - 1) * (((x - y) / 2) ^ (p - 2)) * (1 / 2)) x := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ (p - 1))
+            ((p - 1) * (((x - y) / 2) ^ (p - 2))) ((x - y) / 2) := by
+        simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+          show p + (-1 + -1) = p + -2 by ring] using
+          (Real.hasDerivAt_rpow_const (Or.inr hp1_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ (p - 1))
+              ((p - 1) * ((x - y) / 2) ^ ((p - 1) - 1)) ((x - y) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp x hbase_diff
+    have hd :
+        HasDerivAt
+          (fun t =>
+            ((t + y) / 2) ^ (p - 1) * (p / 2) -
+              (p - 1) ^ p * (((t - y) / 2) ^ (p - 1)) * (p / 2))
+          (((p - 1) * (((x + y) / 2) ^ (p - 2)) * (1 / 2)) * (p / 2) -
+            (p - 1) ^ p *
+              (((p - 1) * (((x - y) / 2) ^ (p - 2)) * (1 / 2))) *
+                (p / 2)) x := by
+      exact (hpow_sum.mul_const (p / 2)).sub
+        ((hpow_diff.const_mul ((p - 1) ^ p)).mul_const (p / 2))
+    refine hd.congr_deriv ?_
+    ring
+  rw [hderiv2, hfun]
+  exact hd2.deriv
+
+lemma Dxx_vGeTwo_nonpos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 : A2 p x y) :
+    0 ≥ deriv (deriv (fun x => vGeTwo p x y)) x := by
+  rw [Dxx_vGeTwo_formula_on_A2 p hp x y hA2]
+  have hcoef : 0 ≤ p * (p - 1) / 4 := by
+    exact div_nonneg (mul_nonneg (by linarith) (by linarith)) (by norm_num)
+  have hbr := vGeTwo_A2_second_bracket_nonpos p hp x y hA2
+  nlinarith [mul_nonpos_of_nonneg_of_nonpos hcoef hbr]
+
+lemma Dyy_vGeTwo_formula_on_A2 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 : A2 p x y) :
+    deriv (deriv (fun s => vGeTwo p x s)) y =
+      (p * (p - 1) / 4) *
+        (((x + y) / 2) ^ (p - 2) -
+          (p - 1) ^ p * ((x - y) / 2) ^ (p - 2)) := by
+  rcases hA2 with ⟨hx, hneg, hay⟩
+  have hp_ge1 : 1 ≤ p := by linarith
+  have hp1_ge1 : 1 ≤ p - 1 := by linarith
+  have hyx : y < x := by
+    rw [a, pStar_eq_self_of_two_le p hp] at hay
+    have hp0 : 0 < p := by linarith
+    have hcoeff : 1 - 2 / p < (1 : ℝ) := by
+      have hdiv : 0 < 2 / p := by positivity
+      linarith
+    have hax_lt_x : (1 - 2 / p) * x < x := by
+      simpa using mul_lt_mul_of_pos_right hcoeff hx
+    linarith
+  have hsum : 0 < (x + y) / 2 := by linarith
+  have hdiff : 0 < (x - y) / 2 := by linarith
+  let g : ℝ → ℝ := fun s =>
+    ((x + s) / 2) ^ p - (p - 1) ^ p * (((x - s) / 2) ^ p)
+  have hsum_nhds : {s : ℝ | 0 < (x + s) / 2} ∈ nhds y := by
+    exact ((((continuous_const.add continuous_id').div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hsum))
+  have hdiff_nhds : {s : ℝ | 0 < (x - s) / 2} ∈ nhds y := by
+    exact ((((continuous_const.sub continuous_id').div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hdiff))
+  have hEq : (fun s => vGeTwo p x s) =ᶠ[nhds y] g := by
+    filter_upwards [hsum_nhds, hdiff_nhds] with s hs_sum hs_diff
+    simp [vGeTwo, g, abs_of_pos hs_sum, abs_of_pos hs_diff]
+  have hderiv2 :
+      deriv (deriv (fun s => vGeTwo p x s)) y = deriv (deriv g) y :=
+    hEq.deriv.deriv_eq
+  have hfun :
+      deriv g =
+        fun s =>
+          ((x + s) / 2) ^ (p - 1) * (p / 2) +
+            (p - 1) ^ p * (((x - s) / 2) ^ (p - 1)) * (p / 2) := by
+    funext s
+    have hbase_sum :
+        HasDerivAt (fun u : ℝ => (x + u) / 2) (1 / 2) s := by
+      simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        (((hasDerivAt_id s).const_add x).const_mul (1 / 2 : ℝ))
+    have hbase_diff :
+        HasDerivAt (fun u : ℝ => (x - u) / 2) (-(1 / 2)) s := by
+      simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        ((((hasDerivAt_id s).neg).const_add x).const_mul (1 / 2 : ℝ))
+    have hpow_sum :
+        HasDerivAt (fun u : ℝ => ((x + u) / 2) ^ p)
+          (p * (((x + s) / 2) ^ (p - 1)) * (1 / 2)) s := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ p) (p * (((x + s) / 2) ^ (p - 1)))
+            ((x + s) / 2) := by
+        simpa using
+          (Real.hasDerivAt_rpow_const (Or.inr hp_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ p) (p * ((x + s) / 2) ^ (p - 1))
+              ((x + s) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp s hbase_sum
+    have hpow_diff :
+        HasDerivAt (fun u : ℝ => ((x - u) / 2) ^ p)
+          (p * (((x - s) / 2) ^ (p - 1)) * (-(1 / 2))) s := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ p) (p * (((x - s) / 2) ^ (p - 1)))
+            ((x - s) / 2) := by
+        simpa using
+          (Real.hasDerivAt_rpow_const (Or.inr hp_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ p) (p * ((x - s) / 2) ^ (p - 1))
+              ((x - s) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp s hbase_diff
+    have hd :
+        HasDerivAt g
+          (p * (((x + s) / 2) ^ (p - 1)) * (1 / 2) -
+            (p - 1) ^ p * (p * (((x - s) / 2) ^ (p - 1)) * (-(1 / 2)))) s := by
+      dsimp [g]
+      exact hpow_sum.sub (hpow_diff.const_mul ((p - 1) ^ p))
+    calc
+      deriv g s =
+          p * (((x + s) / 2) ^ (p - 1)) * (1 / 2) -
+            (p - 1) ^ p * (p * (((x - s) / 2) ^ (p - 1)) * (-(1 / 2))) := hd.deriv
+      _ = ((x + s) / 2) ^ (p - 1) * (p / 2) +
+            (p - 1) ^ p * (((x - s) / 2) ^ (p - 1)) * (p / 2) := by ring
+  have hd2 :
+      HasDerivAt
+        (fun s =>
+          ((x + s) / 2) ^ (p - 1) * (p / 2) +
+            (p - 1) ^ p * (((x - s) / 2) ^ (p - 1)) * (p / 2))
+        ((p * (p - 1) / 4) *
+          (((x + y) / 2) ^ (p - 2) -
+            (p - 1) ^ p * ((x - y) / 2) ^ (p - 2))) y := by
+    have hbase_sum :
+        HasDerivAt (fun s : ℝ => (x + s) / 2) (1 / 2) y := by
+      simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        (((hasDerivAt_id y).const_add x).const_mul (1 / 2 : ℝ))
+    have hbase_diff :
+        HasDerivAt (fun s : ℝ => (x - s) / 2) (-(1 / 2)) y := by
+      simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        ((((hasDerivAt_id y).neg).const_add x).const_mul (1 / 2 : ℝ))
+    have hpow_sum :
+        HasDerivAt (fun s : ℝ => ((x + s) / 2) ^ (p - 1))
+          ((p - 1) * (((x + y) / 2) ^ (p - 2)) * (1 / 2)) y := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ (p - 1))
+            ((p - 1) * (((x + y) / 2) ^ (p - 2))) ((x + y) / 2) := by
+        simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+          show p + (-1 + -1) = p + -2 by ring] using
+          (Real.hasDerivAt_rpow_const (Or.inr hp1_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ (p - 1))
+              ((p - 1) * ((x + y) / 2) ^ ((p - 1) - 1)) ((x + y) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp y hbase_sum
+    have hpow_diff :
+        HasDerivAt (fun s : ℝ => ((x - s) / 2) ^ (p - 1))
+          ((p - 1) * (((x - y) / 2) ^ (p - 2)) * (-(1 / 2))) y := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ (p - 1))
+            ((p - 1) * (((x - y) / 2) ^ (p - 2))) ((x - y) / 2) := by
+        simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+          show p + (-1 + -1) = p + -2 by ring] using
+          (Real.hasDerivAt_rpow_const (Or.inr hp1_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ (p - 1))
+              ((p - 1) * ((x - y) / 2) ^ ((p - 1) - 1)) ((x - y) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp y hbase_diff
+    have hd :
+        HasDerivAt
+          (fun s =>
+            ((x + s) / 2) ^ (p - 1) * (p / 2) +
+              (p - 1) ^ p * (((x - s) / 2) ^ (p - 1)) * (p / 2))
+          (((p - 1) * (((x + y) / 2) ^ (p - 2)) * (1 / 2)) * (p / 2) +
+            (p - 1) ^ p *
+              (((p - 1) * (((x - y) / 2) ^ (p - 2)) * (-(1 / 2)))) *
+                (p / 2)) y := by
+      exact (hpow_sum.mul_const (p / 2)).add
+        ((hpow_diff.const_mul ((p - 1) ^ p)).mul_const (p / 2))
+    refine hd.congr_deriv ?_
+    ring
+  rw [hderiv2, hfun]
+  exact hd2.deriv
+
+lemma Dyy_vGeTwo_nonpos (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 : A2 p x y) :
+    0 ≥ deriv (deriv (fun y => vGeTwo p x y)) y := by
+  rw [Dyy_vGeTwo_formula_on_A2 p hp x y hA2]
+  have hcoef : 0 ≤ p * (p - 1) / 4 := by
+    exact div_nonneg (mul_nonneg (by linarith) (by linarith)) (by norm_num)
+  have hbr := vGeTwo_A2_second_bracket_nonpos p hp x y hA2
+  nlinarith [mul_nonpos_of_nonneg_of_nonpos hcoef hbr]
+
+lemma Dxy_vGeTwo_formula_on_A2 (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 : A2 p x y) :
+    deriv (fun x => deriv (fun y => vGeTwo p x y) y) x =
+      (p * (p - 1) / 4) *
+        (((x + y) / 2) ^ (p - 2) +
+          (p - 1) ^ p * ((x - y) / 2) ^ (p - 2)) := by
+  rcases hA2 with ⟨hx, hneg, hay⟩
+  have hp1_ge1 : 1 ≤ p - 1 := by linarith
+  have hyx : y < x := by
+    rw [a, pStar_eq_self_of_two_le p hp] at hay
+    have hp0 : 0 < p := by linarith
+    have hcoeff : 1 - 2 / p < (1 : ℝ) := by
+      have hdiv : 0 < 2 / p := by positivity
+      linarith
+    have hax_lt_x : (1 - 2 / p) * x < x := by
+      simpa using mul_lt_mul_of_pos_right hcoeff hx
+    linarith
+  have hsum : 0 < (x + y) / 2 := by linarith
+  have hdiff : 0 < (x - y) / 2 := by linarith
+  let g : ℝ → ℝ := fun t =>
+    ((t + y) / 2) ^ (p - 1) * (p / 2) +
+      (p - 1) ^ p * (((t - y) / 2) ^ (p - 1)) * (p / 2)
+  have ht0_nhds : {t : ℝ | 0 < t} ∈ nhds x := Ioi_mem_nhds hx
+  have hneg_nhds : {t : ℝ | -t < y} ∈ nhds x := by
+    have hxy : -y < x := by linarith
+    simpa [neg_lt] using (Ioi_mem_nhds hxy : Set.Ioi (-y) ∈ nhds x)
+  have hA_nhds : {t : ℝ | y < a p * t} ∈ nhds x := by
+    have hcont : ContinuousAt (fun t : ℝ => a p * t - y) x :=
+      ((continuous_const.mul continuous_id').sub continuous_const).continuousAt
+    have hapos : 0 < a p * x - y := by linarith
+    simpa [Set.preimage, sub_pos] using hcont.preimage_mem_nhds (Ioi_mem_nhds hapos)
+  have hsum_nhds : {t : ℝ | 0 < (t + y) / 2} ∈ nhds x := by
+    exact ((((continuous_id'.add continuous_const).div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hsum))
+  have hdiff_nhds : {t : ℝ | 0 < (t - y) / 2} ∈ nhds x := by
+    exact ((((continuous_id'.sub continuous_const).div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hdiff))
+  have hEq :
+      (fun t => deriv (fun s => vGeTwo p t s) y) =ᶠ[nhds x] g := by
+    filter_upwards [ht0_nhds, hneg_nhds, hA_nhds, hsum_nhds, hdiff_nhds] with
+      t ht0 htneg htA htsum htdiff
+    have hA2t : A2 p t y := ⟨ht0, htneg, htA⟩
+    calc
+      deriv (fun s => vGeTwo p t s) y = DyvGeTwo p t y :=
+        deriv_vGeTwo_eq_DyvGeTwo_on_A2 p hp t y hA2t
+      _ = g t := by
+        simp [g, DyvGeTwo, ht0, abs_of_pos htsum, abs_of_pos htdiff]
+  have hd :
+      HasDerivAt g
+        ((p * (p - 1) / 4) *
+          (((x + y) / 2) ^ (p - 2) +
+            (p - 1) ^ p * ((x - y) / 2) ^ (p - 2))) x := by
+    have hbase_sum :
+        HasDerivAt (fun t : ℝ => (t + y) / 2) (1 / 2) x := by
+      simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        (((hasDerivAt_id x).add_const y).const_mul (1 / 2 : ℝ))
+    have hbase_diff :
+        HasDerivAt (fun t : ℝ => (t - y) / 2) (1 / 2) x := by
+      simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+        (((hasDerivAt_id x).add_const (-y)).const_mul (1 / 2 : ℝ))
+    have hpow_sum :
+        HasDerivAt (fun t : ℝ => ((t + y) / 2) ^ (p - 1))
+          ((p - 1) * (((x + y) / 2) ^ (p - 2)) * (1 / 2)) x := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ (p - 1))
+            ((p - 1) * (((x + y) / 2) ^ (p - 2))) ((x + y) / 2) := by
+        simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+          show p + (-1 + -1) = p + -2 by ring] using
+          (Real.hasDerivAt_rpow_const (Or.inr hp1_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ (p - 1))
+              ((p - 1) * ((x + y) / 2) ^ ((p - 1) - 1)) ((x + y) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp x hbase_sum
+    have hpow_diff :
+        HasDerivAt (fun t : ℝ => ((t - y) / 2) ^ (p - 1))
+          ((p - 1) * (((x - y) / 2) ^ (p - 2)) * (1 / 2)) x := by
+      have hrpow :
+          HasDerivAt (fun u : ℝ => u ^ (p - 1))
+            ((p - 1) * (((x - y) / 2) ^ (p - 2))) ((x - y) / 2) := by
+        simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+          show p + (-1 + -1) = p + -2 by ring] using
+          (Real.hasDerivAt_rpow_const (Or.inr hp1_ge1) :
+            HasDerivAt (fun u : ℝ => u ^ (p - 1))
+              ((p - 1) * ((x - y) / 2) ^ ((p - 1) - 1)) ((x - y) / 2))
+      simpa [mul_assoc, mul_left_comm, mul_comm] using hrpow.comp x hbase_diff
+    have hd' :
+        HasDerivAt g
+          (((p - 1) * (((x + y) / 2) ^ (p - 2)) * (1 / 2)) * (p / 2) +
+            (p - 1) ^ p *
+              (((p - 1) * (((x - y) / 2) ^ (p - 2)) * (1 / 2))) *
+                (p / 2)) x := by
+      dsimp [g]
+      exact (hpow_sum.mul_const (p / 2)).add
+        ((hpow_diff.const_mul ((p - 1) ^ p)).mul_const (p / 2))
+    refine hd'.congr_deriv ?_
+    ring
+  rw [hEq.deriv_eq]
+  exact hd.deriv
+
+lemma Dxy_vGeTwo_nonneg (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hA2 : A2 p x y) :
+    0 ≤ deriv (fun x => deriv (fun y => vGeTwo p x y) y) x := by
+  rw [Dxy_vGeTwo_formula_on_A2 p hp x y hA2]
+  rcases hA2 with ⟨hx, hneg, hay⟩
+  have hpcoef : 0 ≤ p * (p - 1) / 4 := by
+    exact div_nonneg (mul_nonneg (by linarith) (by linarith)) (by norm_num)
+  have hsum : 0 ≤ ((x + y) / 2) ^ (p - 2) := by
+    have hpos : 0 < (x + y) / 2 := by
+      have hp' : 2 ≤ p := hp
+      rw [a, pStar_eq_self_of_two_le p hp'] at hay
+      have hp0 : 0 < p := by linarith
+      have hcoeff : 1 - 2 / p < (1 : ℝ) := by
+        have hdiv : 0 < 2 / p := by positivity
+        linarith
+      have hyx : y < x := by
+        have hax_lt_x : (1 - 2 / p) * x < x := by
+          simpa using mul_lt_mul_of_pos_right hcoeff hx
+        linarith
+      linarith
+    exact Real.rpow_nonneg hpos.le _
+  have hdiff : 0 ≤ ((x - y) / 2) ^ (p - 2) := by
+    have hpos : 0 < (x - y) / 2 := by
+      rw [a, pStar_eq_self_of_two_le p hp] at hay
+      have hp0 : 0 < p := by linarith
+      have hcoeff : 1 - 2 / p < (1 : ℝ) := by
+        have hdiv : 0 < 2 / p := by positivity
+        linarith
+      have hyx : y < x := by
+        have hax_lt_x : (1 - 2 / p) * x < x := by
+          simpa using mul_lt_mul_of_pos_right hcoeff hx
+        linarith
+      linarith
+    exact Real.rpow_nonneg hpos.le _
+  have hpbase : 0 ≤ (p - 1) ^ p := Real.rpow_nonneg (by linarith) _
+  have hsumbr :
+      0 ≤ ((x + y) / 2) ^ (p - 2) +
+        (p - 1) ^ p * ((x - y) / 2) ^ (p - 2) :=
+    add_nonneg hsum (mul_nonneg hpbase hdiff)
+  exact mul_nonneg hpcoef hsumbr
 
 lemma a_nonneg_of_two_le (p : ℝ) (hp : 2 ≤ p) : 0 ≤ a p := by
   have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
