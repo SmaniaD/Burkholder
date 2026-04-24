@@ -560,6 +560,34 @@ def uCandidate (p x y : ℝ) : ℝ :=
         auxFunction1  p (-y) (-x)
       else 0
 
+def DxuCandidate (p x y : ℝ) : ℝ :=
+  by
+    classical
+    exact
+      if QuarterPlane x y then
+        DxauxFunction1 p x y
+      else if QuarterPlane2 x y then
+        -DxauxFunction1 p (-x) (-y)
+      else if QuarterPlane3 x y then
+        DyauxFunction1 p y x
+      else if QuarterPlane4 x y then
+        -DyauxFunction1 p (-y) (-x)
+      else 0
+
+def DyuCandidate (p x y : ℝ) : ℝ :=
+  by
+    classical
+    exact
+      if QuarterPlane x y then
+        DyauxFunction1 p x y
+      else if QuarterPlane2 x y then
+        -DyauxFunction1 p (-x) (-y)
+      else if QuarterPlane3 x y then
+        DxauxFunction1 p y x
+      else if QuarterPlane4 x y then
+        -DxauxFunction1 p (-y) (-x)
+      else 0
+
 
 /-- For x ≥ 0, uA1 equals the smooth expression (using 0^(p-1)=0 when x=0). -/
 lemma uA1_eq_smooth_of_nonneg (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (hx : 0 ≤ x) :
@@ -879,6 +907,60 @@ lemma auxFunction1_Dy_eq_DyvGeTwo (p : ℝ) (hp : 2 ≤ p) (x y : ℝ) (h2 : clo
   · simp only [h1, ite_true]
     exact DyuA1_eq_DyvGeTwo_on_inter p hp x y h1 h2
   · simp only [h1, ite_false, h2, ite_true]
+
+lemma DxauxFunction1_eq_DyauxFunction1_on_diag (p : ℝ) (hp : 2 < p) (x : ℝ)
+    (hx : 0 ≤ x) :
+    DxauxFunction1 p x x = DyauxFunction1 p x x := by
+  have hp' : 2 ≤ p := by linarith
+  rcases hx.lt_or_eq with hxpos | hxeq
+  · have hlt : a p < 1 := by
+      have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp'
+      have hp_pos : 0 < p := by linarith
+      rw [a, hpStar]
+      have hdiv : 0 < 2 / p := by positivity
+      linarith
+    have hax : a p * x ≤ x := (mul_le_mul_of_nonneg_right hlt.le hx).trans_eq (one_mul x)
+    have hcl : closureA1 p x x := ⟨hx, hax, le_rfl⟩
+    calc
+      DxauxFunction1 p x x = DxuA1 p x x := auxFunction1_Dx_eq_DxuA1 p x x hcl
+      _ = DyuA1 p x x := by
+        have hxpow : x ^ (p - 1) = x ^ (p - 2) * x := by
+          calc
+            x ^ (p - 1) = x ^ ((p - 2) + 1) := by ring_nf
+            _ = x ^ (p - 2) * x ^ (1 : ℝ) := by rw [Real.rpow_add hxpos]
+            _ = x ^ (p - 2) * x := by rw [Real.rpow_one]
+        simp [DxuA1, DyuA1, hxpos, pStar_eq_self_of_two_le p hp']
+        rw [hxpow]
+        ring
+      _ = DyauxFunction1 p x x := (auxFunction1_Dy_eq_DyuA1 p x x hcl).symm
+  · subst hxeq
+    simp [DxauxFunction1, DyauxFunction1, closureA1, DxuA1, DyuA1]
+
+lemma DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag (p : ℝ) (hp : 2 < p) (x : ℝ)
+    (hx : 0 ≤ x) :
+    DxauxFunction1 p x (-x) = -DyauxFunction1 p x (-x) := by
+  have hp' : 2 ≤ p := by linarith
+  rcases hx.lt_or_eq with hxpos | hxeq
+  · have ha_nonneg : 0 ≤ a p := by
+      have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp'
+      have hp_pos : 0 < p := by linarith
+      rw [a, hpStar]
+      field_simp [hp_pos.ne]
+      nlinarith
+    have hcl : closureA2 p x (-x) := by
+      refine ⟨hx, le_rfl, ?_⟩
+      exact le_trans (neg_nonpos.mpr hx) (mul_nonneg ha_nonneg hx)
+    calc
+      DxauxFunction1 p x (-x) = DxvGeTwo p x (-x) :=
+        auxFunction1_Dx_eq_DxvGeTwo p hp' x (-x) hcl
+      _ = -DyvGeTwo p x (-x) := by
+        have hp1_ne : p - 1 ≠ 0 := by linarith
+        have hdiff : (x - -x) / 2 = x := by ring
+        simp [DxvGeTwo, DyvGeTwo, hxpos, hp1_ne, hdiff, abs_of_pos hxpos]
+      _ = -DyauxFunction1 p x (-x) := by
+        rw [auxFunction1_Dy_eq_DyvGeTwo p hp' x (-x) hcl]
+  · subst hxeq
+    simp [DxauxFunction1, DyauxFunction1, closureA1, DxuA1, DyuA1]
 
 lemma continuousOn_DxauxFunction1 (p : ℝ) (hp : 2 ≤ p) :
     ContinuousOn (fun z : ℝ × ℝ => DxauxFunction1 p z.1 z.2)
@@ -1250,9 +1332,403 @@ lemma continuousuCandidate (p : ℝ) (hp : 2 ≤ p) :
 
 
 
-lemma continuousDxuCandidate (p : ℝ) (hp : 2 ≤ p)
-    : ContinuousOn (fun z : ℝ × ℝ => deriv (fun x => uCandidate p x z.2) z.1) Set.univ := by
-  sorry
+lemma continuousDxuCandidate (p : ℝ) (hp : 2 < p) :
+    ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Set.univ := by
+  have hp' : 2 ≤ p := by linarith
+  let Q1 : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
+  let Q2 : Set (ℝ × ℝ) := {z | QuarterPlane2 z.1 z.2}
+  let Q3 : Set (ℝ × ℝ) := {z | QuarterPlane3 z.1 z.2}
+  let Q4 : Set (ℝ × ℝ) := {z | QuarterPlane4 z.1 z.2}
+  let f1 : ℝ × ℝ → ℝ := fun z => DxauxFunction1 p z.1 z.2
+  let f2 : ℝ × ℝ → ℝ := fun z => -DxauxFunction1 p (-z.1) (-z.2)
+  let f3 : ℝ × ℝ → ℝ := fun z => DyauxFunction1 p z.2 z.1
+  let f4 : ℝ × ℝ → ℝ := fun z => -DyauxFunction1 p (-z.2) (-z.1)
+  have hcont1 : ContinuousOn f1 Q1 := by
+    simpa [Q1, f1] using continuousOn_DxauxFunction1 p hp'
+  have hcont2 : ContinuousOn f2 Q2 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (-z.1, -z.2)) Q2 Q1 := by
+      intro z hz
+      rcases hz with ⟨hx, hy, hxy⟩
+      exact ⟨by linarith, by linarith, by linarith⟩
+    have hneg : Continuous (fun z : ℝ × ℝ => (-z.1, -z.2)) := by continuity
+    simpa [Q1, Q2, f2] using
+      ((continuousOn_DxauxFunction1 p hp').comp hneg.continuousOn hmap).neg
+  have hcont3 : ContinuousOn f3 Q3 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (z.2, z.1)) Q3 Q1 := by
+      intro z hz
+      rcases hz with ⟨hy, hnyx, hxy⟩
+      exact ⟨hy, hxy, hnyx⟩
+    have hswap : Continuous (fun z : ℝ × ℝ => (z.2, z.1)) := by continuity
+    simpa [Q1, Q3, f3] using
+      (continuousOn_DyauxFunction1 p hp).comp hswap.continuousOn hmap
+  have hcont4 : ContinuousOn f4 Q4 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (-z.2, -z.1)) Q4 Q1 := by
+      intro z hz
+      rcases hz with ⟨hy, hyx, hxn⟩
+      exact ⟨by linarith, by linarith, by linarith⟩
+    have hns : Continuous (fun z : ℝ × ℝ => (-z.2, -z.1)) := by continuity
+    simpa [Q1, Q4, f4] using
+      ((continuousOn_DyauxFunction1 p hp).comp hns.continuousOn hmap).neg
+  have hcl1 : IsClosed Q1 := by
+    simp only [Q1, QuarterPlane, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_fst).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst.neg continuous_snd))
+  have hcl2 : IsClosed Q2 := by
+    simp only [Q2, QuarterPlane2, Set.setOf_and]
+    exact (isClosed_le continuous_fst continuous_const).inter
+      ((isClosed_le continuous_snd continuous_fst.neg).inter
+        (isClosed_le continuous_fst continuous_snd))
+  have hcl3 : IsClosed Q3 := by
+    simp only [Q3, QuarterPlane3, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_snd).inter
+      ((isClosed_le continuous_snd.neg continuous_fst).inter
+        (isClosed_le continuous_fst continuous_snd))
+  have hcl4 : IsClosed Q4 := by
+    simp only [Q4, QuarterPlane4, Set.setOf_and]
+    exact (isClosed_le continuous_snd continuous_const).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst continuous_snd.neg))
+  have h12 : ∀ z : ℝ × ℝ, z ∈ Q1 → z ∈ Q2 → f1 z = f2 z := by
+    intro z hz1 hz2
+    rcases z with ⟨x, y⟩
+    rcases hz1 with ⟨hx0, hyx, _⟩
+    rcases hz2 with ⟨hx1, _, hxy⟩
+    have hx : x = 0 := le_antisymm hx1 hx0
+    have hy : y = 0 := by
+      have hy_le : y ≤ 0 := by simpa [hx] using hyx
+      have hy_ge : 0 ≤ y := by simpa [hx] using hxy
+      exact le_antisymm hy_le hy_ge
+    simp [f1, f2, hx, hy, DxauxFunction1, closureA1, DxuA1]
+  have h13 : ∀ z : ℝ × ℝ, z ∈ Q1 → z ∈ Q3 → f1 z = f3 z := by
+    intro z hz1 hz3
+    rcases z with ⟨x, y⟩
+    rcases hz1 with ⟨_, hyx, _⟩
+    rcases hz3 with ⟨hy0, _, hxy⟩
+    have hxy' : x = y := le_antisymm hxy hyx
+    subst x
+    simpa [f1, f3] using DxauxFunction1_eq_DyauxFunction1_on_diag p hp y hy0
+  have h14 : ∀ z : ℝ × ℝ, z ∈ Q1 → z ∈ Q4 → f1 z = f4 z := by
+    intro z hz1 hz4
+    rcases z with ⟨x, y⟩
+    rcases hz1 with ⟨hx0, _, hmx⟩
+    rcases hz4 with ⟨_, _, hxn⟩
+    have hy : y = -x := by linarith [hxn, hmx]
+    subst hy
+    simpa [f1, f4] using DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp x hx0
+  have h23 : ∀ z : ℝ × ℝ, z ∈ Q2 → z ∈ Q3 → f2 z = f3 z := by
+    intro z hz2 hz3
+    rcases z with ⟨x, y⟩
+    rcases hz2 with ⟨_, hy, _⟩
+    rcases hz3 with ⟨hy0, hnyx, _⟩
+    have hx : x = -y := le_antisymm (by linarith [hy]) hnyx
+    subst x
+    have h := DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp y hy0
+    have h' : -DxauxFunction1 p y (-y) = DyauxFunction1 p y (-y) := by
+      linarith
+    simpa [f2, f3] using h'
+  have h24 : ∀ z : ℝ × ℝ, z ∈ Q2 → z ∈ Q4 → f2 z = f4 z := by
+    intro z hz2 hz4
+    rcases z with ⟨x, y⟩
+    rcases hz2 with ⟨hx0, _, hxy⟩
+    rcases hz4 with ⟨_, hyx, _⟩
+    have hxy' : x = y := le_antisymm hxy hyx
+    subst x
+    have hnonneg : 0 ≤ -y := by linarith
+    have h := DxauxFunction1_eq_DyauxFunction1_on_diag p hp (-y) hnonneg
+    simpa [f2, f4] using congrArg Neg.neg h
+  have h34 : ∀ z : ℝ × ℝ, z ∈ Q3 → z ∈ Q4 → f3 z = f4 z := by
+    intro z hz3 hz4
+    rcases z with ⟨x, y⟩
+    rcases hz3 with ⟨hy0, hnyx, _⟩
+    rcases hz4 with ⟨hy1, _, hxn⟩
+    have hy : y = 0 := le_antisymm hy1 hy0
+    have hx : x = 0 := by
+      have hx_le : x ≤ 0 := by simpa [hy] using hxn
+      have hx_ge : 0 ≤ x := by simpa [hy] using hnyx
+      exact le_antisymm hx_le hx_ge
+    simp [f3, f4, hx, hy, DyauxFunction1, closureA1, DyuA1]
+  have heq1 : ∀ z : ℝ × ℝ, z ∈ Q1 → DxuCandidate p z.1 z.2 = f1 z := by
+    intro z hz1
+    have hq1 : QuarterPlane z.1 z.2 := by simpa [Q1] using hz1
+    simp [DxuCandidate, f1, hq1]
+  have heq2 : ∀ z : ℝ × ℝ, z ∈ Q2 → DxuCandidate p z.1 z.2 = f2 z := by
+    intro z hz2
+    by_cases hz1 : z ∈ Q1
+    · exact (heq1 z hz1).trans (h12 z hz1 hz2)
+    · have hq1 : ¬ QuarterPlane z.1 z.2 := by simpa [Q1] using hz1
+      have hq2 : QuarterPlane2 z.1 z.2 := by simpa [Q2] using hz2
+      simp [DxuCandidate, f2, hq1, hq2]
+  have heq3 : ∀ z : ℝ × ℝ, z ∈ Q3 → DxuCandidate p z.1 z.2 = f3 z := by
+    intro z hz3
+    by_cases hz1 : z ∈ Q1
+    · exact (heq1 z hz1).trans (h13 z hz1 hz3)
+    · by_cases hz2 : z ∈ Q2
+      · exact (heq2 z hz2).trans (h23 z hz2 hz3)
+      · have hq1 : ¬ QuarterPlane z.1 z.2 := by simpa [Q1] using hz1
+        have hq2 : ¬ QuarterPlane2 z.1 z.2 := by simpa [Q2] using hz2
+        have hq3 : QuarterPlane3 z.1 z.2 := by simpa [Q3] using hz3
+        simp [DxuCandidate, f3, hq1, hq2, hq3]
+  have heq4 : ∀ z : ℝ × ℝ, z ∈ Q4 → DxuCandidate p z.1 z.2 = f4 z := by
+    intro z hz4
+    by_cases hz1 : z ∈ Q1
+    · exact (heq1 z hz1).trans (h14 z hz1 hz4)
+    · by_cases hz2 : z ∈ Q2
+      · exact (heq2 z hz2).trans (h24 z hz2 hz4)
+      · by_cases hz3 : z ∈ Q3
+        · exact (heq3 z hz3).trans (h34 z hz3 hz4)
+        · have hq1 : ¬ QuarterPlane z.1 z.2 := by simpa [Q1] using hz1
+          have hq2 : ¬ QuarterPlane2 z.1 z.2 := by simpa [Q2] using hz2
+          have hq3 : ¬ QuarterPlane3 z.1 z.2 := by simpa [Q3] using hz3
+          have hq4 : QuarterPlane4 z.1 z.2 := by simpa [Q4] using hz4
+          simp [DxuCandidate, f4, hq1, hq2, hq3, hq4]
+  have hc1 : ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Q1 := by
+    apply ContinuousOn.congr hcont1
+    intro z hz
+    simpa using heq1 z hz
+  have hc2 : ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Q2 := by
+    apply ContinuousOn.congr hcont2
+    intro z hz
+    simpa using heq2 z hz
+  have hc3 : ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Q3 := by
+    apply ContinuousOn.congr hcont3
+    intro z hz
+    simpa using heq3 z hz
+  have hc4 : ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Q4 := by
+    apply ContinuousOn.congr hcont4
+    intro z hz
+    simpa using heq4 z hz
+  have hcover : Set.univ ⊆ Q1 ∪ Q2 ∪ Q3 ∪ Q4 := by
+    intro z _
+    rcases z with ⟨x, y⟩
+    by_cases hxy : |x| ≤ |y|
+    · by_cases hy : 0 ≤ y
+      · have habs : |x| ≤ y := by simpa [abs_of_nonneg hy] using hxy
+        rcases abs_le.mp habs with ⟨h1, h2⟩
+        exact Or.inl (Or.inr ⟨hy, h1, h2⟩)
+      · have hy' : y < 0 := lt_of_not_ge hy
+        have habs : |x| ≤ -y := by simpa [abs_of_neg hy'] using hxy
+        rcases abs_le.mp habs with ⟨h1, h2⟩
+        have h1' : y ≤ x := by simpa using h1
+        exact Or.inr ⟨le_of_lt hy', h1', h2⟩
+    · have hyx : |y| ≤ |x| := le_of_lt (not_le.mp hxy)
+      by_cases hx : 0 ≤ x
+      · have habs : |y| ≤ x := by simpa [abs_of_nonneg hx] using hyx
+        rcases abs_le.mp habs with ⟨h1, h2⟩
+        exact Or.inl (Or.inl (Or.inl ⟨hx, h2, h1⟩))
+      · have hx' : x < 0 := lt_of_not_ge hx
+        have habs : |y| ≤ -x := by simpa [abs_of_neg hx'] using hyx
+        rcases abs_le.mp habs with ⟨h1, h2⟩
+        have h1' : x ≤ y := by simpa using h1
+        exact Or.inl (Or.inl (Or.inr ⟨le_of_lt hx', h2, h1'⟩))
+  have hc12 := hc1.union_of_isClosed hc2 hcl1 hcl2
+  have hcl12 : IsClosed (Q1 ∪ Q2) := hcl1.union hcl2
+  have hc123 := hc12.union_of_isClosed hc3 hcl12 hcl3
+  have hcl123 : IsClosed (Q1 ∪ Q2 ∪ Q3) := hcl12.union hcl3
+  have hc1234 := hc123.union_of_isClosed hc4 hcl123 hcl4
+  exact ContinuousOn.mono hc1234 hcover
+
+lemma continuousDyuCandidate (p : ℝ) (hp : 2 < p) :
+    ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Set.univ := by
+  have hp' : 2 ≤ p := by linarith
+  let Q1 : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
+  let Q2 : Set (ℝ × ℝ) := {z | QuarterPlane2 z.1 z.2}
+  let Q3 : Set (ℝ × ℝ) := {z | QuarterPlane3 z.1 z.2}
+  let Q4 : Set (ℝ × ℝ) := {z | QuarterPlane4 z.1 z.2}
+  let f1 : ℝ × ℝ → ℝ := fun z => DyauxFunction1 p z.1 z.2
+  let f2 : ℝ × ℝ → ℝ := fun z => -DyauxFunction1 p (-z.1) (-z.2)
+  let f3 : ℝ × ℝ → ℝ := fun z => DxauxFunction1 p z.2 z.1
+  let f4 : ℝ × ℝ → ℝ := fun z => -DxauxFunction1 p (-z.2) (-z.1)
+  have hcont1 : ContinuousOn f1 Q1 := by
+    simpa [Q1, f1] using continuousOn_DyauxFunction1 p hp
+  have hcont2 : ContinuousOn f2 Q2 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (-z.1, -z.2)) Q2 Q1 := by
+      intro z hz
+      rcases hz with ⟨hx, hy, hxy⟩
+      exact ⟨by linarith, by linarith, by linarith⟩
+    have hneg : Continuous (fun z : ℝ × ℝ => (-z.1, -z.2)) := by continuity
+    simpa [Q1, Q2, f2] using
+      ((continuousOn_DyauxFunction1 p hp).comp hneg.continuousOn hmap).neg
+  have hcont3 : ContinuousOn f3 Q3 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (z.2, z.1)) Q3 Q1 := by
+      intro z hz
+      rcases hz with ⟨hy, hnyx, hxy⟩
+      exact ⟨hy, hxy, hnyx⟩
+    have hswap : Continuous (fun z : ℝ × ℝ => (z.2, z.1)) := by continuity
+    simpa [Q1, Q3, f3] using
+      (continuousOn_DxauxFunction1 p hp').comp hswap.continuousOn hmap
+  have hcont4 : ContinuousOn f4 Q4 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (-z.2, -z.1)) Q4 Q1 := by
+      intro z hz
+      rcases hz with ⟨hy, hyx, hxn⟩
+      exact ⟨by linarith, by linarith, by linarith⟩
+    have hns : Continuous (fun z : ℝ × ℝ => (-z.2, -z.1)) := by continuity
+    simpa [Q1, Q4, f4] using
+      ((continuousOn_DxauxFunction1 p hp').comp hns.continuousOn hmap).neg
+  have hcl1 : IsClosed Q1 := by
+    simp only [Q1, QuarterPlane, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_fst).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst.neg continuous_snd))
+  have hcl2 : IsClosed Q2 := by
+    simp only [Q2, QuarterPlane2, Set.setOf_and]
+    exact (isClosed_le continuous_fst continuous_const).inter
+      ((isClosed_le continuous_snd continuous_fst.neg).inter
+        (isClosed_le continuous_fst continuous_snd))
+  have hcl3 : IsClosed Q3 := by
+    simp only [Q3, QuarterPlane3, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_snd).inter
+      ((isClosed_le continuous_snd.neg continuous_fst).inter
+        (isClosed_le continuous_fst continuous_snd))
+  have hcl4 : IsClosed Q4 := by
+    simp only [Q4, QuarterPlane4, Set.setOf_and]
+    exact (isClosed_le continuous_snd continuous_const).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst continuous_snd.neg))
+  have h12 : ∀ z : ℝ × ℝ, z ∈ Q1 → z ∈ Q2 → f1 z = f2 z := by
+    intro z hz1 hz2
+    rcases z with ⟨x, y⟩
+    rcases hz1 with ⟨hx0, hyx, _⟩
+    rcases hz2 with ⟨hx1, _, hxy⟩
+    have hx : x = 0 := le_antisymm hx1 hx0
+    have hy : y = 0 := by
+      have hy_le : y ≤ 0 := by simpa [hx] using hyx
+      have hy_ge : 0 ≤ y := by simpa [hx] using hxy
+      exact le_antisymm hy_le hy_ge
+    simp [f1, f2, hx, hy, DyauxFunction1, closureA1, DyuA1]
+  have h13 : ∀ z : ℝ × ℝ, z ∈ Q1 → z ∈ Q3 → f1 z = f3 z := by
+    intro z hz1 hz3
+    rcases z with ⟨x, y⟩
+    rcases hz1 with ⟨_, hyx, _⟩
+    rcases hz3 with ⟨hy0, _, hxy⟩
+    have hxy' : x = y := le_antisymm hxy hyx
+    subst x
+    simpa [f1, f3] using (DxauxFunction1_eq_DyauxFunction1_on_diag p hp y hy0).symm
+  have h14 : ∀ z : ℝ × ℝ, z ∈ Q1 → z ∈ Q4 → f1 z = f4 z := by
+    intro z hz1 hz4
+    rcases z with ⟨x, y⟩
+    rcases hz1 with ⟨hx0, _, hmx⟩
+    rcases hz4 with ⟨_, _, hxn⟩
+    have hy : y = -x := by linarith [hxn, hmx]
+    subst y
+    have h := DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp x hx0
+    have h' : DyauxFunction1 p x (-x) = -DxauxFunction1 p x (-x) := by
+      linarith
+    simpa [f1, f4] using h'
+  have h23 : ∀ z : ℝ × ℝ, z ∈ Q2 → z ∈ Q3 → f2 z = f3 z := by
+    intro z hz2 hz3
+    rcases z with ⟨x, y⟩
+    rcases hz2 with ⟨_, hy, _⟩
+    rcases hz3 with ⟨hy0, hnyx, _⟩
+    have hx : x = -y := le_antisymm (by linarith [hy]) hnyx
+    subst x
+    have h := DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp y hy0
+    simpa [f2, f3] using h.symm
+  have h24 : ∀ z : ℝ × ℝ, z ∈ Q2 → z ∈ Q4 → f2 z = f4 z := by
+    intro z hz2 hz4
+    rcases z with ⟨x, y⟩
+    rcases hz2 with ⟨hx0, _, hxy⟩
+    rcases hz4 with ⟨_, hyx, _⟩
+    have hxy' : x = y := le_antisymm hxy hyx
+    subst x
+    have hnonneg : 0 ≤ -y := by linarith
+    have h := DxauxFunction1_eq_DyauxFunction1_on_diag p hp (-y) hnonneg
+    simpa [f2, f4] using congrArg Neg.neg h.symm
+  have h34 : ∀ z : ℝ × ℝ, z ∈ Q3 → z ∈ Q4 → f3 z = f4 z := by
+    intro z hz3 hz4
+    rcases z with ⟨x, y⟩
+    rcases hz3 with ⟨hy0, hnyx, _⟩
+    rcases hz4 with ⟨hy1, _, hxn⟩
+    have hy : y = 0 := le_antisymm hy1 hy0
+    have hx : x = 0 := by
+      have hx_le : x ≤ 0 := by simpa [hy] using hxn
+      have hx_ge : 0 ≤ x := by simpa [hy] using hnyx
+      exact le_antisymm hx_le hx_ge
+    simp [f3, f4, hx, hy, DxauxFunction1, closureA1, DxuA1]
+  have heq1 : ∀ z : ℝ × ℝ, z ∈ Q1 → DyuCandidate p z.1 z.2 = f1 z := by
+    intro z hz1
+    have hq1 : QuarterPlane z.1 z.2 := by simpa [Q1] using hz1
+    simp [DyuCandidate, f1, hq1]
+  have heq2 : ∀ z : ℝ × ℝ, z ∈ Q2 → DyuCandidate p z.1 z.2 = f2 z := by
+    intro z hz2
+    by_cases hz1 : z ∈ Q1
+    · exact (heq1 z hz1).trans (h12 z hz1 hz2)
+    · have hq1 : ¬ QuarterPlane z.1 z.2 := by simpa [Q1] using hz1
+      have hq2 : QuarterPlane2 z.1 z.2 := by simpa [Q2] using hz2
+      simp [DyuCandidate, f2, hq1, hq2]
+  have heq3 : ∀ z : ℝ × ℝ, z ∈ Q3 → DyuCandidate p z.1 z.2 = f3 z := by
+    intro z hz3
+    by_cases hz1 : z ∈ Q1
+    · exact (heq1 z hz1).trans (h13 z hz1 hz3)
+    · by_cases hz2 : z ∈ Q2
+      · exact (heq2 z hz2).trans (h23 z hz2 hz3)
+      · have hq1 : ¬ QuarterPlane z.1 z.2 := by simpa [Q1] using hz1
+        have hq2 : ¬ QuarterPlane2 z.1 z.2 := by simpa [Q2] using hz2
+        have hq3 : QuarterPlane3 z.1 z.2 := by simpa [Q3] using hz3
+        simp [DyuCandidate, f3, hq1, hq2, hq3]
+  have heq4 : ∀ z : ℝ × ℝ, z ∈ Q4 → DyuCandidate p z.1 z.2 = f4 z := by
+    intro z hz4
+    by_cases hz1 : z ∈ Q1
+    · exact (heq1 z hz1).trans (h14 z hz1 hz4)
+    · by_cases hz2 : z ∈ Q2
+      · exact (heq2 z hz2).trans (h24 z hz2 hz4)
+      · by_cases hz3 : z ∈ Q3
+        · exact (heq3 z hz3).trans (h34 z hz3 hz4)
+        · have hq1 : ¬ QuarterPlane z.1 z.2 := by simpa [Q1] using hz1
+          have hq2 : ¬ QuarterPlane2 z.1 z.2 := by simpa [Q2] using hz2
+          have hq3 : ¬ QuarterPlane3 z.1 z.2 := by simpa [Q3] using hz3
+          have hq4 : QuarterPlane4 z.1 z.2 := by simpa [Q4] using hz4
+          simp [DyuCandidate, f4, hq1, hq2, hq3, hq4]
+  have hc1 : ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Q1 := by
+    apply ContinuousOn.congr hcont1
+    intro z hz
+    simpa using heq1 z hz
+  have hc2 : ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Q2 := by
+    apply ContinuousOn.congr hcont2
+    intro z hz
+    simpa using heq2 z hz
+  have hc3 : ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Q3 := by
+    apply ContinuousOn.congr hcont3
+    intro z hz
+    simpa using heq3 z hz
+  have hc4 : ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Q4 := by
+    apply ContinuousOn.congr hcont4
+    intro z hz
+    simpa using heq4 z hz
+  have hcover : Set.univ ⊆ Q1 ∪ Q2 ∪ Q3 ∪ Q4 := by
+    intro z _
+    rcases z with ⟨x, y⟩
+    by_cases hxy : |x| ≤ |y|
+    · by_cases hy : 0 ≤ y
+      · have habs : |x| ≤ y := by simpa [abs_of_nonneg hy] using hxy
+        rcases abs_le.mp habs with ⟨h1, h2⟩
+        exact Or.inl (Or.inr ⟨hy, h1, h2⟩)
+      · have hy' : y < 0 := lt_of_not_ge hy
+        have habs : |x| ≤ -y := by simpa [abs_of_neg hy'] using hxy
+        rcases abs_le.mp habs with ⟨h1, h2⟩
+        have h1' : y ≤ x := by simpa using h1
+        exact Or.inr ⟨le_of_lt hy', h1', h2⟩
+    · have hyx : |y| ≤ |x| := le_of_lt (not_le.mp hxy)
+      by_cases hx : 0 ≤ x
+      · have habs : |y| ≤ x := by simpa [abs_of_nonneg hx] using hyx
+        rcases abs_le.mp habs with ⟨h1, h2⟩
+        exact Or.inl (Or.inl (Or.inl ⟨hx, h2, h1⟩))
+      · have hx' : x < 0 := lt_of_not_ge hx
+        have habs : |y| ≤ -x := by simpa [abs_of_neg hx'] using hyx
+        rcases abs_le.mp habs with ⟨h1, h2⟩
+        have h1' : x ≤ y := by simpa using h1
+        exact Or.inl (Or.inl (Or.inr ⟨le_of_lt hx', h2, h1'⟩))
+  have hc12 := hc1.union_of_isClosed hc2 hcl1 hcl2
+  have hcl12 : IsClosed (Q1 ∪ Q2) := hcl1.union hcl2
+  have hc123 := hc12.union_of_isClosed hc3 hcl12 hcl3
+  have hcl123 : IsClosed (Q1 ∪ Q2 ∪ Q3) := hcl12.union hcl3
+  have hc1234 := hc123.union_of_isClosed hc4 hcl123 hcl4
+  exact ContinuousOn.mono hc1234 hcover
+
+lemma continuous_firstPartials_uCandidate (p : ℝ) (hp : 2 < p) :
+    ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Set.univ ∧
+    ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Set.univ := by
+  exact ⟨continuousDxuCandidate p hp, continuousDyuCandidate p hp⟩
 
 
 /-- For p ≥ 2, uA1 p x y is linear (hence concave) in y for fixed x. -/
@@ -2293,6 +2769,17 @@ lemma continuousOn_DyauxFunction1_on_QuarterPlaneOpen (p : ℝ) (hp : 2 < p) :
     intro z hz
     rcases hz with ⟨hz1, hz2, hz3⟩
     exact ⟨le_of_lt hz1, le_of_lt hz2, le_of_lt hz3⟩)
+
+lemma continuousOn_DxauxFunction1_on_QuarterPlane (p : ℝ) (hp : 2 ≤ p) :
+    ContinuousOn (fun z : ℝ × ℝ => DxauxFunction1 p z.1 z.2)
+      {z | QuarterPlane z.1 z.2} := by
+  exact continuousOn_DxauxFunction1 p hp
+
+lemma continuousOn_DyauxFunction1_on_QuarterPlane (p : ℝ) (hp : 2 < p) :
+    ContinuousOn (fun z : ℝ × ℝ => DyauxFunction1 p z.1 z.2)
+      {z | QuarterPlane z.1 z.2} := by
+  exact continuousOn_DyauxFunction1 p hp
+
 
 theorem exists_majorant_geTwo (p : ℝ) (hp : 2 ≤ p) :
     ∃ u : ℝ → ℝ → ℝ,
