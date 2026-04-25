@@ -1,6 +1,8 @@
 import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Convex.Deriv
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.InnerProductSpace.NormPow
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -836,6 +838,148 @@ lemma alpha_eq_boundary_coeff (p : ℝ) (hp : 2 ≤ p) :
           field_simp
     _ = p * ((p - 1) / p) ^ (p - 1) := by
           rw [Real.div_rpow hp1_nonneg hp_pos.le]
+
+/--
+The normalization constant dominates one for `p ≥ 2`.
+
+This is the endpoint estimate used in the pointwise majorization proof on
+`A1`: on the diagonal, `uA1 p x x = alpha p * x^p` while
+`vGeTwo p x x = x^p`.
+-/
+lemma one_le_alpha (p : ℝ) (hp : 2 ≤ p) :
+    1 ≤ alpha p := by
+  rw [alpha_eq_boundary_coeff p hp]
+  change 1 ≤ p * ((p - 1) / p) ^ (p - 1)
+  let G : ℝ → ℝ := fun t =>
+    Real.log t - (t - 1) * Real.log (t / (t - 1))
+  have hp_pos : 0 < p := by linarith
+  have hp1_pos : 0 < p - 1 := by linarith
+  have hG_nonneg : 0 ≤ G p := by
+    have hderiv_formula :
+        ∀ x, 2 < x → HasDerivAt G (2 / x - Real.log (x / (x - 1))) x := by
+      intro x hx2
+      have hx_pos : 0 < x := by linarith
+      have hx1_pos : 0 < x - 1 := by linarith
+      have hdiv_ne : x - 1 ≠ 0 := by linarith
+      have hquot_pos : 0 < x / (x - 1) := div_pos hx_pos hx1_pos
+      have hquot_ne : x / (x - 1) ≠ 0 := ne_of_gt hquot_pos
+      have hlogx : HasDerivAt (fun y : ℝ => Real.log y) x⁻¹ x := by
+        simpa [one_div] using Real.hasDerivAt_log (show x ≠ 0 by linarith)
+      have hid1 : HasDerivAt (fun y : ℝ => y - 1) 1 x := by
+        simpa using (hasDerivAt_id x).sub_const 1
+      have hquot :
+          HasDerivAt (fun y : ℝ => y / (y - 1)) (-1 / (x - 1) ^ 2) x := by
+        have hq := (hasDerivAt_id x).div hid1 hdiv_ne
+        simpa [id, hdiv_ne] using hq
+      have hlogquot :
+          HasDerivAt (fun y : ℝ => Real.log (y / (y - 1)))
+            ((-1 / (x - 1) ^ 2) / (x / (x - 1))) x := by
+        simpa [one_div] using hquot.log hquot_ne
+      have hmul :
+          HasDerivAt (fun y : ℝ => (y - 1) * Real.log (y / (y - 1)))
+            (1 * Real.log (x / (x - 1)) +
+              (x - 1) * ((-1 / (x - 1) ^ 2) / (x / (x - 1)))) x :=
+        hid1.mul hlogquot
+      have hsub := hlogx.sub hmul
+      refine hsub.congr_deriv ?_
+      field_simp [hx_pos.ne', hx1_pos.ne']
+      ring
+    have hmono : MonotoneOn G (Set.Ici 2) := by
+      refine monotoneOn_of_deriv_nonneg (convex_Ici 2) ?hcont ?hdiff ?hderiv
+      · unfold G
+        apply ContinuousOn.sub
+        · exact ContinuousOn.log continuousOn_id (by
+            intro x hx
+            exact ne_of_gt (lt_of_lt_of_le (by norm_num : (0 : ℝ) < 2) hx))
+        · apply ContinuousOn.mul
+          · exact (continuous_id.sub continuous_const).continuousOn
+          · apply ContinuousOn.log
+            · exact (continuousOn_id.div (continuousOn_id.sub continuousOn_const) (by
+                intro x hx
+                have hx2 : (2 : ℝ) ≤ x := hx
+                linarith))
+            · intro x hx
+              have hx2 : (2 : ℝ) ≤ x := hx
+              exact div_ne_zero (by linarith) (by linarith)
+      · intro x hx
+        have hx2 : 2 < x := by simpa [interior_Ici] using hx
+        exact (hderiv_formula x hx2).differentiableAt.differentiableWithinAt
+      · intro x hx
+        have hx2 : 2 < x := by simpa [interior_Ici] using hx
+        rw [(hderiv_formula x hx2).deriv]
+        have hx_pos : 0 < x := by linarith
+        have hx1_pos : 0 < x - 1 := by linarith
+        have hlog : Real.log (x / (x - 1)) ≤ 1 / (x - 1) := by
+          have hpos : 0 < x / (x - 1) := div_pos hx_pos hx1_pos
+          have h := Real.log_le_sub_one_of_pos hpos
+          have hs : x / (x - 1) - 1 = 1 / (x - 1) := by
+            field_simp [hx1_pos.ne']
+            ring
+          simpa [hs] using h
+        have hfrac : 1 / (x - 1) ≤ 2 / x := by
+          field_simp [hx_pos.ne', hx1_pos.ne']
+          nlinarith
+        linarith
+    have h2mem : (2 : ℝ) ∈ Set.Ici 2 := by simp
+    have hpmem : p ∈ Set.Ici 2 := hp
+    have hle := hmono h2mem hpmem hp
+    have hG2 : G 2 = 0 := by
+      unfold G
+      norm_num [Real.log_one]
+    linarith
+  have hbase_pos : 0 < (p - 1) / p := div_pos hp1_pos hp_pos
+  have hpow_pos : 0 < ((p - 1) / p) ^ (p - 1) :=
+    Real.rpow_pos_of_pos hbase_pos _
+  have hpos : 0 < p * ((p - 1) / p) ^ (p - 1) := mul_pos hp_pos hpow_pos
+  have hlogeq :
+      Real.log (p * ((p - 1) / p) ^ (p - 1)) = G p := by
+    unfold G
+    rw [Real.log_mul hp_pos.ne' (ne_of_gt hpow_pos)]
+    rw [Real.log_rpow hbase_pos]
+    have hlogdiv : Real.log ((p - 1) / p) = -Real.log (p / (p - 1)) := by
+      have hinv : ((p - 1) / p)⁻¹ = p / (p - 1) := by
+        field_simp [hp_pos.ne', hp1_pos.ne']
+      have h := Real.log_inv (x := ((p - 1) / p))
+      rw [hinv] at h
+      linarith
+    rw [hlogdiv]
+    ring
+  have hlog_nonneg : 0 ≤ Real.log (p * ((p - 1) / p) ^ (p - 1)) := by
+    rwa [hlogeq]
+  rw [← Real.log_le_log_iff zero_lt_one hpos]
+  simpa [Real.log_one] using hlog_nonneg
+
+/-- On the diagonal endpoint of `A1`, `uA1` dominates `vGeTwo`. -/
+lemma vGeTwo_le_uA1_on_diag
+    (p : ℝ) (hp : 2 ≤ p) {x : ℝ} (hx : 0 ≤ x) :
+    vGeTwo p x x ≤ uA1 p x x := by
+  rcases hx.eq_or_lt with rfl | hxpos
+  · simp [vGeTwo, uA1, Real.zero_rpow (by linarith : p ≠ 0)]
+  · have hp_pos : 0 < p := by linarith
+    have hx_nonneg : 0 ≤ x := le_of_lt hxpos
+    have halpha := one_le_alpha p hp
+    have hv : vGeTwo p x x = x ^ p := by
+      have hsum : (x + x) / 2 = x := by ring
+      have hdiff : (x - x) / 2 = 0 := by ring
+      simp [vGeTwo, hsum, hdiff, abs_of_pos hxpos, Real.zero_rpow hp_pos.ne']
+    have hu : uA1 p x x = alpha p * x ^ p := by
+      have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+      have hpow : x ^ (p - 1) * x = x ^ p := by
+        have h := Real.rpow_one_add' hx_nonneg (by linarith : 1 + (p - 1) ≠ 0)
+        have h' : x ^ p = x * x ^ (p - 1) := by
+          -- `rpow_one_add'` writes the product as `x * x^(p-1)`.
+          simpa [show 1 + (p - 1) = p by ring] using h
+        rw [h']
+        ring
+      calc
+        uA1 p x x =
+            alpha p * x ^ (p - 1) * (x - p * (x - x) / 2) := by
+          simp [uA1, hxpos, hpStar]
+        _ = alpha p * (x ^ (p - 1) * x) := by ring
+        _ = alpha p * x ^ p := by rw [hpow]
+    rw [hv, hu]
+    simpa [one_mul] using
+      mul_le_mul_of_nonneg_right halpha (Real.rpow_nonneg hx_nonneg p)
 
 /-- On the A1/A2 boundary, the x-partial formulas agree. -/
 lemma DxuA1_eq_DxvGeTwo_on_A1A2_boundary (p x : ℝ) (hp : 2 ≤ p) (hx : 0 < x) :
@@ -8575,7 +8719,441 @@ lemma continuousOn_DyauxFunction1_on_QuarterPlane (p : ℝ) (hp : 2 < p) :
   exact continuousOn_DyauxFunction1 p hp
 
 
-/-! ## 11. Majorant existence statement -/
+/-! ## 11. Pointwise majorization -/
+
+/-
+The pointwise estimate `vGeTwo ≤ uCandidate` is local in the first quadrant
+and then transported by the symmetries used in the definition of
+`uCandidate`.  The only genuinely analytic part is the scalar inequality on
+the `A1` sector; the `A2` sector is equality by construction.
+-/
+
+/-- A convexity bound for the derivative of the normalized scalar difference. -/
+lemma burkholder_scalar_deriv_nonpos
+    (p t : ℝ) (hp : 2 < p) (ht0 : 0 ≤ t) (ht1 : t ≤ 1 / p) :
+    (1 - t) ^ (p - 1) + (p - 1) ^ p * t ^ (p - 1) ≤ alpha p := by
+  let lam : ℝ := 1 - p * t
+  let mu : ℝ := p * t
+  have hp_ge : 2 ≤ p := by linarith
+  have hp_pos : 0 < p := by linarith
+  have hp1_ge_one : 1 ≤ p - 1 := by linarith
+  have hp1_pos : 0 < p - 1 := by linarith
+  have hbase_nonneg : 0 ≤ (p - 1) / p := by positivity
+  have hbase_le_one : (p - 1) / p ≤ 1 := by
+    field_simp [hp_pos.ne']
+    linarith
+  have h_inv_nonneg : 0 ≤ 1 / p := by positivity
+  have hlam_nonneg : 0 ≤ lam := by
+    dsimp [lam]
+    have hmul := mul_le_mul_of_nonneg_left ht1 (by linarith : 0 ≤ p)
+    field_simp [hp_pos.ne'] at hmul
+    linarith
+  have hmu_nonneg : 0 ≤ mu := by
+    dsimp [mu]
+    positivity
+  have hsum : lam + mu = 1 := by
+    dsimp [lam, mu]
+    ring
+  have hone :
+      lam • (1 : ℝ) + mu • ((p - 1) / p) = 1 - t := by
+    dsimp [lam, mu]
+    field_simp [hp_pos.ne']
+    ring
+  have ht_as_combo :
+      lam • (0 : ℝ) + mu • (1 / p) = t := by
+    dsimp [lam, mu]
+    field_simp [hp_pos.ne']
+    ring
+  have hone' : lam + mu * ((p - 1) / p) = 1 - t := by
+    simpa [smul_eq_mul] using hone
+  have ht_as_combo' : mu * p⁻¹ = t := by
+    simpa [smul_eq_mul, one_div] using ht_as_combo
+  have hconv := convexOn_rpow (p := p - 1) hp1_ge_one
+  have hfirst :
+      (1 - t) ^ (p - 1) ≤
+        lam * (1 : ℝ) ^ (p - 1) + mu * (((p - 1) / p) ^ (p - 1)) := by
+    have h :=
+      hconv.2 (by simp : (1 : ℝ) ∈ Set.Ici 0) hbase_nonneg
+        hlam_nonneg hmu_nonneg hsum
+    simpa [smul_eq_mul, hone'] using h
+  have hsecond :
+      t ^ (p - 1) ≤
+        lam * (0 : ℝ) ^ (p - 1) + mu * ((1 / p) ^ (p - 1)) := by
+    have h :=
+      hconv.2 (by simp : (0 : ℝ) ∈ Set.Ici 0) h_inv_nonneg
+        hlam_nonneg hmu_nonneg hsum
+    simpa [smul_eq_mul, one_div, ht_as_combo'] using h
+  have hzero : (0 : ℝ) ^ (p - 1) = 0 := Real.zero_rpow (by linarith)
+  have hsecond' :
+      (p - 1) ^ p * t ^ (p - 1) ≤
+        (p - 1) ^ p * (mu * ((1 / p) ^ (p - 1))) := by
+    have hcoef_nonneg : 0 ≤ (p - 1) ^ p :=
+      Real.rpow_nonneg (by linarith : 0 ≤ p - 1) p
+    have h2 : t ^ (p - 1) ≤ mu * ((1 / p) ^ (p - 1)) := by
+      simpa [hzero] using hsecond
+    exact mul_le_mul_of_nonneg_left h2 hcoef_nonneg
+  have halpha : alpha p = p * (((p - 1) / p) ^ (p - 1)) :=
+    alpha_eq_boundary_coeff p hp_ge
+  have hsum_bound :
+      (1 - t) ^ (p - 1) + (p - 1) ^ p * t ^ (p - 1) ≤
+        lam + mu * (p * (((p - 1) / p) ^ (p - 1))) := by
+    calc
+      (1 - t) ^ (p - 1) + (p - 1) ^ p * t ^ (p - 1)
+          ≤ (lam * (1 : ℝ) ^ (p - 1) + mu * (((p - 1) / p) ^ (p - 1))) +
+              (p - 1) ^ p * (mu * ((1 / p) ^ (p - 1))) := by
+                exact add_le_add hfirst hsecond'
+      _ = lam + mu * (p * (((p - 1) / p) ^ (p - 1))) := by
+          rw [Real.one_rpow]
+          have hpow_split : (p - 1) ^ p = (p - 1) * (p - 1) ^ (p - 1) := by
+            calc
+              (p - 1) ^ p = (p - 1) ^ (1 + (p - 1)) := by
+                congr 1
+                ring
+              _ = (p - 1) * (p - 1) ^ (p - 1) := by
+                rw [Real.rpow_one_add' (by linarith : 0 ≤ p - 1)
+                  (by linarith : (1 : ℝ) + (p - 1) ≠ 0)]
+          rw [hpow_split]
+          have hinv_pow : (1 / p) ^ (p - 1) = (p ^ (p - 1))⁻¹ := by
+            rw [one_div, Real.inv_rpow hp_pos.le]
+          have hbase_pow :
+              ((p - 1) / p) ^ (p - 1) =
+                (p - 1) ^ (p - 1) * (p ^ (p - 1))⁻¹ := by
+            rw [Real.div_rpow (by linarith : 0 ≤ p - 1) hp_pos.le]
+            ring
+          rw [hinv_pow, hbase_pow]
+          ring
+  have hmix_le_alpha :
+      lam + mu * (p * (((p - 1) / p) ^ (p - 1))) ≤ alpha p := by
+    rw [halpha]
+    have hone_le : 1 ≤ p * (((p - 1) / p) ^ (p - 1)) := by
+      simpa [halpha] using one_le_alpha p hp_ge
+    have hlam_le :
+        lam ≤ lam * (p * (((p - 1) / p) ^ (p - 1))) := by
+      have h := mul_le_mul_of_nonneg_left hone_le hlam_nonneg
+      simpa using h
+    calc
+      lam + mu * (p * (((p - 1) / p) ^ (p - 1)))
+          ≤ lam * (p * (((p - 1) / p) ^ (p - 1))) +
+              mu * (p * (((p - 1) / p) ^ (p - 1))) := by
+                exact add_le_add hlam_le le_rfl
+      _ = (lam + mu) * (p * (((p - 1) / p) ^ (p - 1))) := by ring
+      _ = p * (((p - 1) / p) ^ (p - 1)) := by rw [hsum]; ring
+  exact hsum_bound.trans hmix_le_alpha
+
+set_option maxHeartbeats 800000 in
+lemma burkholder_scalar_A1
+    (p t : ℝ) (hp : 2 < p) (ht0 : 0 ≤ t) (ht1 : t ≤ 1 / p) :
+    (1 - t) ^ p - (p - 1) ^ p * t ^ p ≤ alpha p * (1 - p * t) := by
+  let H : ℝ → ℝ := fun s =>
+    (1 - s) ^ p - (p - 1) ^ p * s ^ p - alpha p * (1 - p * s)
+  have hp_ge : 2 ≤ p := by linarith
+  have hp_pos : 0 < p := by linarith
+  have hp1_ge_one : 1 ≤ p - 1 := by linarith
+  have hcont : ContinuousOn H (Set.Icc 0 (1 / p)) := by
+    unfold H
+    apply ContinuousOn.sub
+    · apply ContinuousOn.sub
+      · exact ((continuousOn_const.sub continuousOn_id).rpow_const
+          (by intro s hs; exact Or.inr (by linarith : 0 ≤ p)))
+      · exact continuousOn_const.mul
+          (continuousOn_id.rpow_const (by intro s hs; exact Or.inr (by linarith : 0 ≤ p)))
+    · exact continuousOn_const.mul
+        (continuousOn_const.sub (continuousOn_const.mul continuousOn_id))
+  have hderiv_at :
+      ∀ s ∈ interior (Set.Icc 0 (1 / p)),
+        HasDerivAt H
+          (p * (alpha p -
+            ((1 - s) ^ (p - 1) + (p - 1) ^ p * s ^ (p - 1)))) s := by
+    intro s hs
+    have hsI : s ∈ Set.Ioo 0 (1 / p) := by simpa [interior_Icc] using hs
+    have hspos : 0 < s := hsI.1
+    have hslt : s < 1 / p := hsI.2
+    have h1spos : 0 < 1 - s := by
+      have hhalf : 1 / p ≤ 1 := by
+        field_simp [hp_pos.ne']
+        linarith
+      linarith
+    have h_one_sub :
+        HasDerivAt (fun r : ℝ => 1 - r) (-1) s := by
+      simpa using (hasDerivAt_const (c := (1 : ℝ)) s).sub (hasDerivAt_id s)
+    have hpow1 :
+        HasDerivAt (fun r : ℝ => (1 - r) ^ p)
+          (p * (1 - s) ^ (p - 1) * (-1)) s := by
+      have hr := (Real.hasDerivAt_rpow_const (Or.inr (by linarith : 1 ≤ p)) :
+        HasDerivAt (fun u : ℝ => u ^ p) (p * (1 - s) ^ (p - 1)) (1 - s))
+      exact hr.comp s h_one_sub
+    have hpow2 :
+        HasDerivAt (fun r : ℝ => r ^ p)
+          (p * s ^ (p - 1)) s := by
+      exact (Real.hasDerivAt_rpow_const (Or.inr (by linarith : 1 ≤ p)) :
+        HasDerivAt (fun r : ℝ => r ^ p) (p * s ^ (p - 1)) s)
+    have hlinear :
+        HasDerivAt (fun r : ℝ => alpha p * (1 - p * r))
+          (alpha p * (-p)) s := by
+      have hbase : HasDerivAt (fun r : ℝ => 1 - p * r) (-p) s := by
+        simpa using (hasDerivAt_const (c := (1 : ℝ)) s).sub
+          ((hasDerivAt_id s).const_mul p)
+      exact hbase.const_mul (alpha p)
+    have hmain :
+        HasDerivAt H
+          ((p * (1 - s) ^ (p - 1) * (-1)) -
+            (p - 1) ^ p * (p * s ^ (p - 1)) -
+            alpha p * (-p)) s := by
+      unfold H
+      exact (hpow1.sub (hpow2.const_mul ((p - 1) ^ p))).sub hlinear
+    refine hmain.congr_deriv ?_
+    ring
+  have hdiff : DifferentiableOn ℝ H (interior (Set.Icc 0 (1 / p))) := by
+    intro s hs
+    exact (hderiv_at s hs).differentiableAt.differentiableWithinAt
+  have hderiv_nonneg :
+      ∀ s ∈ interior (Set.Icc 0 (1 / p)), 0 ≤ deriv H s := by
+    intro s hs
+    have hsI : s ∈ Set.Ioo 0 (1 / p) := by simpa [interior_Icc] using hs
+    have hspos : 0 < s := hsI.1
+    have hslt : s < 1 / p := hsI.2
+    have hsle : s ≤ 1 / p := le_of_lt hsI.2
+    have hs_nonneg : 0 ≤ s := le_of_lt hspos
+    have hderiv := hderiv_at s hs
+    rw [hderiv.deriv]
+    have hA :=
+      burkholder_scalar_deriv_nonpos p s hp hs_nonneg hsle
+    have hnonneg : 0 ≤ alpha p -
+        ((1 - s) ^ (p - 1) + (p - 1) ^ p * s ^ (p - 1)) := by
+      linarith
+    exact mul_nonneg hp_pos.le hnonneg
+  have hmono : MonotoneOn H (Set.Icc 0 (1 / p)) := by
+    refine monotoneOn_of_deriv_nonneg (convex_Icc 0 (1 / p)) hcont hdiff ?_
+    exact hderiv_nonneg
+  have ht_mem : t ∈ Set.Icc 0 (1 / p) := ⟨ht0, ht1⟩
+  have hb_mem : (1 / p) ∈ Set.Icc 0 (1 / p) := ⟨by positivity, le_rfl⟩
+  have hle := hmono ht_mem hb_mem ht1
+  have hHb : H (1 / p) = 0 := by
+    unfold H
+    have hbase1 : 1 - 1 / p = (p - 1) / p := by
+      field_simp [hp_pos.ne']
+    have hzero : 1 - p * (1 / p) = 0 := by
+      field_simp [hp_pos.ne']
+      norm_num
+    rw [hbase1, hzero, mul_zero, sub_zero]
+    have hpow :
+        (p - 1) ^ p * (1 / p) ^ p = ((p - 1) / p) ^ p := by
+      rw [Real.div_rpow (by linarith : 0 ≤ p - 1) hp_pos.le]
+      rw [one_div, Real.inv_rpow hp_pos.le]
+      ring
+    rw [← hpow]
+    ring
+  have hHt : H t ≤ 0 := by
+    rw [hHb] at hle
+    exact hle
+  unfold H at hHt
+  linarith
+
+/-- On the closed `A1` sector, the scalar inequality gives `vGeTwo ≤ uA1`. -/
+lemma vGeTwo_le_uA1_on_closureA1
+    (p : ℝ) (hp : 2 < p) {x y : ℝ}
+    (hA1 : closureA1 p x y) :
+    vGeTwo p x y ≤ uA1 p x y := by
+  rcases hA1 with ⟨hx_nonneg, hlow, hyx⟩
+  rcases hx_nonneg.eq_or_lt with rfl | hxpos
+  · have hy0 : y = 0 := by linarith
+    subst hy0
+    simp [vGeTwo, uA1, Real.zero_rpow (by linarith : p ≠ 0)]
+  · have hx_nonneg' : 0 ≤ x := le_of_lt hxpos
+    have hp_nonneg : 0 ≤ p := by linarith
+    have hp_pos : 0 < p := by linarith
+    have hp_ne : p ≠ 0 := by linarith
+    have hpStar : pStar p = p := pStar_eq_self_of_two_le p (by linarith)
+    have ha_eq : a p = 1 - 2 / p := by simp [a, hpStar]
+    have ha_nonneg : 0 ≤ a p := by
+      rw [ha_eq]
+      have hdiv : 2 / p ≤ 1 := by
+        field_simp [hp_pos.ne']
+        linarith
+      linarith
+    have hy_nonneg : 0 ≤ y := by
+      exact le_trans (mul_nonneg ha_nonneg hx_nonneg') hlow
+    let t : ℝ := (x - y) / (2 * x)
+    have ht0 : 0 ≤ t := by
+      dsimp [t]
+      exact div_nonneg (sub_nonneg.mpr hyx) (mul_nonneg (by norm_num) hx_nonneg')
+    have ht1 : t ≤ 1 / p := by
+      dsimp [t]
+      rw [ha_eq] at hlow
+      have hxy : x - y ≤ 2 * x / p := by
+        have htmp : x - (1 - 2 / p) * x = 2 * x / p := by
+          field_simp [hp_pos.ne']
+          ring
+        nlinarith
+      have hden_pos : 0 < 2 * x := mul_pos (by norm_num) hxpos
+      have h := div_le_div_of_nonneg_right hxy hden_pos.le
+      calc
+        (x - y) / (2 * x) ≤ (2 * x / p) / (2 * x) := h
+        _ = 1 / p := by field_simp [hp_pos.ne', hxpos.ne']
+    have ht_le_half : t ≤ 1 / 2 := by
+      exact ht1.trans (by
+        field_simp [hp_pos.ne']
+        linarith)
+    have h1mt_nonneg : 0 ≤ 1 - t := by linarith
+    have hpt_nonneg : 0 ≤ 1 - p * t := by
+      have hmul := mul_le_mul_of_nonneg_left ht1 hp_nonneg
+      field_simp [hp_pos.ne'] at hmul
+      linarith
+
+    -- Normalize the two coordinates by `x`.
+    have hsum_norm : (x + y) / 2 = x * (1 - t) := by
+      dsimp [t]
+      field_simp [hxpos.ne']
+      ring
+    have hdiff_norm : (x - y) / 2 = x * t := by
+      dsimp [t]
+      field_simp [hxpos.ne']
+    have hlinear_norm :
+        x - p * (x - y) / 2 = x * (1 - p * t) := by
+      dsimp [t]
+      field_simp [hxpos.ne']
+
+    -- Rewrite `vGeTwo` as `x^p` times the normalized scalar expression.
+    have hv_norm :
+        vGeTwo p x y =
+          x ^ p * ((1 - t) ^ p - (p - 1) ^ p * t ^ p) := by
+      have hsum_nonneg : 0 ≤ (x + y) / 2 := by
+        rw [hsum_norm]
+        exact mul_nonneg hx_nonneg' h1mt_nonneg
+      have hdiff_nonneg : 0 ≤ (x - y) / 2 := by
+        rw [hdiff_norm]
+        exact mul_nonneg hx_nonneg' ht0
+      calc
+        vGeTwo p x y =
+            ((x + y) / 2) ^ p -
+              (p - 1) ^ p * ((x - y) / 2) ^ p := by
+                simp [vGeTwo, abs_of_nonneg hsum_nonneg, abs_of_nonneg hdiff_nonneg]
+        _ = (x * (1 - t)) ^ p - (p - 1) ^ p * (x * t) ^ p := by
+                rw [hsum_norm, hdiff_norm]
+        _ = x ^ p * (1 - t) ^ p - (p - 1) ^ p * (x ^ p * t ^ p) := by
+                rw [Real.mul_rpow hx_nonneg' h1mt_nonneg,
+                  Real.mul_rpow hx_nonneg' ht0]
+        _ = x ^ p * ((1 - t) ^ p - (p - 1) ^ p * t ^ p) := by ring
+
+    -- Rewrite `uA1` in the same normalization.
+    have hu_norm :
+        uA1 p x y = x ^ p * (alpha p * (1 - p * t)) := by
+      have hxpow : x ^ (p - 1) * x = x ^ p := by
+        have h := Real.rpow_one_add' hx_nonneg'
+          (by linarith : (1 : ℝ) + (p - 1) ≠ 0)
+        have h' : x ^ p = x * x ^ (p - 1) := by
+          simpa [show (1 : ℝ) + (p - 1) = p by ring] using h
+        rw [h']
+        ring
+      calc
+        uA1 p x y =
+            alpha p * x ^ (p - 1) * (x - p * (x - y) / 2) := by
+              simp [uA1, hxpos, hpStar]
+        _ = alpha p * x ^ (p - 1) * (x * (1 - p * t)) := by
+              rw [hlinear_norm]
+        _ = x ^ p * (alpha p * (1 - p * t)) := by
+              rw [← hxpow]
+              ring
+
+    have hscalar := burkholder_scalar_A1 p t hp ht0 ht1
+    have hxpow_nonneg : 0 ≤ x ^ p := Real.rpow_nonneg hx_nonneg' p
+    calc
+      vGeTwo p x y =
+          x ^ p * ((1 - t) ^ p - (p - 1) ^ p * t ^ p) := hv_norm
+      _ ≤ x ^ p * (alpha p * (1 - p * t)) :=
+          mul_le_mul_of_nonneg_left hscalar hxpow_nonneg
+      _ = uA1 p x y := hu_norm.symm
+
+/-- `vGeTwo` is invariant under the central symmetry `(x, y) ↦ (-x, -y)`. -/
+lemma vGeTwo_neg_neg (p x y : ℝ) :
+    vGeTwo p (-x) (-y) = vGeTwo p x y := by
+  have hsum : ((-x + -y) / 2 : ℝ) = -((x + y) / 2) := by ring
+  have hdiff : ((-x + y) / 2 : ℝ) = -((x - y) / 2) := by ring
+  simp [vGeTwo, hsum, hdiff]
+
+/-- `vGeTwo` is invariant under swapping the two coordinates. -/
+lemma vGeTwo_swap (p x y : ℝ) :
+    vGeTwo p y x = vGeTwo p x y := by
+  have hsum : ((y + x) / 2 : ℝ) = (x + y) / 2 := by ring
+  have hdiff : ((y - x) / 2 : ℝ) = -((x - y) / 2) := by ring
+  simp [vGeTwo, hsum, hdiff]
+
+/-- On the `A2` branch the pointwise majorization is equality by construction. -/
+lemma vGeTwo_le_auxFunction1_on_closureA2
+    (p : ℝ) (hp : 2 ≤ p) {x y : ℝ} (h2 : closureA2 p x y) :
+    vGeTwo p x y ≤ auxFunction1 p x y := by
+  rw [auxFunction1_eq_vGeTwo p hp x y h2]
+
+/--
+First-quadrant reduction for the pointwise majorization.
+
+Inside the first quadrant cone, every point is either in the closed `A2`
+sector, where `auxFunction1 = vGeTwo`, or in the complementary closed `A1`
+sector, where the remaining scalar Burkholder inequality must be supplied by
+`hA1`.
+-/
+lemma vGeTwo_le_auxFunction1_on_QuarterPlane_of_A1
+    (p : ℝ) (hp : 2 ≤ p)
+    (hA1 : ∀ ⦃x y : ℝ⦄, closureA1 p x y → vGeTwo p x y ≤ uA1 p x y)
+    {x y : ℝ} (hQ : QuarterPlane x y) :
+    vGeTwo p x y ≤ auxFunction1 p x y := by
+  by_cases h1 : closureA1 p x y
+  · exact (hA1 h1).trans_eq (auxFunction1_eq_uA1 p x y h1).symm
+  · have h2 : closureA2 p x y := by
+      rcases hQ with ⟨hx, hyx, hnegx_y⟩
+      have hy_le_ax : y ≤ a p * x := by
+        by_contra hy_not
+        have hax_le_y : a p * x ≤ y := le_of_not_ge hy_not
+        exact h1 ⟨hx, hax_le_y, hyx⟩
+      exact ⟨hx, hnegx_y, hy_le_ax⟩
+    exact vGeTwo_le_auxFunction1_on_closureA2 p hp h2
+
+/--
+Global reduction for `vGeTwo ≤ uCandidate`.
+
+The four quadrant branches of `uCandidate` are reflected copies of
+`auxFunction1`.  Since `vGeTwo` is invariant under the same reflections, a
+first-quadrant proof gives the whole-plane proof.
+-/
+lemma vGeTwo_le_uCandidate_of_A1
+    (p : ℝ) (hp : 2 ≤ p)
+    (hA1 : ∀ ⦃x y : ℝ⦄, closureA1 p x y → vGeTwo p x y ≤ uA1 p x y)
+    (x y : ℝ) :
+    vGeTwo p x y ≤ uCandidate p x y := by
+  rcases mem_some_QuarterPlane x y with hQ1 | hrest
+  · rw [uCandidate_eq_Q1 p hQ1]
+    exact vGeTwo_le_auxFunction1_on_QuarterPlane_of_A1 p hp hA1 hQ1
+  rcases hrest with hQ2 | hrest
+  · have hQ : QuarterPlane (-x) (-y) := ⟨by linarith [hQ2.1], by linarith [hQ2.2.2],
+      by linarith [hQ2.2.1]⟩
+    rw [uCandidate_eq_Q2 p hQ2, ← vGeTwo_neg_neg p x y]
+    exact vGeTwo_le_auxFunction1_on_QuarterPlane_of_A1 p hp hA1 hQ
+  rcases hrest with hQ3 | hQ4
+  · have hQ : QuarterPlane y x := ⟨hQ3.1, hQ3.2.2, hQ3.2.1⟩
+    rw [uCandidate_eq_Q3 p hQ3, ← vGeTwo_swap p x y]
+    exact vGeTwo_le_auxFunction1_on_QuarterPlane_of_A1 p hp hA1 hQ
+  · have hQ : QuarterPlane (-y) (-x) := ⟨by linarith [hQ4.1], by linarith [hQ4.2.1],
+      by linarith [hQ4.2.2]⟩
+    have hv : vGeTwo p (-y) (-x) = vGeTwo p x y := by
+      rw [vGeTwo_neg_neg p y x, vGeTwo_swap p y x]
+    rw [uCandidate_eq_Q4 p hQ4, ← hv]
+    exact vGeTwo_le_auxFunction1_on_QuarterPlane_of_A1 p hp hA1 hQ
+
+/--
+The candidate dominates the Burkholder expression on the whole plane.
+
+The proof is now purely geometric: the first-quadrant `A2` sector is equality,
+the first-quadrant `A1` sector is handled by the normalized scalar inequality,
+and all other quadrants follow from the symmetries in `uCandidate`.
+-/
+lemma vGeTwo_le_uCandidate
+    (p : ℝ) (hp : 2 < p) (x y : ℝ) :
+    vGeTwo p x y ≤ uCandidate p x y := by
+  exact vGeTwo_le_uCandidate_of_A1 p (by linarith)
+    (fun {x y} hA1 => vGeTwo_le_uA1_on_closureA1 p hp hA1) x y
+
+
+/-! ## 12. Majorant existence statement -/
 
 /-
 This final theorem is the high-level packaging goal for the candidate.  The
