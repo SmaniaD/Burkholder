@@ -5639,7 +5639,7 @@ lemma uCandidate_tangent_x_QuarterPlane3Open_to_diag_segment
 
 lemma auxFunction1_tangent_y_diag_to_QuarterPlaneOpen_segment
     (p : ℝ) (hp : 2 < p) {x z : ℝ}
-    (hx : 0 < x) (hz_lower : -x < z) (hz_upper : z < x) :
+    (hx : 0 < x) (hz_lower : -x ≤ z) (hz_upper : z < x) :
     auxFunction1 p x z ≤
       auxFunction1 p x x + DyauxFunction1 p x x * (z - x) := by
   have hp' : 2 ≤ p := by linarith
@@ -5674,7 +5674,7 @@ lemma auxFunction1_tangent_y_diag_to_QuarterPlaneOpen_segment
     simpa [auxFunction1_eq_uA1 p x z hcl_z,
       auxFunction1_eq_uA1 p x x hdiag] using h_u
   · have hzc : z < c := lt_of_not_ge hcz
-    have hcl_z : closureA2 p x z := ⟨hx.le, le_of_lt hz_lower, le_of_lt hzc⟩
+    have hcl_z : closureA2 p x z := ⟨hx.le, hz_lower, le_of_lt hzc⟩
     have hderiv_c :
         HasDerivAt (fun t => vGeTwo p x t) (DyauxFunction1 p x c) c := by
       have hsum : 0 < (x + c) / 2 := by linarith [hneg_c]
@@ -5735,7 +5735,7 @@ lemma uCandidate_tangent_x_diag_to_QuarterPlane3Open_segment
     have hlt : -z < y := by linarith
     exact not_le_of_gt hlt hq.2.1
   have haux := auxFunction1_tangent_y_diag_to_QuarterPlaneOpen_segment
-    p hp hy_pos hz_lower hz_upper
+    p hp hy_pos hz_lower.le hz_upper
   have hdx : DxuCandidate p y y = DyauxFunction1 p y y := by
     have h := DxauxFunction1_eq_DyauxFunction1_on_diag p hp y hy_pos.le
     simp [DxuCandidate, hQd, h]
@@ -6145,6 +6145,112 @@ lemma auxFunction1_tangent_y_antidiag_to_QuarterPlaneOpen_segment
       (fun t => auxFunction1 p x t) (fun t => DyauxFunction1 p x t)
       (le_of_lt hneg_c) hcz.le h_ac h_cz hd
 
+/--
+Tangent estimate from an interior first-quadrant point down to the antidiagonal.
+
+This is the reverse-direction companion to
+`auxFunction1_tangent_y_antidiag_to_QuarterPlaneOpen_segment`.  The segment
+may lie entirely in A2, or it may first move through A1 and then cross the
+internal A1/A2 boundary before reaching the antidiagonal.
+-/
+lemma auxFunction1_tangent_y_QuarterPlaneOpen_to_antidiag_segment
+    (p : ℝ) (hp : 2 < p) {x y : ℝ}
+    (hx : 0 < x) (hy_lower : -x < y) (hy_upper : y < x) :
+    auxFunction1 p x (-x) ≤
+      auxFunction1 p x y + DyauxFunction1 p x y * ((-x) - y) := by
+  have hp' : 2 ≤ p := by linarith
+  let c : ℝ := (a p) * x
+  have hc_lt_x : c < x := by
+    have hlt : a p < 1 := a_lt_one_of_two_le p hp'
+    simpa [c] using mul_lt_mul_of_pos_right hlt hx
+  have hneg_c : -x < c := by
+    have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+    nlinarith [mul_nonneg ha_nonneg hx.le]
+  have hcl_a_A2 : closureA2 p x (-x) := by
+    refine ⟨hx.le, le_rfl, ?_⟩
+    have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+    exact le_trans (neg_nonpos.mpr hx.le) (mul_nonneg ha_nonneg hx.le)
+  have hcl_c_A2 : closureA2 p x c := ⟨hx.le, le_of_lt hneg_c, le_rfl⟩
+  have hcl_c_A1 : closureA1 p x c := ⟨hx.le, le_rfl, le_of_lt hc_lt_x⟩
+  by_cases hyc : y ≤ c
+  · have hcl_y : closureA2 p x y := ⟨hx.le, le_of_lt hy_lower, hyc⟩
+    have hderiv_y :
+        HasDerivAt (fun t => vGeTwo p x t) (DyauxFunction1 p x y) y := by
+      have hsum : 0 < (x + y) / 2 := by linarith
+      have hdiff : 0 < (x - y) / 2 := by linarith
+      refine (hasDerivAt_vGeTwo_y_of_pos p hp' x y hsum hdiff).congr_deriv ?_
+      exact (auxFunction1_Dy_eq_DyvGeTwo p hp' x y hcl_y).symm
+    have h_v :
+        vGeTwo p x (-x) ≤
+          vGeTwo p x y + DyauxFunction1 p x y * ((-x) - y) := by
+      apply vGeTwo_tangent_y_on_Icc_of_A2
+        (p := p) (hp := hp') (lo := -x) (hi := y)
+        (x := x) (y := y) (z := -x)
+      · intro t ht
+        have htIoo : t ∈ Set.Ioo (-x) y := by
+          simpa [interior_Icc] using ht
+        exact ⟨hx, htIoo.1, lt_of_lt_of_le htIoo.2 hyc⟩
+      · exact ⟨hy_lower.le, le_rfl⟩
+      · exact ⟨le_rfl, hy_lower.le⟩
+      · exact hderiv_y
+    simpa [auxFunction1_eq_vGeTwo p hp' x (-x) hcl_a_A2,
+      auxFunction1_eq_vGeTwo p hp' x y hcl_y] using h_v
+  · have hcy : c < y := lt_of_not_ge hyc
+    have hcl_y : closureA1 p x y := ⟨hx.le, le_of_lt hcy, le_of_lt hy_upper⟩
+    have hderiv_y :
+        HasDerivAt (fun t => uA1 p x t) (DyauxFunction1 p x y) y := by
+      refine (hasDerivAt_uA1_y_of_pos p hp' x y hx).congr_deriv ?_
+      exact (auxFunction1_Dy_eq_DyuA1 p x y hcl_y).symm
+    have hderiv_c :
+        HasDerivAt (fun t => vGeTwo p x t) (DyauxFunction1 p x c) c := by
+      have hsum : 0 < (x + c) / 2 := by linarith [hneg_c]
+      have hdiff : 0 < (x - c) / 2 := by linarith [hc_lt_x]
+      refine (hasDerivAt_vGeTwo_y_of_pos p hp' x c hsum hdiff).congr_deriv ?_
+      exact (auxFunction1_Dy_eq_DyvGeTwo p hp' x c hcl_c_A2).symm
+    have h_yc_u :
+        uA1 p x c ≤ uA1 p x y + DyauxFunction1 p x y * (c - y) := by
+      apply uA1_tangent_y_on_Icc_of_A1
+        (p := p) (hp := hp') (lo := c) (hi := y)
+        (x := x) (y := y) (z := c)
+      · exact hx
+      · intro t ht
+        have htIoo : t ∈ Set.Ioo c y := by
+          simpa [interior_Icc] using ht
+        exact ⟨hx, htIoo.1, lt_trans htIoo.2 hy_upper⟩
+      · exact ⟨hcy.le, le_rfl⟩
+      · exact ⟨le_rfl, hcy.le⟩
+      · exact hderiv_y
+    have h_cz_v :
+        vGeTwo p x (-x) ≤
+          vGeTwo p x c + DyauxFunction1 p x c * ((-x) - c) := by
+      apply vGeTwo_tangent_y_on_Icc_of_A2
+        (p := p) (hp := hp') (lo := -x) (hi := c)
+        (x := x) (y := c) (z := -x)
+      · intro t ht
+        have htIoo : t ∈ Set.Ioo (-x) c := by
+          simpa [interior_Icc] using ht
+        exact ⟨hx, htIoo.1, htIoo.2⟩
+      · exact ⟨le_of_lt hneg_c, le_rfl⟩
+      · exact ⟨le_rfl, le_of_lt hneg_c⟩
+      · exact hderiv_c
+    have h_yc :
+        auxFunction1 p x c ≤
+          auxFunction1 p x y + DyauxFunction1 p x y * (c - y) := by
+      simpa [auxFunction1_eq_uA1 p x c hcl_c_A1,
+        auxFunction1_eq_uA1 p x y hcl_y] using h_yc_u
+    have h_cz :
+        auxFunction1 p x (-x) ≤
+          auxFunction1 p x c + DyauxFunction1 p x c * ((-x) - c) := by
+      simpa [auxFunction1_eq_vGeTwo p hp' x (-x) hcl_a_A2,
+        auxFunction1_eq_vGeTwo p hp' x c hcl_c_A2] using h_cz_v
+    have hd : DyauxFunction1 p x y ≤ DyauxFunction1 p x c := by
+      rw [auxFunction1_Dy_eq_DyuA1 p x y hcl_y,
+        auxFunction1_Dy_eq_DyuA1 p x c hcl_c_A1]
+      simp [DyuA1]
+    exact tangent_glue_two_backward
+      (fun t => auxFunction1 p x t) (fun t => DyauxFunction1 p x t)
+      (le_of_lt hneg_c) hcy.le h_yc h_cz hd
+
 lemma uCandidate_tangent_x_antidiag_to_QuarterPlane3Open_segment
     (p : ℝ) (hp : 2 < p) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : -y < z) (hz_upper : z < y) :
@@ -6173,6 +6279,226 @@ lemma uCandidate_tangent_x_antidiag_to_QuarterPlane3Open_segment
     _ ≤ auxFunction1 p y (-y) + DyauxFunction1 p y (-y) * (z - (-y)) := haux
     _ = uCandidate p (-y) y + DxuCandidate p (-y) y * (z - (-y)) := by
       simp [uCandidate, hnotQa, hQa, hdx]
+
+/--
+Horizontal tangent estimate from Q3 down to the antidiagonal.
+
+Under the Q3 reflection `uCandidate p x y = auxFunction1 p y x`, this is the
+auxiliary vertical estimate from an interior point to `-y`.
+-/
+lemma uCandidate_tangent_x_QuarterPlane3Open_to_antidiag_segment
+    (p : ℝ) (hp : 2 < p) {x y : ℝ}
+    (hy_pos : 0 < y) (hneg_x : -y < x) (hxy : x < y) :
+    uCandidate p (-y) y ≤
+      uCandidate p x y + DxuCandidate p x y * ((-y) - x) := by
+  have hQx : QuarterPlane3 x y := ⟨hy_pos.le, le_of_lt hneg_x, le_of_lt hxy⟩
+  have hQa : QuarterPlane2 (-y) y := ⟨by linarith, by linarith, by linarith⟩
+  have hnotQx : ¬ QuarterPlane x y := by
+    intro hq
+    exact not_le_of_gt hxy hq.2.1
+  have hnotQ2x : ¬ QuarterPlane2 x y := by
+    intro hq
+    have hlt : -x < y := by linarith
+    exact not_le_of_gt hlt hq.2.1
+  have hnotQa : ¬ QuarterPlane (-y) y := by
+    intro hq
+    exact not_le_of_gt (by linarith : -y < 0) hq.1
+  have haux := auxFunction1_tangent_y_QuarterPlaneOpen_to_antidiag_segment
+    p hp hy_pos hneg_x hxy
+  have hdx : DxuCandidate p x y = DyauxFunction1 p y x := by
+    simp [DxuCandidate, hnotQx, hnotQ2x, hQx]
+  calc
+    uCandidate p (-y) y = auxFunction1 p y (-y) := by
+      simp [uCandidate, hnotQa, hQa]
+    _ ≤ auxFunction1 p y x + DyauxFunction1 p y x * ((-y) - x) := haux
+    _ = uCandidate p x y + DxuCandidate p x y * ((-y) - x) := by
+      simp [uCandidate, hnotQx, hnotQ2x, hQx, hdx]
+
+/--
+First-quadrant estimate from the antidiagonal to the right, along A2.
+
+This is the auxiliary form of moving left from the antidiagonal into Q2 in the
+original coordinates.  The whole open segment lies in A2; only the starting
+point is on the antidiagonal boundary.
+-/
+lemma auxFunction1_tangent_x_antidiag_to_right_segment
+    (p : ℝ) (hp : 2 < p) {x z : ℝ}
+    (hx : 0 < x) (hxz : x < z) :
+    auxFunction1 p z (-x) ≤
+      auxFunction1 p x (-x) + DxauxFunction1 p x (-x) * (z - x) := by
+  have hp' : 2 ≤ p := by linarith
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+  have hcl_x : closureA2 p x (-x) := by
+    refine ⟨hx.le, le_rfl, ?_⟩
+    exact le_trans (neg_nonpos.mpr hx.le) (mul_nonneg ha_nonneg hx.le)
+  have hz_pos : 0 < z := lt_trans hx hxz
+  have hcl_z : closureA2 p z (-x) := by
+    refine ⟨hz_pos.le, ?_, ?_⟩
+    · linarith
+    · exact le_trans (by linarith : -x ≤ 0) (mul_nonneg ha_nonneg hz_pos.le)
+  have hderiv_x :
+      HasDerivAt (fun t => vGeTwo p t (-x)) (DxauxFunction1 p x (-x)) x := by
+    refine (hasDerivAt_vGeTwo_x_on_antidiag_pos p hp x hx).congr_deriv ?_
+    exact (auxFunction1_Dx_eq_DxvGeTwo p hp' x (-x) hcl_x).symm
+  have h_v :
+      vGeTwo p z (-x) ≤
+        vGeTwo p x (-x) + DxauxFunction1 p x (-x) * (z - x) := by
+    apply vGeTwo_tangent_x_on_Icc_of_A2
+      (p := p) (hp := hp') (lo := x) (hi := z)
+      (x := x) (z := z) (y := -x)
+    · intro t ht
+      have htIoo : t ∈ Set.Ioo x z := by
+        simpa [interior_Icc] using ht
+      have ht_pos : 0 < t := lt_trans hx htIoo.1
+      refine ⟨ht_pos, by linarith [htIoo.1], ?_⟩
+      exact lt_of_lt_of_le (by linarith : -x < 0)
+        (mul_nonneg ha_nonneg ht_pos.le)
+    · exact ⟨le_rfl, hxz.le⟩
+    · exact ⟨hxz.le, le_rfl⟩
+    · exact hderiv_x
+  simpa [auxFunction1_eq_vGeTwo p hp' z (-x) hcl_z,
+    auxFunction1_eq_vGeTwo p hp' x (-x) hcl_x] using h_v
+
+/--
+Horizontal tangent estimate from the antidiagonal into Q2.
+
+This is the original-coordinate wrapper for
+`auxFunction1_tangent_x_antidiag_to_right_segment`.
+-/
+lemma uCandidate_tangent_x_antidiag_to_QuarterPlane2Open_segment
+    (p : ℝ) (hp : 2 < p) {z y : ℝ}
+    (hy_pos : 0 < y) (hz_left : z < -y) :
+    uCandidate p z y ≤
+      uCandidate p (-y) y + DxuCandidate p (-y) y * (z - (-y)) := by
+  have hQa : QuarterPlane2 (-y) y := ⟨by linarith, by linarith, by linarith⟩
+  have hz_neg : z < 0 := by linarith
+  have hQz : QuarterPlane2 z y :=
+    ⟨le_of_lt hz_neg, le_of_lt (by linarith : y < -z),
+      le_of_lt (by linarith : z < y)⟩
+  have hnotQa : ¬ QuarterPlane (-y) y := by
+    intro hq
+    exact not_le_of_gt (by linarith : -y < 0) hq.1
+  have hnotQz : ¬ QuarterPlane z y := by
+    intro hq
+    exact not_le_of_gt hz_neg hq.1
+  have haux := auxFunction1_tangent_x_antidiag_to_right_segment
+    p hp hy_pos (by linarith : y < -z)
+  have hdx : DxuCandidate p (-y) y = -DxauxFunction1 p y (-y) := by
+    simp [DxuCandidate, hnotQa, hQa]
+  calc
+    uCandidate p z y = auxFunction1 p (-z) (-y) := by
+      simp [uCandidate, hnotQz, hQz]
+    _ ≤ auxFunction1 p y (-y) + DxauxFunction1 p y (-y) * ((-z) - y) := haux
+    _ = uCandidate p (-y) y + DxuCandidate p (-y) y * (z - (-y)) := by
+      simp [uCandidate, hnotQa, hQa, hdx]
+      ring
+
+/--
+Derivative comparison from an interior first-quadrant point down to the
+antidiagonal.
+
+This is the derivative monotonicity input for the backward glue across the
+antidiagonal.
+-/
+lemma DyauxFunction1_QuarterPlaneOpen_le_antidiag
+    (p : ℝ) (hp : 2 < p) {x y : ℝ}
+    (hx : 0 < x) (hy_lower : -x < y) (hy_upper : y < x) :
+    DyauxFunction1 p x y ≤ DyauxFunction1 p x (-x) := by
+  have hp' : 2 ≤ p := by linarith
+  let c : ℝ := (a p) * x
+  have hc_lt_x : c < x := by
+    have hlt : a p < 1 := a_lt_one_of_two_le p hp'
+    simpa [c] using mul_lt_mul_of_pos_right hlt hx
+  have hneg_c : -x < c := by
+    have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+    nlinarith [mul_nonneg ha_nonneg hx.le]
+  by_cases hyc : y ≤ c
+  · have hcl_y : closureA2 p x y := ⟨hx.le, le_of_lt hy_lower, hyc⟩
+    have hcl_a : closureA2 p x (-x) := by
+      have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+      exact ⟨hx.le, le_rfl,
+        le_trans (neg_nonpos.mpr hx.le) (mul_nonneg ha_nonneg hx.le)⟩
+    have hanti :
+        AntitoneOn (fun t : ℝ => DyvGeTwo p x t) (Set.Icc (-x) y) := by
+      have hcont : ContinuousOn (fun t : ℝ => DyvGeTwo p x t) (Set.Icc (-x) y) := by
+        have hpair : ContinuousOn (fun t : ℝ => (x, t)) (Set.Icc (-x) y) :=
+          (by continuity : Continuous (fun t : ℝ => (x, t))).continuousOn
+        exact (continuousOn_DyvGeTwo_closureA2 p hp').comp hpair (by
+          intro t ht
+          exact ⟨hx.le, ht.1, le_trans ht.2 hyc⟩)
+      refine antitoneOn_of_hasDerivWithinAt_nonpos
+        (D := Set.Icc (-x) y)
+        (f := fun t : ℝ => DyvGeTwo p x t)
+        (f' := fun t : ℝ => deriv (fun s => DyvGeTwo p x s) t)
+        (convex_Icc (-x) y) hcont ?_ ?_
+      · intro t ht
+        have htIoo : t ∈ Set.Ioo (-x) y := by
+          simpa [interior_Icc] using ht
+        have hsum : 0 < (x + t) / 2 := by linarith [htIoo.1]
+        have hdiff : 0 < (x - t) / 2 := by linarith [htIoo.2, hy_upper]
+        exact (differentiableAt_DyvGeTwo_y_of_pos p x t hsum hdiff).hasDerivAt.hasDerivWithinAt
+      · intro t ht
+        have htIoo : t ∈ Set.Ioo (-x) y := by
+          simpa [interior_Icc] using ht
+        exact deriv_DyvGeTwo_y_nonpos_on_A2 p hp' x t
+          ⟨hx, htIoo.1, lt_of_lt_of_le htIoo.2 hyc⟩
+    have ha_mem : (-x) ∈ Set.Icc (-x) y := ⟨le_rfl, hy_lower.le⟩
+    have hy_mem : y ∈ Set.Icc (-x) y := ⟨hy_lower.le, le_rfl⟩
+    have hle : DyvGeTwo p x y ≤ DyvGeTwo p x (-x) :=
+      hanti ha_mem hy_mem hy_lower.le
+    simpa [auxFunction1_Dy_eq_DyvGeTwo p hp' x y hcl_y,
+      auxFunction1_Dy_eq_DyvGeTwo p hp' x (-x) hcl_a] using hle
+  · have hcy : c < y := lt_of_not_ge hyc
+    have hcl_y : closureA1 p x y := ⟨hx.le, le_of_lt hcy, le_of_lt hy_upper⟩
+    have hcl_c : closureA1 p x c := ⟨hx.le, le_rfl, le_of_lt hc_lt_x⟩
+    have h_eq : DyauxFunction1 p x y = DyauxFunction1 p x c := by
+      rw [auxFunction1_Dy_eq_DyuA1 p x y hcl_y,
+        auxFunction1_Dy_eq_DyuA1 p x c hcl_c]
+      simp [DyuA1]
+    calc
+      DyauxFunction1 p x y = DyauxFunction1 p x c := h_eq
+      _ ≤ DyauxFunction1 p x (-x) := by
+        simpa [c] using DyauxFunction1_internal_boundary_le_antidiag p hp hx
+
+lemma DxuCandidate_QuarterPlane3Open_le_antidiag
+    (p : ℝ) (hp : 2 < p) {x y : ℝ}
+    (hy_pos : 0 < y) (hneg_x : -y < x) (hxy : x < y) :
+    DxuCandidate p x y ≤ DxuCandidate p (-y) y := by
+  have hQx : QuarterPlane3 x y := ⟨hy_pos.le, le_of_lt hneg_x, le_of_lt hxy⟩
+  have hQa : QuarterPlane2 (-y) y := ⟨by linarith, by linarith, by linarith⟩
+  have hnotQx : ¬ QuarterPlane x y := by
+    intro hq
+    exact not_le_of_gt hxy hq.2.1
+  have hnotQ2x : ¬ QuarterPlane2 x y := by
+    intro hq
+    have hlt : -x < y := by linarith
+    exact not_le_of_gt hlt hq.2.1
+  have hnotQa : ¬ QuarterPlane (-y) y := by
+    intro hq
+    exact not_le_of_gt (by linarith : -y < 0) hq.1
+  have hstart : DxuCandidate p x y = DyauxFunction1 p y x := by
+    simp [DxuCandidate, hnotQx, hnotQ2x, hQx]
+  have hbreak : DxuCandidate p (-y) y = DyauxFunction1 p y (-y) := by
+    have hrel := DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp y hy_pos.le
+    simp [DxuCandidate, hnotQa, hQa, hrel]
+  rw [hstart, hbreak]
+  exact DyauxFunction1_QuarterPlaneOpen_le_antidiag p hp hy_pos hneg_x hxy
+
+lemma uCandidate_tangent_x_cross_QuarterPlane3Open_to_QuarterPlane2Open
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hneg_x : -y < x) (hxy : x < y)
+    (hz_left : z < -y) :
+    uCandidate p z y ≤
+      uCandidate p x y + DxuCandidate p x y * (z - x) := by
+  have h_x_a := uCandidate_tangent_x_QuarterPlane3Open_to_antidiag_segment
+    p hp hy_pos hneg_x hxy
+  have h_a_z := uCandidate_tangent_x_antidiag_to_QuarterPlane2Open_segment
+    p hp hy_pos hz_left
+  have hd := DxuCandidate_QuarterPlane3Open_le_antidiag
+    p hp hy_pos hneg_x hxy
+  exact tangent_glue_two_backward
+    (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
+    hz_left.le hneg_x.le h_x_a h_a_z hd
 
 lemma uCandidate_tangent_x_antidiag_to_diag_segment
     (p : ℝ) (hp : 2 < p) {y : ℝ}
@@ -6227,6 +6553,113 @@ lemma DxuCandidate_diag_le_antidiag_pos
     _ ≤ DyauxFunction1 p y (-y) := by
       simpa [c] using DyauxFunction1_internal_boundary_le_antidiag p hp hy_pos
     _ = DxuCandidate p (-y) y := hant_eq.symm
+
+/--
+Horizontal tangent estimate from the diagonal down to the antidiagonal.
+
+This is the endpoint case of the first-quadrant vertical estimate after the
+Q3 reflection.  The auxiliary lemma allows the closed endpoint `z = -y`.
+-/
+lemma uCandidate_tangent_x_diag_to_antidiag_segment
+    (p : ℝ) (hp : 2 < p) {y : ℝ}
+    (hy_pos : 0 < y) :
+    uCandidate p (-y) y ≤
+      uCandidate p y y + DxuCandidate p y y * ((-y) - y) := by
+  have hQd : QuarterPlane y y := ⟨hy_pos.le, le_rfl, by linarith⟩
+  have hQa : QuarterPlane2 (-y) y := ⟨by linarith, by linarith, by linarith⟩
+  have hnotQa : ¬ QuarterPlane (-y) y := by
+    intro hq
+    exact not_le_of_gt (by linarith : -y < 0) hq.1
+  have haux := auxFunction1_tangent_y_diag_to_QuarterPlaneOpen_segment
+    p hp hy_pos le_rfl (by linarith : -y < y)
+  have hdx : DxuCandidate p y y = DyauxFunction1 p y y := by
+    have h := DxauxFunction1_eq_DyauxFunction1_on_diag p hp y hy_pos.le
+    simp [DxuCandidate, hQd, h]
+  calc
+    uCandidate p (-y) y = auxFunction1 p y (-y) := by
+      simp [uCandidate, hnotQa, hQa]
+    _ ≤ auxFunction1 p y y + DyauxFunction1 p y y * ((-y) - y) := haux
+    _ = uCandidate p y y + DxuCandidate p y y * ((-y) - y) := by
+      simp [uCandidate, hQd, hdx]
+
+/--
+Derivative comparison from Q1 all the way to the antidiagonal.
+
+It is just the already proved Q1-to-diagonal comparison followed by the
+diagonal-to-antidiagonal comparison.
+-/
+lemma DxuCandidate_QuarterPlaneOpen_le_antidiag
+    (p : ℝ) (hp : 2 < p) {x y : ℝ}
+    (hy_pos : 0 < y) (hyx : y < x) :
+    DxuCandidate p x y ≤ DxuCandidate p (-y) y := by
+  have hxd := DxuCandidate_QuarterPlaneOpen_le_diag p hp hy_pos hyx
+  have hda := DxuCandidate_diag_le_antidiag_pos p hp hy_pos
+  linarith
+
+/--
+Horizontal tangent estimate from Q1 down to the antidiagonal.
+
+The path is glued at the diagonal.  This is one of the closed endpoint pieces
+needed for the backward horizontal dispatcher.
+-/
+lemma uCandidate_tangent_x_cross_QuarterPlaneOpen_to_antidiag
+    (p : ℝ) (hp : 2 < p) {x y : ℝ}
+    (hy_pos : 0 < y) (hyx : y < x) :
+    uCandidate p (-y) y ≤
+      uCandidate p x y + DxuCandidate p x y * ((-y) - x) := by
+  have h_x_d := uCandidate_tangent_x_QuarterPlaneOpen_to_diag_segment
+    p hp hy_pos hyx
+  have h_d_a := uCandidate_tangent_x_diag_to_antidiag_segment
+    p hp hy_pos
+  have hd := DxuCandidate_QuarterPlaneOpen_le_diag p hp hy_pos hyx
+  exact tangent_glue_two_backward
+    (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
+    (by linarith : -y ≤ y) hyx.le h_x_d h_d_a hd
+
+/--
+Horizontal tangent estimate from the diagonal into Q2.
+
+This glues the closed diagonal-to-antidiagonal piece with the Q2 reflected
+first-quadrant estimate.
+-/
+lemma uCandidate_tangent_x_diag_to_QuarterPlane2Open_segment
+    (p : ℝ) (hp : 2 < p) {z y : ℝ}
+    (hy_pos : 0 < y) (hz_left : z < -y) :
+    uCandidate p z y ≤
+      uCandidate p y y + DxuCandidate p y y * (z - y) := by
+  have h_d_a := uCandidate_tangent_x_diag_to_antidiag_segment
+    p hp hy_pos
+  have h_a_z := uCandidate_tangent_x_antidiag_to_QuarterPlane2Open_segment
+    p hp hy_pos hz_left
+  have hd := DxuCandidate_diag_le_antidiag_pos p hp hy_pos
+  exact tangent_glue_two_backward
+    (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
+    hz_left.le (by linarith : -y ≤ y) h_d_a h_a_z hd
+
+/--
+Horizontal tangent estimate from Q1 into Q2.
+
+The full segment crosses both special lines, so we glue at the diagonal and
+the antidiagonal.  The derivative comparisons are always made against the
+starting point in Q1, as required by `tangent_glue_three_backward`.
+-/
+lemma uCandidate_tangent_x_cross_QuarterPlaneOpen_to_QuarterPlane2Open
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hyx : y < x) (hz_left : z < -y) :
+    uCandidate p z y ≤
+      uCandidate p x y + DxuCandidate p x y * (z - x) := by
+  have h_x_d := uCandidate_tangent_x_QuarterPlaneOpen_to_diag_segment
+    p hp hy_pos hyx
+  have h_d_a := uCandidate_tangent_x_diag_to_antidiag_segment
+    p hp hy_pos
+  have h_a_z := uCandidate_tangent_x_antidiag_to_QuarterPlane2Open_segment
+    p hp hy_pos hz_left
+  have hd_xd := DxuCandidate_QuarterPlaneOpen_le_diag p hp hy_pos hyx
+  have hd_xa := DxuCandidate_QuarterPlaneOpen_le_antidiag p hp hy_pos hyx
+  exact tangent_glue_three_backward
+    (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
+    hz_left.le (by linarith : -y ≤ y) hyx.le
+    h_x_d h_d_a h_a_z hd_xd hd_xa
 
 lemma DxuCandidate_antidiag_le_QuarterPlane2Open
     (p : ℝ) (hp : 2 < p) {x y : ℝ}
@@ -6411,6 +6844,90 @@ lemma uCandidate_tangent_x_forward_of_y_pos_le
   · exact uCandidate_tangent_x_forward_of_y_pos p hp hy_pos hxz_lt
   · simp
 
+/--
+Horizontal tangent dispatcher for targets to the left, with `y > 0`.
+
+The proof follows the geometry of the horizontal segment.  The only possible
+breakpoints are the diagonal `x = y` and the antidiagonal `x = -y`; every case
+below either stays in one open sector or uses one of the glued estimates above.
+-/
+lemma uCandidate_tangent_x_backward_of_y_pos
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hzx : z < x) :
+    uCandidate p z y ≤
+      uCandidate p x y + DxuCandidate p x y * (z - x) := by
+  by_cases hx_right : y < x
+  · by_cases hz_right : y < z
+    · exact uCandidate_tangent_x_on_QuarterPlaneOpen_segment p hp
+        (lt_trans hy_pos hx_right) hx_right (by linarith)
+        (lt_trans hy_pos hz_right) hz_right (by linarith)
+    · have hzy_le : z ≤ y := le_of_not_gt hz_right
+      by_cases hzy_eq : z = y
+      · subst z
+        exact uCandidate_tangent_x_QuarterPlaneOpen_to_diag_segment
+          p hp hy_pos hx_right
+      · have hzy : z < y := lt_of_le_of_ne hzy_le hzy_eq
+        by_cases hz_mid : -y < z
+        · exact uCandidate_tangent_x_cross_QuarterPlaneOpen_to_QuarterPlane3Open
+            p hp hy_pos hx_right hz_mid hzy
+        · have hza_le : z ≤ -y := le_of_not_gt hz_mid
+          by_cases hza_eq : z = -y
+          · subst z
+            exact uCandidate_tangent_x_cross_QuarterPlaneOpen_to_antidiag
+              p hp hy_pos hx_right
+          · have hz_left : z < -y := lt_of_le_of_ne hza_le hza_eq
+            exact uCandidate_tangent_x_cross_QuarterPlaneOpen_to_QuarterPlane2Open
+              p hp hy_pos hx_right hz_left
+  · have hxy_le : x ≤ y := le_of_not_gt hx_right
+    by_cases hxy_eq : x = y
+    · subst x
+      by_cases hz_mid : -y < z
+      · exact uCandidate_tangent_x_diag_to_QuarterPlane3Open_segment
+          p hp hy_pos hz_mid hzx
+      · have hza_le : z ≤ -y := le_of_not_gt hz_mid
+        by_cases hza_eq : z = -y
+        · subst z
+          exact uCandidate_tangent_x_diag_to_antidiag_segment p hp hy_pos
+        · have hz_left : z < -y := lt_of_le_of_ne hza_le hza_eq
+          exact uCandidate_tangent_x_diag_to_QuarterPlane2Open_segment
+            p hp hy_pos hz_left
+    · have hxy : x < y := lt_of_le_of_ne hxy_le hxy_eq
+      by_cases hx_mid : -y < x
+      · by_cases hz_mid : -y < z
+        · exact uCandidate_tangent_x_on_QuarterPlane3Open_segment p hp
+            hy_pos hx_mid hxy hz_mid (lt_trans hzx hxy)
+        · have hza_le : z ≤ -y := le_of_not_gt hz_mid
+          by_cases hza_eq : z = -y
+          · subst z
+            exact uCandidate_tangent_x_QuarterPlane3Open_to_antidiag_segment
+              p hp hy_pos hx_mid hxy
+          · have hz_left : z < -y := lt_of_le_of_ne hza_le hza_eq
+            exact uCandidate_tangent_x_cross_QuarterPlane3Open_to_QuarterPlane2Open
+              p hp hy_pos hx_mid hxy hz_left
+      · have hxa_le : x ≤ -y := le_of_not_gt hx_mid
+        by_cases hxa_eq : x = -y
+        · subst x
+          exact uCandidate_tangent_x_antidiag_to_QuarterPlane2Open_segment
+            p hp hy_pos hzx
+        · have hx_left : x < -y := lt_of_le_of_ne hxa_le hxa_eq
+          exact uCandidate_tangent_x_on_QuarterPlane2Open_segment p hp
+            (by linarith : x < 0)
+            (by linarith : y < -x)
+            (by linarith : x < y)
+            (by linarith : z < 0)
+            (by linarith : y < -z)
+            (by linarith : z < y)
+
+/-- Closed-form version of the left-target horizontal dispatcher. -/
+lemma uCandidate_tangent_x_backward_of_y_pos_le
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hzx : z ≤ x) :
+    uCandidate p z y ≤
+      uCandidate p x y + DxuCandidate p x y * (z - x) := by
+  rcases hzx.lt_or_eq with hzx_lt | rfl
+  · exact uCandidate_tangent_x_backward_of_y_pos p hp hy_pos hzx_lt
+  · simp
+
 lemma uCandidate_tangent_x_nonneg_increment_of_y_pos
     (p : ℝ) (hp : 2 < p) {x y h : ℝ}
     (hy_pos : 0 < y) (hh : 0 ≤ h) :
@@ -6421,6 +6938,34 @@ lemma uCandidate_tangent_x_nonneg_increment_of_y_pos
     p hp hy_pos hxz
   simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using hmain
 
+/-- Horizontal tangent inequality for nonpositive increments, still with `y > 0`. -/
+lemma uCandidate_tangent_x_nonpos_increment_of_y_pos
+    (p : ℝ) (hp : 2 < p) {x y h : ℝ}
+    (hy_pos : 0 < y) (hh : h ≤ 0) :
+    uCandidate p (x + h) y ≤
+      uCandidate p x y + DxuCandidate p x y * h := by
+  have hxz : x + h ≤ x := by linarith
+  have hmain := uCandidate_tangent_x_backward_of_y_pos_le
+    p hp hy_pos hxz
+  simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using hmain
+
+/--
+Horizontal tangent inequality for every increment, with `y > 0`.
+
+This is the one-dimensional form of the desired axis estimate.  The proof only
+chooses the correct dispatcher according to the sign of the increment.
+-/
+lemma uCandidate_tangent_x_increment_of_y_pos
+    (p : ℝ) (hp : 2 < p) {x y h : ℝ}
+    (hy_pos : 0 < y) :
+    uCandidate p (x + h) y ≤
+      uCandidate p x y + DxuCandidate p x y * h := by
+  rcases le_total 0 h with hh | hh
+  · exact uCandidate_tangent_x_nonneg_increment_of_y_pos
+      p hp hy_pos hh
+  · exact uCandidate_tangent_x_nonpos_increment_of_y_pos
+      p hp hy_pos hh
+
 lemma uCandidate_axis_tangent_horizontal_nonneg_of_y_pos
     (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
     (hy_pos : 0 < y) (hh : 0 ≤ h) (hk0 : k = 0) :
@@ -6429,6 +6974,22 @@ lemma uCandidate_axis_tangent_horizontal_nonneg_of_y_pos
   subst k
   have hx := uCandidate_tangent_x_nonneg_increment_of_y_pos
     (p := p) (hp := hp) (x := x) (y := y) (h := h) hy_pos hh
+  simpa using hx
+
+/--
+The horizontal part of the target tangent inequality for `y > 0`.
+
+When `k = 0`, the `DyuCandidate` term vanishes and the estimate reduces to the
+one-dimensional horizontal tangent inequality above.
+-/
+lemma uCandidate_axis_tangent_horizontal_of_y_pos
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hy_pos : 0 < y) (hk0 : k = 0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  subst k
+  have hx := uCandidate_tangent_x_increment_of_y_pos
+    (p := p) (hp := hp) (x := x) (y := y) (h := h) hy_pos
   simpa using hx
 
 /-! ## 10. Other quadrant wrappers and pointwise differentiability -/
@@ -7426,7 +7987,6 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 ≤ p) :
       (∀ x y, A1 p x y → u x y = uA1 p x y) ∧
       (∀ x y, A2 p x y → u x y = vGeTwo p x y) := by
        sorry
-
 
 
 
