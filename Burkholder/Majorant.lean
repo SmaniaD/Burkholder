@@ -9153,7 +9153,85 @@ lemma vGeTwo_le_uCandidate
     (fun {x y} hA1 => vGeTwo_le_uA1_on_closureA1 p hp hA1) x y
 
 
-/-! ## 12. Majorant existence statement -/
+/-! ## 12. uCandidate(p,x,y) <0 If  xy=0 e (x,y) ≠ (0,0)  -/
+
+lemma uCandidate_le_zero_of_xy_zero
+    (p x y : ℝ) (hp : 2 ≤ p)
+    (hxy : x * y = 0) (_hnonzero : (x, y) ≠ (0, 0)) :
+    uCandidate p x y ≤ 0 := by
+  have hv_axis : ∀ t : ℝ, vGeTwo p t 0 ≤ 0 := by
+    intro t
+    have hp_nonneg : 0 ≤ p := by linarith
+    have hbase : (1 : ℝ) ≤ p - 1 := by linarith
+    have hpow : (1 : ℝ) ≤ Real.rpow (p - 1) p := by
+      simpa [Real.one_rpow] using
+        (Real.rpow_le_rpow
+          (by norm_num : (0 : ℝ) ≤ 1) hbase hp_nonneg)
+    have hA_nonneg : 0 ≤ Real.rpow (|t / 2|) p :=
+      Real.rpow_nonneg (abs_nonneg (t / 2)) p
+    have hle :
+        Real.rpow (|t / 2|) p ≤
+          Real.rpow (p - 1) p * Real.rpow (|t / 2|) p := by
+      simpa [one_mul] using mul_le_mul_of_nonneg_right hpow hA_nonneg
+    have hsum : ((t + 0) / 2 : ℝ) = t / 2 := by ring
+    have hdiff : ((t - 0) / 2 : ℝ) = t / 2 := by ring
+    simpa [vGeTwo, hsum, hdiff] using sub_nonpos.mpr hle
+
+  have haux_axis : ∀ t : ℝ, 0 ≤ t → auxFunction1 p t 0 ≤ 0 := by
+    intro t ht
+    have h2 : closureA2 p t 0 := by
+      refine ⟨ht, by linarith, ?_⟩
+      exact mul_nonneg (a_nonneg_of_two_le p hp) ht
+    rw [auxFunction1_eq_vGeTwo p hp t 0 h2]
+    exact hv_axis t
+
+  rcases mem_some_QuarterPlane x y with hQ1 | hrest
+  · rw [uCandidate_eq_Q1 p hQ1]
+    have hy0 : y = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · have hy_le : y ≤ 0 := by simpa [hx0] using hQ1.2.1
+        have hy_ge : 0 ≤ y := by simpa [hx0] using hQ1.2.2
+        exact le_antisymm hy_le hy_ge
+      · exact hy0
+    subst y
+    exact haux_axis x hQ1.1
+
+  rcases hrest with hQ2 | hrest
+  · rw [uCandidate_eq_Q2 p hQ2]
+    have hy0 : y = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · have hy_le : y ≤ 0 := by simpa [hx0] using hQ2.2.1
+        have hy_ge : 0 ≤ y := by simpa [hx0] using hQ2.2.2
+        exact le_antisymm hy_le hy_ge
+      · exact hy0
+    subst y
+    have ht : 0 ≤ -x := by linarith [hQ2.1]
+    simpa using haux_axis (-x) ht
+
+  rcases hrest with hQ3 | hQ4
+  · rw [uCandidate_eq_Q3 p hQ3]
+    have hx0 : x = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · exact hx0
+      · have hx_ge : 0 ≤ x := by simpa [hy0] using hQ3.2.1
+        have hx_le : x ≤ 0 := by simpa [hy0] using hQ3.2.2
+        exact le_antisymm hx_le hx_ge
+    subst x
+    exact haux_axis y hQ3.1
+
+  · rw [uCandidate_eq_Q4 p hQ4]
+    have hx0 : x = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · exact hx0
+      · have hx_ge : 0 ≤ x := by simpa [hy0] using hQ4.2.1
+        have hx_le : x ≤ 0 := by simpa [hy0] using hQ4.2.2
+        exact le_antisymm hx_le hx_ge
+    subst x
+    have ht : 0 ≤ -y := by linarith [hQ4.1]
+    simpa using haux_axis (-y) ht
+
+
+/-! 13. Majorant existence statement -/
 
 /-
 This final theorem is the high-level packaging goal for the candidate.  The
