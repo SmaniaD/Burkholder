@@ -6992,6 +6992,614 @@ lemma uCandidate_axis_tangent_horizontal_of_y_pos
     (p := p) (hp := hp) (x := x) (y := y) (h := h) hy_pos
   simpa using hx
 
+/--
+Central symmetry of the candidate on horizontal lines below the origin.
+
+For `y < 0`, the reflected point `(-x, -y)` lies on the corresponding
+horizontal line with positive second coordinate.  The proof only dispatches the
+three possible regions cut out by `x = y` and `x = -y`.
+-/
+lemma uCandidate_neg_neg_of_y_neg
+    (p : ℝ) {x y : ℝ} (hy_neg : y < 0) :
+    uCandidate p x y = uCandidate p (-x) (-y) := by
+  by_cases hx_left : x ≤ y
+  · have hQ2 : QuarterPlane2 x y := ⟨by linarith, by linarith, hx_left⟩
+    have hQ_ref : QuarterPlane (-x) (-y) :=
+      ⟨by linarith, by linarith, by linarith⟩
+    have hnotQ : ¬ QuarterPlane x y := by
+      intro hq
+      linarith [hq.1]
+    simp [uCandidate, hnotQ, hQ2, hQ_ref]
+  · have hyx : y < x := lt_of_not_ge hx_left
+    by_cases hx_mid : x < -y
+    · have hQ4 : QuarterPlane4 x y := ⟨hy_neg.le, hyx.le, hx_mid.le⟩
+      have hQ3_ref : QuarterPlane3 (-x) (-y) :=
+        ⟨by linarith, by linarith, by linarith⟩
+      have hnotQ : ¬ QuarterPlane x y := by
+        intro hq
+        linarith [hq.2.2]
+      have hnotQ2 : ¬ QuarterPlane2 x y := by
+        intro hq
+        linarith [hq.2.2]
+      have hnotQ3 : ¬ QuarterPlane3 x y := by
+        intro hq
+        linarith [hq.1]
+      have hnotQ_ref : ¬ QuarterPlane (-x) (-y) := by
+        intro hq
+        linarith [hq.2.1]
+      have hnotQ2_ref : ¬ QuarterPlane2 (-x) (-y) := by
+        intro hq
+        have hle : -y ≤ x := by simpa using hq.2.1
+        linarith
+      simp [uCandidate, hnotQ, hnotQ2, hnotQ3, hQ4, hnotQ_ref, hnotQ2_ref, hQ3_ref]
+    · have hx_right : -y ≤ x := le_of_not_gt hx_mid
+      have hQ : QuarterPlane x y := ⟨by linarith, by linarith, by linarith⟩
+      have hQ2_ref : QuarterPlane2 (-x) (-y) :=
+        ⟨by linarith, by linarith, by linarith⟩
+      have hnotQ_ref : ¬ QuarterPlane (-x) (-y) := by
+        intro hq
+        linarith [hq.1]
+      simp [uCandidate, hQ, hnotQ_ref, hQ2_ref]
+
+/--
+The x-partial changes sign under the same central reflection.
+
+This is the derivative counterpart of `uCandidate_neg_neg_of_y_neg`, used to
+transport the positive-`y` horizontal tangent inequality to `y < 0`.
+-/
+lemma DxuCandidate_neg_neg_of_y_neg
+    (p : ℝ) {x y : ℝ} (hy_neg : y < 0) :
+    DxuCandidate p x y = -DxuCandidate p (-x) (-y) := by
+  by_cases hx_left : x ≤ y
+  · have hQ2 : QuarterPlane2 x y := ⟨by linarith, by linarith, hx_left⟩
+    have hQ_ref : QuarterPlane (-x) (-y) :=
+      ⟨by linarith, by linarith, by linarith⟩
+    have hnotQ : ¬ QuarterPlane x y := by
+      intro hq
+      linarith [hq.1]
+    simp [DxuCandidate, hnotQ, hQ2, hQ_ref]
+  · have hyx : y < x := lt_of_not_ge hx_left
+    by_cases hx_mid : x < -y
+    · have hQ4 : QuarterPlane4 x y := ⟨hy_neg.le, hyx.le, hx_mid.le⟩
+      have hQ3_ref : QuarterPlane3 (-x) (-y) :=
+        ⟨by linarith, by linarith, by linarith⟩
+      have hnotQ : ¬ QuarterPlane x y := by
+        intro hq
+        linarith [hq.2.2]
+      have hnotQ2 : ¬ QuarterPlane2 x y := by
+        intro hq
+        linarith [hq.2.2]
+      have hnotQ3 : ¬ QuarterPlane3 x y := by
+        intro hq
+        linarith [hq.1]
+      have hnotQ_ref : ¬ QuarterPlane (-x) (-y) := by
+        intro hq
+        linarith [hq.2.1]
+      have hnotQ2_ref : ¬ QuarterPlane2 (-x) (-y) := by
+        intro hq
+        have hle : -y ≤ x := by simpa using hq.2.1
+        linarith
+      simp [DxuCandidate, hnotQ, hnotQ2, hnotQ3, hQ4, hnotQ_ref, hnotQ2_ref, hQ3_ref]
+    · have hx_right : -y ≤ x := le_of_not_gt hx_mid
+      have hQ : QuarterPlane x y := ⟨by linarith, by linarith, by linarith⟩
+      have hQ2_ref : QuarterPlane2 (-x) (-y) :=
+        ⟨by linarith, by linarith, by linarith⟩
+      have hnotQ_ref : ¬ QuarterPlane (-x) (-y) := by
+        intro hq
+        linarith [hq.1]
+      simp [DxuCandidate, hQ, hnotQ_ref, hQ2_ref]
+
+/-- Horizontal tangent inequality for every increment, with `y < 0`. -/
+lemma uCandidate_tangent_x_increment_of_y_neg
+    (p : ℝ) (hp : 2 < p) {x y h : ℝ}
+    (hy_neg : y < 0) :
+    uCandidate p (x + h) y ≤
+      uCandidate p x y + DxuCandidate p x y * h := by
+  have hpos : 0 < -y := by linarith
+  have hmain := uCandidate_tangent_x_increment_of_y_pos
+    (p := p) (hp := hp) (x := -x) (y := -y) (h := -h) hpos
+  have hstart := uCandidate_neg_neg_of_y_neg (p := p) (x := x) (y := y) hy_neg
+  have hend := uCandidate_neg_neg_of_y_neg (p := p) (x := x + h) (y := y) hy_neg
+  have hdx := DxuCandidate_neg_neg_of_y_neg (p := p) (x := x) (y := y) hy_neg
+  calc
+    uCandidate p (x + h) y = uCandidate p (-(x + h)) (-y) := hend
+    _ = uCandidate p ((-x) + (-h)) (-y) := by ring
+    _ ≤ uCandidate p (-x) (-y) + DxuCandidate p (-x) (-y) * (-h) := hmain
+    _ = uCandidate p x y + DxuCandidate p x y * h := by
+      rw [← hstart, hdx]
+      ring
+
+/--
+The horizontal part of the target tangent inequality for `y < 0`.
+
+The proof is the reflected version of the positive-`y` estimate.
+-/
+lemma uCandidate_axis_tangent_horizontal_of_y_neg
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hy_neg : y < 0) (hk0 : k = 0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  subst k
+  have hx := uCandidate_tangent_x_increment_of_y_neg
+    (p := p) (hp := hp) (x := x) (y := y) (h := h) hy_neg
+  simpa using hx
+
+/--
+Horizontal tangent inequality away from the x-axis.
+
+The positive half-plane is proved by sector decomposition; the negative
+half-plane is its central reflection.
+-/
+lemma uCandidate_axis_tangent_horizontal_of_y_ne_zero
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hy_ne : y ≠ 0) (hk0 : k = 0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  rcases lt_or_gt_of_ne hy_ne with hy_neg | hy_pos
+  · exact uCandidate_axis_tangent_horizontal_of_y_neg p hp hy_neg hk0
+  · exact uCandidate_axis_tangent_horizontal_of_y_pos p hp hy_pos hk0
+
+/--
+Horizontal tangent inequality on the x-axis.
+
+Instead of redoing the collapsed sector geometry at `y = 0`, we approach the
+axis from the upper half-plane.  The inequality is known for every `yy > 0`,
+and the global continuity of `uCandidate` and `DxuCandidate` lets us pass to
+the one-sided limit `yy → 0+`.
+-/
+lemma uCandidate_tangent_x_increment_of_y_zero
+    (p : ℝ) (hp : 2 < p) {x h : ℝ} :
+    uCandidate p (x + h) 0 ≤
+      uCandidate p x 0 + DxuCandidate p x 0 * h := by
+  have hp' : 2 ≤ p := by linarith
+  have hcontU : Continuous (fun z : ℝ × ℝ => uCandidate p z.1 z.2) :=
+    continuousOn_univ.mp (continuousuCandidate p hp')
+  have hcontDx : Continuous (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) :=
+    continuousOn_univ.mp (continuousDxuCandidate p hp)
+  have htend_lhs :
+      Filter.Tendsto (fun yy : ℝ => uCandidate p (x + h) yy)
+        (nhdsWithin 0 (Set.Ioi 0)) (nhds (uCandidate p (x + h) 0)) := by
+    have hline : Continuous (fun yy : ℝ => ((x + h), yy)) := by continuity
+    have hcomp : Continuous (fun yy : ℝ => uCandidate p (x + h) yy) := by
+      simpa [Function.comp_def] using hcontU.comp hline
+    exact (hcomp.tendsto 0).mono_left nhdsWithin_le_nhds
+  have htend_rhs :
+      Filter.Tendsto
+        (fun yy : ℝ => uCandidate p x yy + DxuCandidate p x yy * h)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (uCandidate p x 0 + DxuCandidate p x 0 * h)) := by
+    have hline : Continuous (fun yy : ℝ => (x, yy)) := by continuity
+    have hUx : Continuous (fun yy : ℝ => uCandidate p x yy) := by
+      simpa [Function.comp_def] using hcontU.comp hline
+    have hDxx : Continuous (fun yy : ℝ => DxuCandidate p x yy) := by
+      simpa [Function.comp_def] using hcontDx.comp hline
+    have htotal :
+        Continuous (fun yy : ℝ => uCandidate p x yy + DxuCandidate p x yy * h) :=
+      hUx.add (hDxx.mul continuous_const)
+    exact (htotal.tendsto 0).mono_left nhdsWithin_le_nhds
+  have hineq :
+      (fun yy : ℝ => uCandidate p (x + h) yy) ≤ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+        fun yy : ℝ => uCandidate p x yy + DxuCandidate p x yy * h := by
+    exact eventually_nhdsWithin_of_forall fun yy hyy =>
+      uCandidate_tangent_x_increment_of_y_pos
+        (p := p) (hp := hp) (x := x) (y := yy) (h := h) hyy
+  exact le_of_tendsto_of_tendsto htend_lhs htend_rhs hineq
+
+/-- The horizontal part of the target tangent inequality on the x-axis. -/
+lemma uCandidate_axis_tangent_horizontal_of_y_zero
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hy0 : y = 0) (hk0 : k = 0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  subst y
+  subst k
+  have hx := uCandidate_tangent_x_increment_of_y_zero
+    (p := p) (hp := hp) (x := x) (h := h)
+  simpa using hx
+
+/--
+Horizontal tangent inequality for every horizontal line.
+
+This is the complete `k = 0` case of the displayed inequality for `p > 2`.
+-/
+lemma uCandidate_axis_tangent_horizontal
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hk0 : k = 0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  rcases lt_trichotomy y 0 with hy_neg | hy0 | hy_pos
+  · exact uCandidate_axis_tangent_horizontal_of_y_neg p hp hy_neg hk0
+  · exact uCandidate_axis_tangent_horizontal_of_y_zero p hp hy0 hk0
+  · exact uCandidate_axis_tangent_horizontal_of_y_pos p hp hy_pos hk0
+
+/-! ### Swap symmetry for the vertical axis case -/
+
+/--
+Formula selected by `uCandidate` on Q1.
+
+Q1 is the first branch in the definition, so no boundary correction is needed.
+-/
+lemma uCandidate_eq_Q1
+    (p : ℝ) {x y : ℝ} (hQ : QuarterPlane x y) :
+    uCandidate p x y = auxFunction1 p x y := by
+  simp [uCandidate, hQ]
+
+/--
+Formula selected by `uCandidate` on Q2.
+
+If Q1 also holds, the point is the origin and the two formulas agree.
+-/
+lemma uCandidate_eq_Q2
+    (p : ℝ) {x y : ℝ} (hQ : QuarterPlane2 x y) :
+    uCandidate p x y = auxFunction1 p (-x) (-y) := by
+  by_cases hQ1 : QuarterPlane x y
+  · obtain ⟨hx0, hyx, _⟩ := hQ1
+    obtain ⟨hx1, _, hxy⟩ := hQ
+    have hx : x = 0 := le_antisymm hx1 hx0
+    have hy : y = 0 := by
+      have hy_le : y ≤ 0 := by simpa [hx] using hyx
+      have hy_ge : 0 ≤ y := by simpa [hx] using hxy
+      exact le_antisymm hy_le hy_ge
+    subst x
+    subst y
+    simp [uCandidate, auxFunction1, QuarterPlane, closureA1, uA1]
+  · simp [uCandidate, hQ1, hQ]
+
+/--
+Formula selected by `uCandidate` on Q3.
+
+On overlaps with earlier branches the diagonal or antidiagonal compatibility
+lemmas make the displayed formula agree with the branch chosen by the `if`.
+-/
+lemma uCandidate_eq_Q3
+    (p : ℝ) {x y : ℝ} (hQ : QuarterPlane3 x y) :
+    uCandidate p x y = auxFunction1 p y x := by
+  by_cases hQ1 : QuarterPlane x y
+  · have hbranch := uCandidate_eq_Q1 p (hQ := hQ1)
+    obtain ⟨_, hyx, _⟩ := hQ1
+    obtain ⟨_, _, hxy⟩ := hQ
+    have hxy' : x = y := le_antisymm hxy hyx
+    calc
+      uCandidate p x y = auxFunction1 p x y := hbranch
+      _ = auxFunction1 p y x := by rw [hxy']
+  · by_cases hQ2 : QuarterPlane2 x y
+    · have hbranch := uCandidate_eq_Q2 p (hQ := hQ2)
+      obtain ⟨_, hynegx, _⟩ := hQ2
+      obtain ⟨_, hnegyx, _⟩ := hQ
+      have hx : x = -y := le_antisymm (by linarith [hynegx]) hnegyx
+      calc
+        uCandidate p x y = auxFunction1 p (-x) (-y) := hbranch
+        _ = auxFunction1 p y x := by rw [hx]; simp
+    · simp [uCandidate, hQ1, hQ2, hQ]
+
+/--
+Formula selected by `uCandidate` on Q4.
+
+This is the last branch, with boundary corrections for all earlier overlaps.
+-/
+lemma uCandidate_eq_Q4
+    (p : ℝ) {x y : ℝ} (hQ : QuarterPlane4 x y) :
+    uCandidate p x y = auxFunction1 p (-y) (-x) := by
+  by_cases hQ1 : QuarterPlane x y
+  · have hbranch := uCandidate_eq_Q1 p (hQ := hQ1)
+    obtain ⟨_, _, hnegxy⟩ := hQ1
+    obtain ⟨_, _, hxnegy⟩ := hQ
+    have hy : y = -x := by linarith
+    calc
+      uCandidate p x y = auxFunction1 p x y := hbranch
+      _ = auxFunction1 p (-y) (-x) := by rw [hy]; simp
+  · by_cases hQ2 : QuarterPlane2 x y
+    · have hbranch := uCandidate_eq_Q2 p (hQ := hQ2)
+      obtain ⟨_, _, hxy⟩ := hQ2
+      obtain ⟨_, hyx, _⟩ := hQ
+      have hxy' : x = y := le_antisymm hxy hyx
+      calc
+        uCandidate p x y = auxFunction1 p (-x) (-y) := hbranch
+        _ = auxFunction1 p (-y) (-x) := by rw [hxy']
+    · by_cases hQ3 : QuarterPlane3 x y
+      · have hbranch := uCandidate_eq_Q3 p (hQ := hQ3)
+        obtain ⟨hy0, hnegyx, _⟩ := hQ3
+        obtain ⟨hy1, _, hxnegy⟩ := hQ
+        have hy : y = 0 := le_antisymm hy1 hy0
+        have hx : x = 0 := by
+          have hx_le : x ≤ 0 := by simpa [hy] using hxnegy
+          have hx_ge : 0 ≤ x := by simpa [hy] using hnegyx
+          exact le_antisymm hx_le hx_ge
+        calc
+          uCandidate p x y = auxFunction1 p y x := hbranch
+          _ = auxFunction1 p (-y) (-x) := by rw [hx, hy]; simp
+      · simp [uCandidate, hQ1, hQ2, hQ3, hQ]
+
+/--
+The sector decomposition covers the plane.
+
+This is a reusable version of the cover argument used by the continuity proofs.
+-/
+lemma mem_some_QuarterPlane (x y : ℝ) :
+    QuarterPlane x y ∨ QuarterPlane2 x y ∨ QuarterPlane3 x y ∨ QuarterPlane4 x y := by
+  by_cases hxy : |x| ≤ |y|
+  · by_cases hy : 0 ≤ y
+    · have habs : |x| ≤ y := by simpa [abs_of_nonneg hy] using hxy
+      rcases abs_le.mp habs with ⟨h1, h2⟩
+      exact Or.inr (Or.inr (Or.inl ⟨hy, h1, h2⟩))
+    · have hy' : y < 0 := lt_of_not_ge hy
+      have habs : |x| ≤ -y := by simpa [abs_of_neg hy'] using hxy
+      rcases abs_le.mp habs with ⟨h1, h2⟩
+      have h1' : y ≤ x := by simpa using h1
+      exact Or.inr (Or.inr (Or.inr ⟨le_of_lt hy', h1', h2⟩))
+  · have hyx : |y| ≤ |x| := le_of_lt (not_le.mp hxy)
+    by_cases hx : 0 ≤ x
+    · have habs : |y| ≤ x := by simpa [abs_of_nonneg hx] using hyx
+      rcases abs_le.mp habs with ⟨h1, h2⟩
+      exact Or.inl ⟨hx, h2, h1⟩
+    · have hx' : x < 0 := lt_of_not_ge hx
+      have habs : |y| ≤ -x := by simpa [abs_of_neg hx'] using hyx
+      rcases abs_le.mp habs with ⟨h1, h2⟩
+      have h1' : x ≤ y := by simpa using h1
+      exact Or.inr (Or.inl ⟨le_of_lt hx', h2, h1'⟩)
+
+/-- `uCandidate` is symmetric under swapping the coordinates. -/
+lemma uCandidate_swap
+    (p : ℝ) (x y : ℝ) :
+    uCandidate p x y = uCandidate p y x := by
+  rcases mem_some_QuarterPlane x y with hQ1 | hrest
+  · have hswap : QuarterPlane3 y x := ⟨hQ1.1, hQ1.2.2, hQ1.2.1⟩
+    rw [uCandidate_eq_Q1 p hQ1, uCandidate_eq_Q3 p hswap]
+  rcases hrest with hQ2 | hrest
+  · have hswap : QuarterPlane4 y x := ⟨hQ2.1, hQ2.2.2, hQ2.2.1⟩
+    rw [uCandidate_eq_Q2 p hQ2, uCandidate_eq_Q4 p hswap]
+  rcases hrest with hQ3 | hQ4
+  · have hswap : QuarterPlane y x := ⟨hQ3.1, hQ3.2.2, hQ3.2.1⟩
+    rw [uCandidate_eq_Q3 p hQ3, uCandidate_eq_Q1 p hswap]
+  · have hswap : QuarterPlane2 y x := ⟨hQ4.1, hQ4.2.2, hQ4.2.1⟩
+    rw [uCandidate_eq_Q4 p hQ4, uCandidate_eq_Q2 p hswap]
+
+/-- Formula selected by `DxuCandidate` on Q1. -/
+lemma DxuCandidate_eq_Q1
+    (p : ℝ) {x y : ℝ} (hQ : QuarterPlane x y) :
+    DxuCandidate p x y = DxauxFunction1 p x y := by
+  simp [DxuCandidate, hQ]
+
+/-- Formula selected by `DxuCandidate` on Q2, with boundary compatibility. -/
+lemma DxuCandidate_eq_Q2
+    (p : ℝ) {x y : ℝ} (hQ : QuarterPlane2 x y) :
+    DxuCandidate p x y = -DxauxFunction1 p (-x) (-y) := by
+  by_cases hQ1 : QuarterPlane x y
+  · obtain ⟨hx0, hyx, _⟩ := hQ1
+    obtain ⟨hx1, _, hxy⟩ := hQ
+    have hx : x = 0 := le_antisymm hx1 hx0
+    have hy : y = 0 := by
+      have hy_le : y ≤ 0 := by simpa [hx] using hyx
+      have hy_ge : 0 ≤ y := by simpa [hx] using hxy
+      exact le_antisymm hy_le hy_ge
+    subst x
+    subst y
+    simp [DxuCandidate, DxauxFunction1, QuarterPlane, closureA1, DxuA1]
+  · simp [DxuCandidate, hQ1, hQ]
+
+/-- Formula selected by `DxuCandidate` on Q3, with boundary compatibility. -/
+lemma DxuCandidate_eq_Q3
+    (p : ℝ) (hp : 2 < p) {x y : ℝ} (hQ : QuarterPlane3 x y) :
+    DxuCandidate p x y = DyauxFunction1 p y x := by
+  by_cases hQ1 : QuarterPlane x y
+  · have hbranch := DxuCandidate_eq_Q1 p (hQ := hQ1)
+    obtain ⟨_, hyx, _⟩ := hQ1
+    obtain ⟨hy0, _, hxy⟩ := hQ
+    have hxy' : x = y := le_antisymm hxy hyx
+    subst x
+    calc
+      DxuCandidate p y y = DxauxFunction1 p y y := hbranch
+      _ = DyauxFunction1 p y y := DxauxFunction1_eq_DyauxFunction1_on_diag p hp y hy0
+  · by_cases hQ2 : QuarterPlane2 x y
+    · have hbranch := DxuCandidate_eq_Q2 p (hQ := hQ2)
+      obtain ⟨_, hynegx, _⟩ := hQ2
+      obtain ⟨hy0, hnegyx, _⟩ := hQ
+      have hx : x = -y := le_antisymm (by linarith [hynegx]) hnegyx
+      subst x
+      have hrel := DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp y hy0
+      have h' : -DxauxFunction1 p y (-y) = DyauxFunction1 p y (-y) := by
+        linarith
+      calc
+        DxuCandidate p (-y) y = -DxauxFunction1 p (-(-y)) (-y) := hbranch
+        _ = -DxauxFunction1 p y (-y) := by simp
+        _ = DyauxFunction1 p y (-y) := h'
+    · simp [DxuCandidate, hQ1, hQ2, hQ]
+
+/-- Formula selected by `DxuCandidate` on Q4, with boundary compatibility. -/
+lemma DxuCandidate_eq_Q4
+    (p : ℝ) (hp : 2 < p) {x y : ℝ} (hQ : QuarterPlane4 x y) :
+    DxuCandidate p x y = -DyauxFunction1 p (-y) (-x) := by
+  by_cases hQ1 : QuarterPlane x y
+  · have hbranch := DxuCandidate_eq_Q1 p (hQ := hQ1)
+    obtain ⟨hx0, _, hnegxy⟩ := hQ1
+    obtain ⟨_, _, hxnegy⟩ := hQ
+    have hy : y = -x := by linarith
+    subst y
+    calc
+      DxuCandidate p x (-x) = DxauxFunction1 p x (-x) := hbranch
+      _ = -DyauxFunction1 p x (-x) :=
+        DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp x hx0
+      _ = -DyauxFunction1 p (-(-x)) (-x) := by simp
+  · by_cases hQ2 : QuarterPlane2 x y
+    · have hbranch := DxuCandidate_eq_Q2 p (hQ := hQ2)
+      obtain ⟨hx0, _, hxy⟩ := hQ2
+      obtain ⟨_, hyx, _⟩ := hQ
+      have hxy' : x = y := le_antisymm hxy hyx
+      subst x
+      have hnonneg : 0 ≤ -y := by linarith
+      have hdiag := DxauxFunction1_eq_DyauxFunction1_on_diag p hp (-y) hnonneg
+      calc
+        DxuCandidate p y y = -DxauxFunction1 p (-y) (-y) := hbranch
+        _ = -DyauxFunction1 p (-y) (-y) := by rw [hdiag]
+    · by_cases hQ3 : QuarterPlane3 x y
+      · have hbranch := DxuCandidate_eq_Q3 p hp (hQ := hQ3)
+        obtain ⟨hy0, hnegyx, _⟩ := hQ3
+        obtain ⟨hy1, _, hxnegy⟩ := hQ
+        have hy : y = 0 := le_antisymm hy1 hy0
+        have hx : x = 0 := by
+          have hx_le : x ≤ 0 := by simpa [hy] using hxnegy
+          have hx_ge : 0 ≤ x := by simpa [hy] using hnegyx
+          exact le_antisymm hx_le hx_ge
+        subst x
+        subst y
+        simpa [DyauxFunction1, closureA1, DyuA1] using hbranch
+      · simp [DxuCandidate, hQ1, hQ2, hQ3, hQ]
+
+/-- Formula selected by `DyuCandidate` on Q1. -/
+lemma DyuCandidate_eq_Q1
+    (p : ℝ) {x y : ℝ} (hQ : QuarterPlane x y) :
+    DyuCandidate p x y = DyauxFunction1 p x y := by
+  simp [DyuCandidate, hQ]
+
+/-- Formula selected by `DyuCandidate` on Q2, with boundary compatibility. -/
+lemma DyuCandidate_eq_Q2
+    (p : ℝ) {x y : ℝ} (hQ : QuarterPlane2 x y) :
+    DyuCandidate p x y = -DyauxFunction1 p (-x) (-y) := by
+  by_cases hQ1 : QuarterPlane x y
+  · obtain ⟨hx0, hyx, _⟩ := hQ1
+    obtain ⟨hx1, _, hxy⟩ := hQ
+    have hx : x = 0 := le_antisymm hx1 hx0
+    have hy : y = 0 := by
+      have hy_le : y ≤ 0 := by simpa [hx] using hyx
+      have hy_ge : 0 ≤ y := by simpa [hx] using hxy
+      exact le_antisymm hy_le hy_ge
+    subst x
+    subst y
+    simp [DyuCandidate, DyauxFunction1, QuarterPlane, closureA1, DyuA1]
+  · simp [DyuCandidate, hQ1, hQ]
+
+/-- Formula selected by `DyuCandidate` on Q3, with boundary compatibility. -/
+lemma DyuCandidate_eq_Q3
+    (p : ℝ) (hp : 2 < p) {x y : ℝ} (hQ : QuarterPlane3 x y) :
+    DyuCandidate p x y = DxauxFunction1 p y x := by
+  by_cases hQ1 : QuarterPlane x y
+  · have hbranch := DyuCandidate_eq_Q1 p (hQ := hQ1)
+    obtain ⟨_, hyx, _⟩ := hQ1
+    obtain ⟨hy0, _, hxy⟩ := hQ
+    have hxy' : x = y := le_antisymm hxy hyx
+    subst x
+    calc
+      DyuCandidate p y y = DyauxFunction1 p y y := hbranch
+      _ = DxauxFunction1 p y y := (DxauxFunction1_eq_DyauxFunction1_on_diag p hp y hy0).symm
+  · by_cases hQ2 : QuarterPlane2 x y
+    · have hbranch := DyuCandidate_eq_Q2 p (hQ := hQ2)
+      obtain ⟨_, hynegx, _⟩ := hQ2
+      obtain ⟨hy0, hnegyx, _⟩ := hQ
+      have hx : x = -y := le_antisymm (by linarith [hynegx]) hnegyx
+      subst x
+      have hrel := DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp y hy0
+      calc
+        DyuCandidate p (-y) y = -DyauxFunction1 p (-(-y)) (-y) := hbranch
+        _ = -DyauxFunction1 p y (-y) := by simp
+        _ = DxauxFunction1 p y (-y) := hrel.symm
+    · simp [DyuCandidate, hQ1, hQ2, hQ]
+
+/-- Formula selected by `DyuCandidate` on Q4, with boundary compatibility. -/
+lemma DyuCandidate_eq_Q4
+    (p : ℝ) (hp : 2 < p) {x y : ℝ} (hQ : QuarterPlane4 x y) :
+    DyuCandidate p x y = -DxauxFunction1 p (-y) (-x) := by
+  by_cases hQ1 : QuarterPlane x y
+  · have hbranch := DyuCandidate_eq_Q1 p (hQ := hQ1)
+    obtain ⟨hx0, _, hnegxy⟩ := hQ1
+    obtain ⟨_, _, hxnegy⟩ := hQ
+    have hy : y = -x := by linarith
+    subst y
+    have hrel := DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag p hp x hx0
+    have h' : DyauxFunction1 p x (-x) = -DxauxFunction1 p x (-x) := by
+      linarith
+    calc
+      DyuCandidate p x (-x) = DyauxFunction1 p x (-x) := hbranch
+      _ = -DxauxFunction1 p x (-x) := h'
+      _ = -DxauxFunction1 p (-(-x)) (-x) := by simp
+  · by_cases hQ2 : QuarterPlane2 x y
+    · have hbranch := DyuCandidate_eq_Q2 p (hQ := hQ2)
+      obtain ⟨hx0, _, hxy⟩ := hQ2
+      obtain ⟨_, hyx, _⟩ := hQ
+      have hxy' : x = y := le_antisymm hxy hyx
+      subst x
+      have hnonneg : 0 ≤ -y := by linarith
+      have hdiag := DxauxFunction1_eq_DyauxFunction1_on_diag p hp (-y) hnonneg
+      calc
+        DyuCandidate p y y = -DyauxFunction1 p (-y) (-y) := hbranch
+        _ = -DxauxFunction1 p (-y) (-y) := by rw [hdiag]
+    · by_cases hQ3 : QuarterPlane3 x y
+      · have hbranch := DyuCandidate_eq_Q3 p hp (hQ := hQ3)
+        obtain ⟨hy0, hnegyx, _⟩ := hQ3
+        obtain ⟨hy1, _, hxnegy⟩ := hQ
+        have hy : y = 0 := le_antisymm hy1 hy0
+        have hx : x = 0 := by
+          have hx_le : x ≤ 0 := by simpa [hy] using hxnegy
+          have hx_ge : 0 ≤ x := by simpa [hy] using hnegyx
+          exact le_antisymm hx_le hx_ge
+        subst x
+        subst y
+        simpa [DxauxFunction1, closureA1, DxuA1] using hbranch
+      · simp [DyuCandidate, hQ1, hQ2, hQ3, hQ]
+
+/-- The first partials are exchanged by coordinate swap. -/
+lemma DyuCandidate_eq_DxuCandidate_swap
+    (p : ℝ) (hp : 2 < p) (x y : ℝ) :
+    DyuCandidate p x y = DxuCandidate p y x := by
+  rcases mem_some_QuarterPlane x y with hQ1 | hrest
+  · have hswap : QuarterPlane3 y x := ⟨hQ1.1, hQ1.2.2, hQ1.2.1⟩
+    rw [DyuCandidate_eq_Q1 p hQ1, DxuCandidate_eq_Q3 p hp hswap]
+  rcases hrest with hQ2 | hrest
+  · have hswap : QuarterPlane4 y x := ⟨hQ2.1, hQ2.2.2, hQ2.2.1⟩
+    rw [DyuCandidate_eq_Q2 p hQ2, DxuCandidate_eq_Q4 p hp hswap]
+  rcases hrest with hQ3 | hQ4
+  · have hswap : QuarterPlane y x := ⟨hQ3.1, hQ3.2.2, hQ3.2.1⟩
+    rw [DyuCandidate_eq_Q3 p hp hQ3, DxuCandidate_eq_Q1 p hswap]
+  · have hswap : QuarterPlane2 y x := ⟨hQ4.1, hQ4.2.2, hQ4.2.1⟩
+    rw [DyuCandidate_eq_Q4 p hp hQ4, DxuCandidate_eq_Q2 p hswap]
+
+/--
+The vertical axis case follows from the horizontal one by swapping
+coordinates.
+
+The value symmetry transports the left and base terms, while the derivative
+symmetry identifies the horizontal derivative at the swapped point with
+`DyuCandidate` at the original point.
+-/
+lemma uCandidate_axis_tangent_vertical
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hh0 : h = 0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  subst h
+  have hhor := uCandidate_axis_tangent_horizontal
+    (p := p) (hp := hp) (x := y) (y := x) (h := k) (k := 0) rfl
+  have hswap_target :
+      uCandidate p (x + 0) (y + k) =
+        uCandidate p (y + k) (x + 0) := by
+    exact uCandidate_swap p (x + 0) (y + k)
+  have hswap_base : uCandidate p y x = uCandidate p x y :=
+    (uCandidate_swap p x y).symm
+  have hderiv : DxuCandidate p y x = DyuCandidate p x y :=
+    (DyuCandidate_eq_DxuCandidate_swap p hp x y).symm
+  calc
+    uCandidate p (x + 0) (y + k) =
+        uCandidate p (y + k) (x + 0) := hswap_target
+    _ ≤ uCandidate p y x + DxuCandidate p y x * k + DyuCandidate p y x * 0 := hhor
+    _ = uCandidate p x y + DxuCandidate p x y * 0 + DyuCandidate p x y * k := by
+      rw [hswap_base, hderiv]
+      ring
+
+/--
+The displayed tangent inequality whenever one coordinate increment is zero.
+
+This is the final axis-supported statement: the `k = 0` branch is the
+horizontal theorem proved by sector splitting, and the `h = 0` branch is its
+coordinate-swapped version.
+-/
+lemma uCandidate_axis_tangent
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hk : h * k = 0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  rcases mul_eq_zero.mp hk with hh0 | hk0
+  · exact uCandidate_axis_tangent_vertical p hp hh0
+  · exact uCandidate_axis_tangent_horizontal p hp hk0
+
 /-! ## 10. Other quadrant wrappers and pointwise differentiability -/
 
 /-
