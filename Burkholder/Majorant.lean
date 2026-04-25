@@ -1767,6 +1767,24 @@ lemma uCandidate_axis_tangent_inequality_of_coordinate_tangents
     (uCandidate p) (DxuCandidate p) (DyuCandidate p)
     hx_tangent hy_tangent x y h k hk
 
+/-- The displayed axis-tangent inequality for `uCandidate` when the increment is
+supported on one coordinate. -/
+lemma uCandidate_axis_tangent_inequality
+    (p x y h k : ℝ) (hk : h * k = 0)
+    (hx_tangent :
+      uCandidate p (x + h) y ≤
+        uCandidate p x y + DxuCandidate p x y * h)
+    (hy_tangent :
+      uCandidate p x (y + k) ≤
+        uCandidate p x y + DyuCandidate p x y * k) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  rcases mul_eq_zero.mp hk with hh | hk'
+  · subst h
+    simpa [add_assoc] using hy_tangent
+  · subst k
+    simpa [add_assoc] using hx_tangent
+
 lemma tangent_glue_two_forward
     (f d : ℝ → ℝ) {x m z : ℝ}
     (_hxm : x ≤ m) (hmz : m ≤ z)
