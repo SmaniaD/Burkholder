@@ -16768,8 +16768,7 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
     intros x y
     have hv := Majorant_p_g_2.vGeTwo_le_uCandidate p hp x y
     have hp' : 2 ≤ p := by linarith
-    have hp1_nonneg : 0 ≤ p - 1 := by linarith
-    simpa [v, vGeTwo, pStar_eq_self_of_two_le p hp', abs_of_nonneg hp1_nonneg] using hv
+    simpa [v, Majorant_p_g_2.vGeTwo, Majorant_p_g_2.pStar_eq_self_of_two_le p hp', abs_of_nonneg (by linarith : 0 ≤ p - 1)] using hv
   constructor
   · -- negativity on x*y ≤ 0
     intros x y hxy
