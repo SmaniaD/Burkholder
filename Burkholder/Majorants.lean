@@ -27,6 +27,12 @@ def v (p x y : ℝ) : ℝ :=
   Real.rpow (|((x + y) / 2)|) p
     - Real.rpow (|pStar p - 1|) p * Real.rpow (|((x - y) / 2)|) p
 
+/-- The slope parameter separating the two smooth sectors in the first quadrant. -/
+  def a (p : ℝ) : ℝ := 1 - 2 / (pStar p)
+
+/-- Normalization constant for the affine-in-`y` sector formula. -/
+  def alpha (p : ℝ) : ℝ :=  p* Real.rpow (pStar p/(pStar p - 1)) (1-p)
+
 namespace  Majorant_p_l_2
 
 /-!
@@ -99,11 +105,7 @@ def vLeTwo (p x y : ℝ) : ℝ :=
     - coeffLeTwo p * Real.rpow (|((x - y) / 2)|) p
 
 
-/-- The slope parameter separating the two smooth sectors in the first quadrant. -/
-def a (p : ℝ) : ℝ := 1 - 2 / (pStar p)
 
-/-- Normalization constant for the affine-in-`y` sector formula. -/
-def alpha (p : ℝ) : ℝ :=  p* Real.rpow (pStar p/(pStar p - 1)) (1-p)
 
 
 def A2 (p x y : ℝ) : Prop :=
@@ -7499,7 +7501,7 @@ bookkeeping lemmas that move a segment through the sector decomposition of
 
 /-! ## 1. Basic parameters and local formulas -/
 
- 
+
 
 theorem pStar_eq_self_of_two_le (p : ℝ) (hp : 2 ≤ p) : pStar p = p := by
   unfold pStar
@@ -7521,18 +7523,14 @@ theorem pStar_eq_self_of_two_le (p : ℝ) (hp : 2 ≤ p) : pStar p = p := by
 
 
 
- 
+
 
 /-- The same expression specialized to the `p ≥ 2` regime. -/
 def vGeTwo (p x y : ℝ) : ℝ :=
   Real.rpow (|((x + y) / 2)|) p
     - Real.rpow (p - 1) p * Real.rpow (|((x - y) / 2)|) p
 
-/-- The slope parameter separating the two smooth sectors in the first quadrant. -/
-  def a (p : ℝ) : ℝ := 1 - 2 / (pStar p)
 
-/-- Normalization constant for the affine-in-`y` sector formula. -/
-  def alpha (p : ℝ) : ℝ :=  p* Real.rpow (pStar p/(pStar p - 1)) (1-p)
 
 /-- Open first-quadrant sector where the formula `uA1` is used. -/
 def A1 (p x y : ℝ) : Prop := 0 < x ∧ (a p) * x < y ∧ y < x
@@ -7654,15 +7652,12 @@ lemma continuousAt_DxuA1_interior
 
   have hcont : ContinuousAt (DxuA1Formula p) (x, y) := by
     change ContinuousAt
-      (fun z : ℝ × ℝ => (p / 2) * (z.1 ^ (p - 2) * ((2 - p) * z.1 + (p - 1) * z.2) * alpha p))
+      (fun z : ℝ × ℝ =>
+        alpha p * (p / 2) * z.1 ^ (p - 2) * ((2 - p) * z.1 + (p - 1) * z.2))
       (x, y)
-    -- Rearranged multiplication order to match the expected type
-    have : (fun z : ℝ × ℝ => (p / 2) * (z.1 ^ (p - 2) * ((2 - p) * z.1 + (p - 1) * z.2) * alpha p)) =
-      (fun z : ℝ × ℝ => (p / 2) * alpha p * (z.1 ^ (p - 2)) * ((2 - p) * z.1 + (p - 1) * z.2)) := by
-      ext z; ring
-    rw [this]
-    exact (continuous_const.continuousAt.mul continuous_const.continuousAt)
-      .mul (hcont_rpow.mul hcont_lin)
+    simpa [mul_assoc, mul_left_comm, mul_comm] using
+      (continuous_const.continuousAt.mul continuous_const.continuousAt).mul
+        (hcont_rpow.mul hcont_lin)
 
   exact hcont.congr_of_eventuallyEq hEvent
 
