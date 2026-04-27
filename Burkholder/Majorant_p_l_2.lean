@@ -13,7 +13,7 @@ import Mathlib.Tactic.Ring
 
 noncomputable section
 
-namespace Burkholder
+namespace Burkholder.Majorant_p_l_2
 
 /-!
 # Burkholder majorant candidate
@@ -16496,4 +16496,4 @@ theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
 
 
 
-end Burkholder
+end Burkholder.Majorant_p_l_2
