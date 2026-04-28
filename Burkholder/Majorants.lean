@@ -41,6 +41,11 @@ def v (p x y : ℝ) : ℝ :=
 /-- Normalization constant for the affine-in-`y` sector formula. -/
   def alpha (p : ℝ) : ℝ :=  p* Real.rpow (pStar p/(pStar p - 1)) (1-p)
 
+
+end Burkholder
+
+namespace Burkholder
+
 namespace  Majorant_p_l_2
 
 /-!
@@ -7453,6 +7458,13 @@ lemma uCandidate_axis_tangent_leTwo
 
 end Majorant_p_l_2
 
+end Burkholder
+
+
+
+
+namespace Burkholder
+
 theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
@@ -7477,6 +7489,10 @@ theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
   · intro x y hxy
     exact Majorant_p_l_2.uCandidate_le_zero_of_xy_zero_leTwo p x y hp.1 hp.2 hxy
 
+end Burkholder
+
+
+namespace Burkholder
 
 namespace  Majorant_p_g_2
 
@@ -16748,7 +16764,7 @@ lemma uCandidate_le_zero_of_mul_nonpos
     rw [uCandidate_eq_Q4 p hQ4]
     exact auxFunction1_le_zero_of_QuarterPlane_mul_nonpos p (-y) (-x) hp hQ hxy'
 
-end  Majorant_p_g_2
+
 
 /-! 13. Majorant existence statement -/
 
@@ -16785,6 +16801,12 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
     intros x y hxy
     exact Majorant_p_g_2.uCandidate_le_zero_of_xy_zero p x y (by linarith) hxy
 
+end  Majorant_p_g_2
+
+end Burkholder
+
+namespace Burkholder
+
 theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
@@ -16818,6 +16840,9 @@ theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
     exact hxy
   · intro x y hxy
     rw [hxy]
+
+
+
 
 /- Final result: majorant exists for p > 1 -/
 
