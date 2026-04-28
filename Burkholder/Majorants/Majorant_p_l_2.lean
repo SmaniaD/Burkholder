@@ -7425,6 +7425,107 @@ lemma uCandidate_axis_tangent_leTwo
   · exact uCandidate_axis_tangent_vertical_leTwo p hp1 hp2 hh0
   · exact uCandidate_axis_tangent_horizontal_leTwo p hp1 hp2 hk0
 
+lemma uCandidate_le_zero_of_mul_neg_LeTwo
+    (p x y : ℝ) (hp : 1 < p ∧ p < 2) (hxy : x * y = 0) (hnzero: (x, y) ≠ (0, 0)):
+    uCandidate p x y < 0 := by
+  have huA1_axis : ∀ t : ℝ, 0 ≤ t → t ≠ 0 → uA1 p t 0 < 0 := by
+    intro t ht htne
+    have htpos : 0 < t := lt_of_le_of_ne ht (Ne.symm htne)
+    have hp_pos : 0 < p := by linarith
+    have halpha_pos : 0 < alpha p := by
+      rw [alpha_eq_leTwo p hp.1 hp.2]
+      exact mul_pos hp_pos (Real.rpow_pos_of_pos hp_pos _)
+    have hpow_pos : 0 < t ^ (p - 1) :=
+      Real.rpow_pos_of_pos htpos _
+    have hprod_pos : 0 < alpha p * t ^ (p - 1) :=
+      mul_pos halpha_pos hpow_pos
+    have hpStar_half_gt_one : 1 < pStar p / 2 := by
+      have hpStar : pStar p = q p :=
+        pStar_eq_q_of_one_lt_of_lt_two p hp.1 hp.2
+      have hp_ne_one : p ≠ 1 := by linarith
+      have hpden_pos : 0 < p - 1 := by linarith
+      rw [hpStar]
+      simp [q, hp_ne_one]
+      rw [lt_div_iff₀ (by norm_num : (0 : ℝ) < 2)]
+      rw [lt_div_iff₀ hpden_pos]
+      linarith
+    have hmain : t < pStar p * t / 2 := by
+      have hmul := mul_lt_mul_of_pos_right hpStar_half_gt_one htpos
+      nlinarith
+    have hbracket : t - pStar p * t / 2 < 0 := by
+      linarith
+    simp [uA1, htpos]
+    exact mul_neg_of_pos_of_neg hprod_pos hbracket
+
+  have haux_axis : ∀ t : ℝ, 0 ≤ t → t ≠ 0 → auxFunction1 p t 0 < 0 := by
+    intro t ht htne
+    have h1 : closureA1 p t 0 := by
+      refine ⟨ht, by linarith, ?_⟩
+      exact mul_nonneg (a_nonneg_of_one_lt_of_lt_two p hp.1 hp.2) ht
+    rw [auxFunction1]
+    simp [h1]
+    exact huA1_axis t ht htne
+
+  rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
+  · rw [uCandidate_eq_Q1_leTwo p hQ1]
+    have hy0 : y = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · have hy_le : y ≤ 0 := by simpa [hx0] using hQ1.2.1
+        have hy_ge : 0 ≤ y := by simpa [hx0] using hQ1.2.2
+        exact le_antisymm hy_le hy_ge
+      · exact hy0
+    subst y
+    have hxne : x ≠ 0 := by
+      intro hx0
+      apply hnzero
+      ext <;> simp [hx0]
+    exact haux_axis x hQ1.1 hxne
+
+  rcases hrest with hQ2 | hrest
+  · rw [uCandidate_eq_Q2_leTwo p hQ2]
+    have hy0 : y = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · have hy_le : y ≤ 0 := by simpa [hx0] using hQ2.2.1
+        have hy_ge : 0 ≤ y := by simpa [hx0] using hQ2.2.2
+        exact le_antisymm hy_le hy_ge
+      · exact hy0
+    subst y
+    have ht : 0 ≤ -x := by linarith [hQ2.1]
+    have htne : -x ≠ 0 := by
+      intro hx0
+      apply hnzero
+      ext <;> linarith
+    simpa using haux_axis (-x) ht htne
+
+  rcases hrest with hQ3 | hQ4
+  · rw [uCandidate_eq_Q3_leTwo p hQ3]
+    have hx0 : x = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · exact hx0
+      · have hx_ge : 0 ≤ x := by simpa [hy0] using hQ3.2.1
+        have hx_le : x ≤ 0 := by simpa [hy0] using hQ3.2.2
+        exact le_antisymm hx_le hx_ge
+    subst x
+    have hyne : y ≠ 0 := by
+      intro hy0
+      apply hnzero
+      ext <;> simp [hy0]
+    exact haux_axis y hQ3.1 hyne
+
+  · rw [uCandidate_eq_Q4_leTwo p hQ4]
+    have hx0 : x = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · exact hx0
+      · have hx_ge : 0 ≤ x := by simpa [hy0] using hQ4.2.1
+        have hx_le : x ≤ 0 := by simpa [hy0] using hQ4.2.2
+        exact le_antisymm hx_le hx_ge
+    subst x
+    have ht : 0 ≤ -y := by linarith [hQ4.1]
+    have htne : -y ≠ 0 := by
+      intro hy0
+      apply hnzero
+      ext <;> linarith
+    simpa using haux_axis (-y) ht htne
 
 
 
@@ -7439,7 +7540,7 @@ theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
           u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
-      (∀ x y, x*y = 0 → u x y ≤ 0) := by
+      (∀ x y, x*y = 0 ∧ (x,y) ≠ (0,0) → u x y < 0) := by
   use Majorant_p_l_2.uCandidate p
   constructor
   · intro x y
@@ -7454,6 +7555,7 @@ theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
   · intro x y hxy
     exact Majorant_p_l_2.uCandidate_le_zero_of_mul_nonpos_leTwo p x y hp.1 hp.2 hxy
   · intro x y hxy
-    exact Majorant_p_l_2.uCandidate_le_zero_of_xy_zero_leTwo p x y hp.1 hp.2 hxy
+    rcases hxy with ⟨hxy0, hne⟩
+    exact Majorant_p_l_2.uCandidate_le_zero_of_mul_neg_LeTwo p x y hp hxy0 hne
 
 end Majorants

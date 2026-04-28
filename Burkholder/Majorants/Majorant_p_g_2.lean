@@ -9287,6 +9287,100 @@ lemma uCandidate_le_zero_of_mul_nonpos
     rw [uCandidate_eq_Q4 p hQ4]
     exact auxFunction1_le_zero_of_QuarterPlane_mul_nonpos p (-y) (-x) hp hQ hxy'
 
+
+lemma uCandidate_le_zero_of_mul_neg
+    (p x y : ℝ) (hp : 2 < p) (hxy : x * y = 0) (hnzero: (x, y) ≠ (0, 0)):
+    uCandidate p x y < 0 := by
+  have hp' : 2 ≤ p := by linarith
+  have hv_axis : ∀ t : ℝ, t ≠ 0 → vGeTwo p t 0 < 0 := by
+    intro t htne
+    have hp_pos : 0 < p := by linarith
+    have hcoef_gt_one : (1 : ℝ) < Real.rpow (p - 1) p := by
+      exact Real.one_lt_rpow (by linarith : (1 : ℝ) < p - 1) hp_pos
+    have hbase_pos : 0 < |t / 2| := by
+      exact abs_pos.mpr (by
+        intro hdiv
+        apply htne
+        nlinarith)
+    have hA_pos : 0 < Real.rpow (|t / 2|) p :=
+      Real.rpow_pos_of_pos hbase_pos p
+    have hlt :
+        Real.rpow (|t / 2|) p <
+          Real.rpow (p - 1) p * Real.rpow (|t / 2|) p := by
+      simpa [one_mul] using mul_lt_mul_of_pos_right hcoef_gt_one hA_pos
+    have hsum : ((t + 0) / 2 : ℝ) = t / 2 := by ring
+    have hdiff : ((t - 0) / 2 : ℝ) = t / 2 := by ring
+    simpa [vGeTwo, hsum, hdiff] using sub_neg.mpr hlt
+
+  have haux_axis : ∀ t : ℝ, 0 ≤ t → t ≠ 0 → auxFunction1 p t 0 < 0 := by
+    intro t ht htne
+    have h2 : closureA2 p t 0 := by
+      refine ⟨ht, by linarith, ?_⟩
+      exact mul_nonneg (a_nonneg_of_two_le p hp') ht
+    rw [auxFunction1_eq_vGeTwo p hp' t 0 h2]
+    exact hv_axis t htne
+
+  rcases mem_some_QuarterPlane x y with hQ1 | hrest
+  · rw [uCandidate_eq_Q1 p hQ1]
+    have hy0 : y = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · have hy_le : y ≤ 0 := by simpa [hx0] using hQ1.2.1
+        have hy_ge : 0 ≤ y := by simpa [hx0] using hQ1.2.2
+        exact le_antisymm hy_le hy_ge
+      · exact hy0
+    subst y
+    have hxne : x ≠ 0 := by
+      intro hx0
+      apply hnzero
+      ext <;> simp [hx0]
+    exact haux_axis x hQ1.1 hxne
+
+  rcases hrest with hQ2 | hrest
+  · rw [uCandidate_eq_Q2 p hQ2]
+    have hy0 : y = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · have hy_le : y ≤ 0 := by simpa [hx0] using hQ2.2.1
+        have hy_ge : 0 ≤ y := by simpa [hx0] using hQ2.2.2
+        exact le_antisymm hy_le hy_ge
+      · exact hy0
+    subst y
+    have ht : 0 ≤ -x := by linarith [hQ2.1]
+    have htne : -x ≠ 0 := by
+      intro hx0
+      apply hnzero
+      ext <;> linarith
+    simpa using haux_axis (-x) ht htne
+
+  rcases hrest with hQ3 | hQ4
+  · rw [uCandidate_eq_Q3 p hQ3]
+    have hx0 : x = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · exact hx0
+      · have hx_ge : 0 ≤ x := by simpa [hy0] using hQ3.2.1
+        have hx_le : x ≤ 0 := by simpa [hy0] using hQ3.2.2
+        exact le_antisymm hx_le hx_ge
+    subst x
+    have hyne : y ≠ 0 := by
+      intro hy0
+      apply hnzero
+      ext <;> simp [hy0]
+    exact haux_axis y hQ3.1 hyne
+
+  · rw [uCandidate_eq_Q4 p hQ4]
+    have hx0 : x = 0 := by
+      rcases mul_eq_zero.mp hxy with hx0 | hy0
+      · exact hx0
+      · have hx_ge : 0 ≤ x := by simpa [hy0] using hQ4.2.1
+        have hx_le : x ≤ 0 := by simpa [hy0] using hQ4.2.2
+        exact le_antisymm hx_le hx_ge
+    subst x
+    have ht : 0 ≤ -y := by linarith [hQ4.1]
+    have htne : -y ≠ 0 := by
+      intro hy0
+      apply hnzero
+      ext <;> linarith
+    simpa using haux_axis (-y) ht htne
+
 end  Majorant_p_g_2
 
 /-! 13. Majorant existence statement -/
@@ -9303,7 +9397,7 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
           u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
-      (∀ x y, x*y = 0 → u x y ≤ 0) := by
+      (∀ x y, x*y = 0 ∧ (x,y) ≠ (0,0) → u x y < 0) := by
   use Majorant_p_g_2.uCandidate p
   constructor
   · intro x y
@@ -9322,7 +9416,8 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
     exact Majorant_p_g_2.uCandidate_le_zero_of_mul_nonpos p x y (by linarith) hxy
   · -- negativity on x*y = 0
     intros x y hxy
-    exact Majorant_p_g_2.uCandidate_le_zero_of_xy_zero p x y (by linarith) hxy
+    rcases hxy with ⟨hxy0, hne⟩
+    exact Majorant_p_g_2.uCandidate_le_zero_of_mul_neg p x y hp hxy0 hne
 
 
 
