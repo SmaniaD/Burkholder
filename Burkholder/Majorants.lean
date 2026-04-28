@@ -1,3 +1,11 @@
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright (c) 2026, Daniel Smania
+--[[require]]
+--name = "mathlib"
+--scope = "leanprover-community"
+--rev = "v4.30.0-rc2"
+
+
 import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
