@@ -19,7 +19,7 @@ noncomputable section
 
 
 
-namespace Burkholder
+namespace Majorants
 
 
 /- Final result: majorant exists for p > 1 -/
@@ -47,4 +47,4 @@ theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
 
 
 
-end Burkholder
+end Majorants

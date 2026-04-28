@@ -14,7 +14,7 @@ import Mathlib.Tactic.Ring
 
 noncomputable section
 
-namespace Burkholder
+namespace Majorants
 
 /-- The conjugate exponent, with a harmless value at `p = 1`. -/
 def q (p : ℝ) : ℝ := if p = 1 then 0 else p / (p - 1)
@@ -34,4 +34,4 @@ def v (p x y : ℝ) : ℝ :=
   def alpha (p : ℝ) : ℝ :=  p* Real.rpow (pStar p/(pStar p - 1)) (1-p)
 
 
-end Burkholder
+end Majorants

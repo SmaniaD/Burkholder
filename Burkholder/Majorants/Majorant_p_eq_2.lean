@@ -17,7 +17,7 @@ noncomputable section
 
 
 
-namespace Burkholder
+namespace Majorants
 
 theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
     ∃ u : ℝ → ℝ → ℝ,
@@ -53,4 +53,4 @@ theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
   · intro x y hxy
     rw [hxy]
 
-    end Burkholder
+    end Majorants

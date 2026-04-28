@@ -14,7 +14,7 @@ import Burkholder.Majorants.Definitions
 
 noncomputable section
 
-namespace Burkholder
+namespace Majorants
 
 namespace  Majorant_p_l_2
 
@@ -7456,4 +7456,4 @@ theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
   · intro x y hxy
     exact Majorant_p_l_2.uCandidate_le_zero_of_xy_zero_leTwo p x y hp.1 hp.2 hxy
 
-end Burkholder
+end Majorants

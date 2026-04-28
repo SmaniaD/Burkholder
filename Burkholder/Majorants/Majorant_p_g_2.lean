@@ -15,7 +15,7 @@ import Burkholder.Majorants.Definitions
 
 noncomputable section
 
-namespace Burkholder
+namespace Majorants
 
 namespace  Majorant_p_g_2
 
@@ -9326,4 +9326,4 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
 
 
 
-end Burkholder
+end Majorants
