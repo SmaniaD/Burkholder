@@ -28,7 +28,7 @@ If `f` has difference sequence `d`, then the transformed process has
 difference sequence `v n * d n`.
 -/
 def martingaleTransform (v f : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
-  fun n ω => (Finset.range (n + 1)).sum fun i => v i ω * martingaleDiff f i ω
+  fun n => (Finset.range (n + 1)).sum fun i => v i * martingaleDiff f i
 
 scoped infixl:70 " ⋆ₘ " => martingaleTransform
 
@@ -60,13 +60,56 @@ The only integrability assumption specific to the multiplier is that each produc
 `v (n+1) * (f (n+1) - f n)` is integrable; predictability then pulls `v (n+1)`
 out of the conditional expectation.
 -/
-theorem martingaleTransform_martingale [IsFiniteMeasure μ]
-    {ℱ : Filtration ℕ mΩ} {v f : ℕ → Ω → ℝ}
-    (hv : IsPredictable ℱ v) (hf : Martingale f ℱ μ)
-    (hadapt : StronglyAdapted ℱ (v ⋆ₘ f))
-    (hint : ∀ n, Integrable ((v ⋆ₘ f) n) μ)
-    (hprod : ∀ n, Integrable (v (n + 1) * (f (n + 1) - f n)) μ) :
-    Martingale (v ⋆ₘ f) ℱ μ := by
+theorem martingaleTransform_martingale {μ : Measure Ω} [IsFiniteMeasure μ]
+  {ℱ : Filtration ℕ mΩ} {v f : ℕ → Ω → ℝ}
+  (hv : IsPredictable ℱ v) (hf : Martingale f ℱ μ)
+  (hbounded :  ∃ C, ∀ n ω, |v n ω| ≤ C) :
+  Martingale (v ⋆ₘ f) ℱ μ := by
+  rcases hbounded with ⟨C, hC⟩
+  have hv_bound : ∀ n ω, ‖v n ω‖ ≤ |C| := by
+    intro n ω
+    simpa [Real.norm_eq_abs] using (hC n ω).trans (le_abs_self C)
+  have hv_adapted : StronglyAdapted ℱ v := hv.adapted
+  have hdiff_integrable : ∀ n, Integrable (martingaleDiff f n) μ := by
+    intro n
+    cases n with
+    | zero =>
+        simpa [martingaleDiff] using hf.integrable 0
+    | succ n =>
+        simpa [martingaleDiff] using (hf.integrable (n + 1)).sub (hf.integrable n)
+  have hdiff_measurable_le :
+      ∀ {i n : ℕ}, i ≤ n → StronglyMeasurable[ℱ n] (martingaleDiff f i) := by
+    intro i n hin
+    cases i with
+    | zero =>
+        simpa [martingaleDiff] using
+          hf.stronglyAdapted.stronglyMeasurable_le (Nat.zero_le n)
+    | succ i =>
+        have hi_succ : i + 1 ≤ n := hin
+        have hi : i ≤ n := Nat.le_trans (Nat.le_succ i) hi_succ
+        simpa [martingaleDiff] using
+          (hf.stronglyAdapted.stronglyMeasurable_le hi_succ).sub
+            (hf.stronglyAdapted.stronglyMeasurable_le hi)
+  have hprod_all : ∀ n, Integrable (v n * martingaleDiff f n) μ := by
+    intro n
+    have hv_meas : AEStronglyMeasurable (v n) μ :=
+      ((hv_adapted n).mono (ℱ.le n)).aestronglyMeasurable
+    have hb : ∀ᵐ ω ∂μ, ‖v n ω‖ ≤ |C| := ae_of_all _ (hv_bound n)
+    simpa [Pi.smul_apply, smul_eq_mul] using
+      (hdiff_integrable n).bdd_smul |C| hv_meas hb
+  have hadapt : StronglyAdapted ℱ (v ⋆ₘ f) := by
+    intro n
+    simpa [martingaleTransform, Finset.sum_apply] using
+      (Finset.stronglyMeasurable_sum (Finset.range (n + 1)) fun i hi => by
+        have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+        exact (hv_adapted.stronglyMeasurable_le hin).mul (hdiff_measurable_le hin))
+  have hint : ∀ n, Integrable ((v ⋆ₘ f) n) μ := by
+    intro n
+    simpa [martingaleTransform, Finset.sum_apply] using
+      (integrable_finset_sum' (Finset.range (n + 1)) fun i _ => hprod_all i)
+  have hprod : ∀ n, Integrable (v (n + 1) * (f (n + 1) - f n)) μ := by
+    intro n
+    simpa [martingaleDiff] using hprod_all (n + 1)
   refine martingale_of_condExp_sub_eq_zero_nat hadapt hint ?_
   intro n
   have hvmeas : StronglyMeasurable[ℱ n] (v (n + 1)) :=
