@@ -11,9 +11,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import Burkholder.Majorants.Definitions
-import Burkholder.Majorants.Majorant_p_l_2
-import Burkholder.Majorants.Majorant_p_g_2
-import Burkholder.Majorants.Majorant_p_eq_2
+
 
 noncomputable section
 
@@ -21,10 +19,7 @@ noncomputable section
 
 namespace Burkholder
 
-
-/- Final result: majorant exists for p > 1 -/
-
-theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
+theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
         ∀ h k, h * k = 0 →
@@ -32,19 +27,30 @@ theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
       (∀ x y, x*y = 0 → u x y ≤ 0) := by
-        by_cases hp2 : p = 2
-        · -- Case p = 2
-          exact exists_majorant_p_eq_2 p hp2
-        by_cases hp_gt_2 : 2 < p
-        · -- Case p > 2
-          exact exists_majorant_geTwo p hp_gt_2
-        -- Case 1 < p < 2
-        have hp1 : 1 < p := hp
-        have hp_lt_2 : p < 2 := lt_of_le_of_ne (le_of_not_gt hp_gt_2) hp2
-        exact exists_majorant_leTwo p ⟨hp1, hp_lt_2⟩
+  use fun x y => x * y
+  constructor
+  · intro x y
+    refine ⟨y, x, ?_⟩
+    intro h k hk
+    rw [mul_eq_zero] at hk
+    rcases hk with rfl | rfl
+    · ring_nf
+      exact le_rfl
+    · ring_nf
+      exact le_rfl
+  constructor
+  · intro x y
+    calc
+      v p x y = x * y := by
+        subst p
+        unfold v
+        norm_num [pStar, q]
+        ring
+      _ ≤ x * y := le_rfl
+  constructor
+  · intro x y hxy
+    exact hxy
+  · intro x y hxy
+    rw [hxy]
 
-
-
-
-
-end Burkholder
+    end Burkholder
