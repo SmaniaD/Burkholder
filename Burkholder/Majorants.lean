@@ -16811,6 +16811,8 @@ theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
   · intro x y hxy
     rw [hxy]
 
+/- Final result: majorant exists for p > 1 -/
+
 theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
