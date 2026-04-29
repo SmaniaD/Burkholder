@@ -1,11 +1,12 @@
 import Mathlib.Probability.Martingale.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Burkholder.Basic
 import Burkholder.Majorants
 import Burkholder.UnconditionalSchauderBasisNontrivialField
 noncomputable section
 
 open MeasureTheory
-open scoped BigOperators
+open scoped BigOperators NNReal ENNReal
 
 namespace MeasureTheory
 
@@ -140,5 +141,23 @@ theorem martingaleTransform_martingale {μ : Measure Ω} [IsFiniteMeasure μ]
     _ =ᵐ[μ] 0 := by
       filter_upwards [hdiff_zero] with ω hω
       simp [hω]
+
+/--
+Theorem 2.2, inequality (2.13): martingale transforms by strongly predictable
+multipliers bounded by `1` are bounded on `L^p`, for `1 < p < ∞`.
+
+This is stated at each finite time `n` for the discrete transform `v ⋆ₘ f`.
+-/
+theorem exists_martingaleTransform_eLpNorm_bound
+    (p : ℝ≥0∞) (hp_one : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C : ℝ≥0∞, C ≠ ∞ ∧
+      ∀ {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
+        {ℱ : Filtration ℕ mΩ} {v f : ℕ → Ω → ℝ},
+        IsStronglyPredictable ℱ v →
+        Martingale f ℱ μ →
+        (∀ n, MemLp (f n) p μ) →
+        (∀ n, ∀ᵐ ω ∂μ, |v n ω| ≤ 1) →
+        ∀ n, eLpNorm ((v ⋆ₘ f) n) p μ ≤ C * eLpNorm (f n) p μ := by
+  sorry
 
 end MeasureTheory
