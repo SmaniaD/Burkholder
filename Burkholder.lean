@@ -148,7 +148,7 @@ multipliers bounded by `1` are bounded on `L^p`, for `1 < p < ∞`.
 
 This is stated at each finite time `n` for the discrete transform `v ⋆ₘ f`.
 -/
-theorem exists_martingaleTransform_eLpNorm_bound
+theorem Lp_Burkholder_inequality_martingaleTransform
     (p : ℝ≥0∞) (hp_one : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0∞, C ≠ ∞ ∧
       ∀ {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
