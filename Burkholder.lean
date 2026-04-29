@@ -12,6 +12,37 @@ namespace MeasureTheory
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /--
+A discrete process is strongly predictable if `u 0` is strongly measurable with respect to
+`ℱ 0` and `u (n + 1)` is strongly measurable with respect to `ℱ n`.
+
+This keeps the stronger predictable hypothesis explicit in this development.
+-/
+def IsStronglyPredictable {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
+    [TopologicalSpace.PseudoMetrizableSpace E]
+    (ℱ : Filtration ℕ mΩ) (u : ℕ → Ω → E) : Prop :=
+  StronglyMeasurable[ℱ 0] (u 0) ∧ ∀ n, StronglyMeasurable[ℱ n] (u (n + 1))
+
+namespace IsStronglyPredictable
+
+theorem stronglyAdapted {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
+    [TopologicalSpace.PseudoMetrizableSpace E]
+    {ℱ : Filtration ℕ mΩ} {u : ℕ → Ω → E}
+    (hu : IsStronglyPredictable ℱ u) : StronglyAdapted ℱ u := by
+  intro n
+  cases n with
+  | zero => exact hu.1
+  | succ n => exact (hu.2 n).mono (ℱ.mono n.le_succ)
+
+theorem measurable_add_one {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
+    [BorelSpace E] [TopologicalSpace.PseudoMetrizableSpace E]
+    {ℱ : Filtration ℕ mΩ} {u : ℕ → Ω → E}
+    (hu : IsStronglyPredictable ℱ u) (n : ℕ) :
+    Measurable[ℱ n] (u (n + 1)) :=
+  (hu.2 n).measurable
+
+end IsStronglyPredictable
+
+/--
 The martingale difference sequence associated to a discrete real-valued process.
 
 With this convention, `martingaleDiff f 0 = f 0` and
@@ -33,12 +64,12 @@ def martingaleTransform (v f : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
 scoped infixl:70 " ⋆ₘ " => martingaleTransform
 
 /--
-`g` is the martingale transform of the martingale `f` by a predictable multiplier `v`,
+`g` is the martingale transform of the martingale `f` by a strongly predictable multiplier `v`,
 relative to the filtration `ℱ` and measure `μ`.
 -/
 def IsMartingaleTransform (ℱ : Filtration ℕ mΩ) (μ : Measure Ω)
     (v f g : ℕ → Ω → ℝ) : Prop :=
-  IsPredictable ℱ v ∧ Martingale f ℱ μ ∧ g = v ⋆ₘ f
+  IsStronglyPredictable ℱ v ∧ Martingale f ℱ μ ∧ g = v ⋆ₘ f
 
 @[simp]
 theorem martingaleTransform_zero (v f : ℕ → Ω → ℝ) :
@@ -53,7 +84,7 @@ theorem martingaleTransform_succ_sub (v f : ℕ → Ω → ℝ) (n : ℕ) :
   simp [martingaleTransform, martingaleDiff, Finset.sum_range_succ]
 
 /--
-A predictable transform of a martingale is a martingale, once the usual
+A strongly predictable transform of a martingale is a martingale, once the usual
 integrability and adaptedness hypotheses for the transformed process are available.
 
 The only integrability assumption specific to the multiplier is that each product
@@ -62,14 +93,14 @@ out of the conditional expectation.
 -/
 theorem martingaleTransform_martingale {μ : Measure Ω} [IsFiniteMeasure μ]
   {ℱ : Filtration ℕ mΩ} {v f : ℕ → Ω → ℝ}
-  (hv : IsPredictable ℱ v) (hf : Martingale f ℱ μ)
+  (hv : IsStronglyPredictable ℱ v) (hf : Martingale f ℱ μ)
   (hbounded :  ∃ C, ∀ n ω, |v n ω| ≤ C) :
   Martingale (v ⋆ₘ f) ℱ μ := by
   rcases hbounded with ⟨C, hC⟩
   have hv_bound : ∀ n ω, ‖v n ω‖ ≤ |C| := by
     intro n ω
     simpa [Real.norm_eq_abs] using (hC n ω).trans (le_abs_self C)
-  have hv_adapted : StronglyAdapted ℱ v := hv.adapted
+  have hv_adapted : StronglyAdapted ℱ v := IsStronglyPredictable.stronglyAdapted hv
   have hdiff_integrable : ∀ n, Integrable (martingaleDiff f n) μ := by
     intro n
     cases n with
@@ -113,7 +144,7 @@ theorem martingaleTransform_martingale {μ : Measure Ω} [IsFiniteMeasure μ]
   refine martingale_of_condExp_sub_eq_zero_nat hadapt hint ?_
   intro n
   have hvmeas : StronglyMeasurable[ℱ n] (v (n + 1)) :=
-    (hv.measurable_add_one n).stronglyMeasurable
+    (IsStronglyPredictable.measurable_add_one hv n).stronglyMeasurable
   have hdiff_int : Integrable (f (n + 1) - f n) μ :=
     (hf.integrable (n + 1)).sub (hf.integrable n)
   have hdiff_zero :
@@ -139,6 +170,6 @@ theorem martingaleTransform_martingale {μ : Measure Ω} [IsFiniteMeasure μ]
     _ =ᵐ[μ] v (n + 1) * μ[f (n + 1) - f n | ℱ n] := hpull
     _ =ᵐ[μ] 0 := by
       filter_upwards [hdiff_zero] with ω hω
-      simpa [hω]
+      simp [hω]
 
 end MeasureTheory
