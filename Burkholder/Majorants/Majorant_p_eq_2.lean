@@ -22,7 +22,7 @@ namespace Majorants
 theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
-        ∀ h k, h * k = 0 →
+        ∀ h k, h * k ≤  0 →
           u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
@@ -32,12 +32,7 @@ theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
   · intro x y
     refine ⟨y, x, ?_⟩
     intro h k hk
-    rw [mul_eq_zero] at hk
-    rcases hk with rfl | rfl
-    · ring_nf
-      exact le_rfl
-    · ring_nf
-      exact le_rfl
+    nlinarith
   constructor
   · intro x y
     calc
