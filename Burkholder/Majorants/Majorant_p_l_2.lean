@@ -7527,6 +7527,1047 @@ lemma uCandidate_le_zero_of_mul_neg_LeTwo
       ext <;> linarith
     simpa using haux_axis (-y) ht htne
 
+lemma hasDerivAt_DyuA1_x_of_pos_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) (hx : 0 < x) :
+    HasDerivAt (fun t => DyuA1 p t y)
+      (alpha p * ((p - 1) * x ^ (p - 2)) * (pStar p / 2)) x := by
+  have hEq :
+      (fun t => DyuA1 p t y) =ᶠ[nhds x]
+        fun t => alpha p * t ^ (p - 1) * (pStar p / 2) := by
+    filter_upwards [Ioi_mem_nhds hx] with t ht
+    have htpos : 0 < t := by simpa using ht
+    simp [DyuA1, htpos]
+  have hxne : x ≠ 0 := by linarith
+  have hxne_pow : x ≠ 0 ∨ 1 ≤ p - 1 := Or.inl hxne
+  have hpow :
+      HasDerivAt (fun t : ℝ => t ^ (p - 1)) ((p - 1) * x ^ (p - 2)) x := by
+    have h := (Real.hasDerivAt_rpow_const hxne_pow :
+      HasDerivAt (fun t : ℝ => t ^ (p - 1))
+        ((p - 1) * x ^ ((p - 1) - 1)) x)
+    simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
+      show p + (-1 + -1) = p + -2 by ring] using h
+  have hderiv :
+      HasDerivAt (fun t => alpha p * t ^ (p - 1) * (pStar p / 2))
+        (alpha p * ((p - 1) * x ^ (p - 2)) * (pStar p / 2)) x := by
+    simpa [mul_assoc, mul_left_comm, mul_comm] using
+      ((hpow.const_mul (alpha p)).mul_const (pStar p / 2))
+  exact hderiv.congr_of_eventuallyEq hEq
+
+lemma deriv_DyuA1_x_nonneg_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) (hx : 0 < x) :
+    0 ≤ deriv (fun t => DyuA1 p t y) x := by
+  have hderiv := hasDerivAt_DyuA1_x_of_pos_leTwo p hp1 hp2 x y hx
+  rw [hderiv.deriv]
+  have ha : 0 ≤ alpha p := alpha_nonneg_of_one_lt_of_lt_two p hp1 hp2
+  have hp_sub : 0 ≤ p - 1 := by linarith
+  have hpow : 0 ≤ x ^ (p - 2) := Real.rpow_nonneg hx.le _
+  have hpStar_nonneg : 0 ≤ pStar p / 2 := by
+    have hpStar : pStar p = q p := pStar_eq_q_of_one_lt_of_lt_two p hp1 hp2
+    have hp_ne_one : p ≠ 1 := by linarith
+    have hpden_pos : 0 < p - 1 := by linarith
+    rw [hpStar]
+    simp [q, hp_ne_one]
+    exact div_nonneg (div_nonneg (by linarith) hpden_pos.le) (by norm_num)
+  positivity
+
+lemma hasDerivAt_DyvLeTwo_x_of_pos_leTwo
+    (p x y : ℝ)
+    (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
+    HasDerivAt (fun t => DyvLeTwo p t y)
+      ((p * (p - 1) / 4) *
+        (((x + y) / 2) ^ (p - 2) +
+          coeffLeTwo p * ((x - y) / 2) ^ (p - 2))) x := by
+  have hx : 0 < x := by linarith
+  have hsum_nhds : {t : ℝ | 0 < (t + y) / 2} ∈ nhds x := by
+    exact ((((continuous_id'.add continuous_const).div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hsum))
+  have hdiff_nhds : {t : ℝ | 0 < (t - y) / 2} ∈ nhds x := by
+    exact ((((continuous_id'.sub continuous_const).div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hdiff))
+  have hEq :
+      (fun t => DyvLeTwo p t y) =ᶠ[nhds x]
+        fun t =>
+          ((t + y) / 2) ^ (p - 1) * (p / 2) +
+            coeffLeTwo p * ((t - y) / 2) ^ (p - 1) * (p / 2) := by
+    filter_upwards [hsum_nhds, hdiff_nhds] with t htsum htdiff
+    have htpos : 0 < t := by linarith
+    simp [DyvLeTwo, htpos, abs_of_pos htsum, abs_of_pos htdiff]
+  have hbase_sum :
+      HasDerivAt (fun t : ℝ => (t + y) / 2) (1 / 2) x := by
+    simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      (((hasDerivAt_id x).add_const y).const_mul (1 / 2 : ℝ))
+  have hbase_diff :
+      HasDerivAt (fun t : ℝ => (t - y) / 2) (1 / 2) x := by
+    simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      (((hasDerivAt_id x).sub (hasDerivAt_const x y)).const_mul (1 / 2 : ℝ))
+  have hpow_sum :
+      HasDerivAt (fun t : ℝ => ((t + y) / 2) ^ (p - 1))
+        ((p - 1) * ((x + y) / 2) ^ (p - 2) * (1 / 2)) x := by
+    have hrpow :
+        HasDerivAt (fun s : ℝ => s ^ (p - 1))
+          ((p - 1) * ((x + y) / 2) ^ (p - 2)) ((x + y) / 2) := by
+      have hne : (x + y) / 2 ≠ 0 := ne_of_gt hsum
+      have hcond : (x + y) / 2 ≠ 0 ∨ 1 ≤ p - 1 := Or.inl hne
+      have h := (Real.hasDerivAt_rpow_const hcond :
+        HasDerivAt (fun s : ℝ => s ^ (p - 1))
+          ((p - 1) * ((x + y) / 2) ^ ((p - 1) - 1)) ((x + y) / 2))
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
+        show p + (-1 + -1) = p + -2 by ring] using h
+    exact hrpow.comp x hbase_sum
+  have hpow_diff :
+      HasDerivAt (fun t : ℝ => ((t - y) / 2) ^ (p - 1))
+        ((p - 1) * ((x - y) / 2) ^ (p - 2) * (1 / 2)) x := by
+    have hrpow :
+        HasDerivAt (fun s : ℝ => s ^ (p - 1))
+          ((p - 1) * ((x - y) / 2) ^ (p - 2)) ((x - y) / 2) := by
+      have hne : (x - y) / 2 ≠ 0 := ne_of_gt hdiff
+      have hcond : (x - y) / 2 ≠ 0 ∨ 1 ≤ p - 1 := Or.inl hne
+      have h := (Real.hasDerivAt_rpow_const hcond :
+        HasDerivAt (fun s : ℝ => s ^ (p - 1))
+          ((p - 1) * ((x - y) / 2) ^ ((p - 1) - 1)) ((x - y) / 2))
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
+        show p + (-1 + -1) = p + -2 by ring] using h
+    exact hrpow.comp x hbase_diff
+  have hderiv :
+      HasDerivAt
+        (fun t : ℝ =>
+          ((t + y) / 2) ^ (p - 1) * (p / 2) +
+            coeffLeTwo p * ((t - y) / 2) ^ (p - 1) * (p / 2))
+        ((p * (p - 1) / 4) *
+          (((x + y) / 2) ^ (p - 2) +
+            coeffLeTwo p * ((x - y) / 2) ^ (p - 2))) x := by
+    have htmp :=
+      (hpow_sum.mul_const (p / 2)).add
+        ((hpow_diff.const_mul (coeffLeTwo p)).mul_const (p / 2))
+    refine htmp.congr_deriv ?_
+    ring
+  exact hderiv.congr_of_eventuallyEq hEq
+
+lemma deriv_DyvLeTwo_x_nonneg_leTwo
+    (p : ℝ) (hp1 : 1 < p) (x y : ℝ)
+    (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
+    0 ≤ deriv (fun t => DyvLeTwo p t y) x := by
+  have hderiv := hasDerivAt_DyvLeTwo_x_of_pos_leTwo p x y hsum hdiff
+  rw [hderiv.deriv]
+  have hpcoef : 0 ≤ p * (p - 1) / 4 := by
+    exact div_nonneg (mul_nonneg (by linarith) (by linarith)) (by norm_num)
+  have hsum_pow : 0 ≤ ((x + y) / 2) ^ (p - 2) :=
+    Real.rpow_nonneg hsum.le _
+  have hdiff_pow : 0 ≤ ((x - y) / 2) ^ (p - 2) :=
+    Real.rpow_nonneg hdiff.le _
+  have hcoeff : 0 ≤ coeffLeTwo p := by
+    exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
+  exact mul_nonneg hpcoef (add_nonneg hsum_pow (mul_nonneg hcoeff hdiff_pow))
+
+lemma DyvLeTwo_mono_x_on_Icc_of_pos_leTwo
+    (p : ℝ) (hp1 : 1 < p) {lo hi y : ℝ}
+    (hlo_sum : 0 < (lo + y) / 2) (hlo_diff : 0 < (lo - y) / 2) :
+    MonotoneOn (fun t : ℝ => DyvLeTwo p t y) (Set.Icc lo hi) := by
+  have hlo_pos : 0 < lo := by linarith
+  have hcont : ContinuousOn (fun t : ℝ => DyvLeTwo p t y) (Set.Icc lo hi) := by
+    let g : ℝ → ℝ := fun t =>
+      ((t + y) / 2) ^ (p - 1) * (p / 2) +
+        coeffLeTwo p * ((t - y) / 2) ^ (p - 1) * (p / 2)
+    have hg : ContinuousOn g (Set.Icc lo hi) := by
+      dsimp [g]
+      apply ContinuousOn.add
+      · exact (((continuousOn_id.add continuousOn_const).div_const 2).rpow_const
+          (fun t ht => Or.inl (ne_of_gt (by
+            change 0 < (t + y) / 2
+            linarith [hlo_sum, ht.1])))).mul continuousOn_const
+      · exact (continuousOn_const.mul
+          (((continuousOn_id.sub continuousOn_const).div_const 2).rpow_const
+            (fun t ht => Or.inl (ne_of_gt (by
+              change 0 < (t - y) / 2
+              linarith [hlo_diff, ht.1]))))).mul continuousOn_const
+    refine ContinuousOn.congr hg ?_
+    intro t ht
+    have htpos : 0 < t := lt_of_lt_of_le hlo_pos ht.1
+    have hsum : 0 < (t + y) / 2 := by linarith [hlo_sum, ht.1]
+    have hdiff : 0 < (t - y) / 2 := by linarith [hlo_diff, ht.1]
+    simp [g, DyvLeTwo, htpos, abs_of_pos hsum, abs_of_pos hdiff]
+  refine monotoneOn_of_hasDerivWithinAt_nonneg
+    (D := Set.Icc lo hi)
+    (f := fun t : ℝ => DyvLeTwo p t y)
+    (f' := fun t : ℝ =>
+      (p * (p - 1) / 4) *
+        (((t + y) / 2) ^ (p - 2) +
+          coeffLeTwo p * ((t - y) / 2) ^ (p - 2)))
+    (convex_Icc lo hi) hcont ?_ ?_
+  · intro t ht
+    have htI : t ∈ Set.Ioo lo hi := by
+      simpa [interior_Icc] using ht
+    have hsum : 0 < (t + y) / 2 := by linarith [hlo_sum, htI.1]
+    have hdiff : 0 < (t - y) / 2 := by linarith [hlo_diff, htI.1]
+    exact (hasDerivAt_DyvLeTwo_x_of_pos_leTwo p t y hsum hdiff).hasDerivWithinAt
+  · intro t ht
+    have htI : t ∈ Set.Ioo lo hi := by
+      simpa [interior_Icc] using ht
+    have hsum : 0 < (t + y) / 2 := by linarith [hlo_sum, htI.1]
+    have hdiff : 0 < (t - y) / 2 := by linarith [hlo_diff, htI.1]
+    have hpcoef : 0 ≤ p * (p - 1) / 4 := by
+      exact div_nonneg (mul_nonneg (by linarith) (by linarith)) (by norm_num)
+    have hsum_pow : 0 ≤ ((t + y) / 2) ^ (p - 2) :=
+      Real.rpow_nonneg hsum.le _
+    have hdiff_pow : 0 ≤ ((t - y) / 2) ^ (p - 2) :=
+      Real.rpow_nonneg hdiff.le _
+    have hcoeff : 0 ≤ coeffLeTwo p := by
+      exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
+    exact mul_nonneg hpcoef (add_nonneg hsum_pow (mul_nonneg hcoeff hdiff_pow))
+
+lemma DyuA1_mono_x_on_Icc_pos_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {lo hi y : ℝ}
+    (hlo : 0 < lo) :
+    MonotoneOn (fun t : ℝ => DyuA1 p t y) (Set.Icc lo hi) := by
+  have hcont : ContinuousOn (fun t : ℝ => DyuA1 p t y) (Set.Icc lo hi) := by
+    let g : ℝ → ℝ := fun t => alpha p * t ^ (p - 1) * (pStar p / 2)
+    have hg : ContinuousOn g (Set.Icc lo hi) := by
+      dsimp [g]
+      exact ((continuousOn_const.mul
+        (continuousOn_id.rpow_const
+          (fun t ht => Or.inl (ne_of_gt (lt_of_lt_of_le hlo ht.1))))).mul
+        continuousOn_const)
+    refine ContinuousOn.congr hg ?_
+    intro t ht
+    have htpos : 0 < t := lt_of_lt_of_le hlo ht.1
+    simp [g, DyuA1, htpos]
+  refine monotoneOn_of_hasDerivWithinAt_nonneg
+    (D := Set.Icc lo hi)
+    (f := fun t : ℝ => DyuA1 p t y)
+    (f' := fun t : ℝ => alpha p * ((p - 1) * t ^ (p - 2)) * (pStar p / 2))
+    (convex_Icc lo hi) hcont ?_ ?_
+  · intro t ht
+    have htI : t ∈ Set.Ioo lo hi := by
+      simpa [interior_Icc] using ht
+    exact (hasDerivAt_DyuA1_x_of_pos_leTwo p hp1 hp2 t y
+      (lt_trans hlo htI.1)).hasDerivWithinAt
+  · intro t ht
+    have htI : t ∈ Set.Ioo lo hi := by
+      simpa [interior_Icc] using ht
+    have htpos : 0 < t := lt_trans hlo htI.1
+    have ha : 0 ≤ alpha p := alpha_nonneg_of_one_lt_of_lt_two p hp1 hp2
+    have hp_sub : 0 ≤ p - 1 := by linarith
+    have hpow : 0 ≤ t ^ (p - 2) := Real.rpow_nonneg htpos.le _
+    have hpStar_nonneg : 0 ≤ pStar p / 2 := by
+      have hpStar : pStar p = q p := pStar_eq_q_of_one_lt_of_lt_two p hp1 hp2
+      have hp_ne_one : p ≠ 1 := by linarith
+      have hpden_pos : 0 < p - 1 := by linarith
+      rw [hpStar]
+      simp [q, hp_ne_one]
+      exact div_nonneg (div_nonneg (by linarith) hpden_pos.le) (by norm_num)
+    positivity
+
+lemma DyuA1_mono_x_of_pos_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
+    (hx : 0 < x) (hxz : x ≤ z) :
+    DyuA1 p x y ≤ DyuA1 p z y := by
+  have hmono := DyuA1_mono_x_on_Icc_pos_leTwo
+    (p := p) (hp1 := hp1) (hp2 := hp2) (lo := x) (hi := z) (y := y) hx
+  exact hmono ⟨le_rfl, hxz⟩ ⟨hxz, le_rfl⟩ hxz
+
+lemma DxuA1_mono_y_of_pos_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y z : ℝ}
+    (hx : 0 < x) (hyz : y ≤ z) :
+    DxuA1 p x y ≤ DxuA1 p x z := by
+  have hcoef_nonneg :
+      0 ≤ alpha p * (p / 2) * x ^ (p - 2) := by
+    have ha : 0 ≤ alpha p := alpha_nonneg_of_one_lt_of_lt_two p hp1 hp2
+    have hp_nonneg : 0 ≤ p / 2 := by linarith
+    have hpow : 0 ≤ x ^ (p - 2) := Real.rpow_nonneg hx.le _
+    positivity
+  have hxpos : x > 0 := hx
+  simp [DxuA1, hxpos]
+  have hlin : (p - 2) / (p - 1) * x + y ≤ (p - 2) / (p - 1) * x + z := by
+    linarith
+  exact mul_le_mul_of_nonneg_left hlin hcoef_nonneg
+
+lemma hasDerivAt_DxvLeTwo_y_of_pos_leTwo
+    (p x y : ℝ)
+    (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
+    HasDerivAt (fun s => DxvLeTwo p x s)
+      ((p * (p - 1) / 4) *
+        (((x + y) / 2) ^ (p - 2) +
+          coeffLeTwo p * ((x - y) / 2) ^ (p - 2))) y := by
+  have hx : 0 < x := by linarith
+  have hsum_nhds : {s : ℝ | 0 < (x + s) / 2} ∈ nhds y := by
+    exact ((((continuous_const.add continuous_id').div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hsum))
+  have hdiff_nhds : {s : ℝ | 0 < (x - s) / 2} ∈ nhds y := by
+    exact ((((continuous_const.sub continuous_id').div_const 2).continuousAt).preimage_mem_nhds
+      (Ioi_mem_nhds hdiff))
+  have hEq :
+      (fun s => DxvLeTwo p x s) =ᶠ[nhds y]
+        fun s =>
+          ((x + s) / 2) ^ (p - 1) * (p / 2) -
+            coeffLeTwo p * ((x - s) / 2) ^ (p - 1) * (p / 2) := by
+    filter_upwards [hsum_nhds, hdiff_nhds] with s hssum hsdiff
+    simp [DxvLeTwo, hx, abs_of_pos hssum, abs_of_pos hsdiff]
+  have hbase_sum :
+      HasDerivAt (fun s : ℝ => (x + s) / 2) (1 / 2) y := by
+    simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      (((hasDerivAt_id y).const_add x).const_mul (1 / 2 : ℝ))
+  have hbase_diff :
+      HasDerivAt (fun s : ℝ => (x - s) / 2) (-(1 / 2)) y := by
+    simpa [sub_eq_add_neg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      ((((hasDerivAt_id y).neg).const_add x).const_mul (1 / 2 : ℝ))
+  have hpow_sum :
+      HasDerivAt (fun s : ℝ => ((x + s) / 2) ^ (p - 1))
+        ((p - 1) * ((x + y) / 2) ^ (p - 2) * (1 / 2)) y := by
+    have hrpow :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1))
+          ((p - 1) * ((x + y) / 2) ^ (p - 2)) ((x + y) / 2) := by
+      have hcond : (x + y) / 2 ≠ 0 ∨ 1 ≤ p - 1 := Or.inl (ne_of_gt hsum)
+      have h := (Real.hasDerivAt_rpow_const hcond :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1))
+          ((p - 1) * ((x + y) / 2) ^ ((p - 1) - 1)) ((x + y) / 2))
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
+        show p + (-1 + -1) = p + -2 by ring] using h
+    exact hrpow.comp y hbase_sum
+  have hpow_diff :
+      HasDerivAt (fun s : ℝ => ((x - s) / 2) ^ (p - 1))
+        ((p - 1) * ((x - y) / 2) ^ (p - 2) * (-(1 / 2))) y := by
+    have hrpow :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1))
+          ((p - 1) * ((x - y) / 2) ^ (p - 2)) ((x - y) / 2) := by
+      have hcond : (x - y) / 2 ≠ 0 ∨ 1 ≤ p - 1 := Or.inl (ne_of_gt hdiff)
+      have h := (Real.hasDerivAt_rpow_const hcond :
+        HasDerivAt (fun t : ℝ => t ^ (p - 1))
+          ((p - 1) * ((x - y) / 2) ^ ((p - 1) - 1)) ((x - y) / 2))
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
+        show p + (-1 + -1) = p + -2 by ring] using h
+    exact hrpow.comp y hbase_diff
+  have hderiv :
+      HasDerivAt
+        (fun s : ℝ =>
+          ((x + s) / 2) ^ (p - 1) * (p / 2) -
+            coeffLeTwo p * ((x - s) / 2) ^ (p - 1) * (p / 2))
+        ((p * (p - 1) / 4) *
+          (((x + y) / 2) ^ (p - 2) +
+            coeffLeTwo p * ((x - y) / 2) ^ (p - 2))) y := by
+    have htmp :=
+      (hpow_sum.mul_const (p / 2)).sub
+        ((hpow_diff.const_mul (coeffLeTwo p)).mul_const (p / 2))
+    refine htmp.congr_deriv ?_
+    ring
+  exact hderiv.congr_of_eventuallyEq hEq
+
+lemma deriv_DxvLeTwo_y_nonneg_leTwo
+    (p : ℝ) (hp1 : 1 < p) (x y : ℝ)
+    (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
+    0 ≤ deriv (fun s => DxvLeTwo p x s) y := by
+  have hderiv := hasDerivAt_DxvLeTwo_y_of_pos_leTwo p x y hsum hdiff
+  rw [hderiv.deriv]
+  have hpcoef : 0 ≤ p * (p - 1) / 4 := by
+    exact div_nonneg (mul_nonneg (by linarith) (by linarith)) (by norm_num)
+  have hsum_pow : 0 ≤ ((x + y) / 2) ^ (p - 2) :=
+    Real.rpow_nonneg hsum.le _
+  have hdiff_pow : 0 ≤ ((x - y) / 2) ^ (p - 2) :=
+    Real.rpow_nonneg hdiff.le _
+  have hcoeff : 0 ≤ coeffLeTwo p := by
+    exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
+  exact mul_nonneg hpcoef (add_nonneg hsum_pow (mul_nonneg hcoeff hdiff_pow))
+
+lemma DxvLeTwo_mono_y_on_Icc_of_pos_leTwo
+    (p : ℝ) (hp1 : 1 < p) {x lo hi : ℝ}
+    (hx : 0 < x)
+    (hlo_sum : 0 < (x + lo) / 2) (hhi_diff : 0 < (x - hi) / 2) :
+    MonotoneOn (fun t : ℝ => DxvLeTwo p x t) (Set.Icc lo hi) := by
+  have hcont : ContinuousOn (fun t : ℝ => DxvLeTwo p x t) (Set.Icc lo hi) := by
+    let g : ℝ → ℝ := fun t =>
+      ((x + t) / 2) ^ (p - 1) * (p / 2) -
+        coeffLeTwo p * ((x - t) / 2) ^ (p - 1) * (p / 2)
+    have hg : ContinuousOn g (Set.Icc lo hi) := by
+      dsimp [g]
+      apply ContinuousOn.sub
+      · exact (((continuousOn_const.add continuousOn_id).div_const 2).rpow_const
+          (fun t ht => Or.inl (ne_of_gt (by
+            change 0 < (x + t) / 2
+            linarith [hlo_sum, ht.1])))).mul continuousOn_const
+      · exact (continuousOn_const.mul
+          (((continuousOn_const.sub continuousOn_id).div_const 2).rpow_const
+            (fun t ht => Or.inl (ne_of_gt (by
+              change 0 < (x - t) / 2
+              linarith [hhi_diff, ht.2]))))).mul continuousOn_const
+    refine ContinuousOn.congr hg ?_
+    intro t ht
+    have hsum : 0 < (x + t) / 2 := by linarith [hlo_sum, ht.1]
+    have hdiff : 0 < (x - t) / 2 := by linarith [hhi_diff, ht.2]
+    simp [g, DxvLeTwo, hx, abs_of_pos hsum, abs_of_pos hdiff]
+  refine monotoneOn_of_hasDerivWithinAt_nonneg
+    (D := Set.Icc lo hi)
+    (f := fun t : ℝ => DxvLeTwo p x t)
+    (f' := fun t : ℝ =>
+      (p * (p - 1) / 4) *
+        (((x + t) / 2) ^ (p - 2) +
+          coeffLeTwo p * ((x - t) / 2) ^ (p - 2)))
+    (convex_Icc lo hi) hcont ?_ ?_
+  · intro t ht
+    have htI : t ∈ Set.Ioo lo hi := by
+      simpa [interior_Icc] using ht
+    have hsum : 0 < (x + t) / 2 := by linarith [hlo_sum, htI.1]
+    have hdiff : 0 < (x - t) / 2 := by linarith [hhi_diff, htI.2]
+    exact (hasDerivAt_DxvLeTwo_y_of_pos_leTwo p x t hsum hdiff).hasDerivWithinAt
+  · intro t ht
+    have htI : t ∈ Set.Ioo lo hi := by
+      simpa [interior_Icc] using ht
+    have hsum : 0 < (x + t) / 2 := by linarith [hlo_sum, htI.1]
+    have hdiff : 0 < (x - t) / 2 := by linarith [hhi_diff, htI.2]
+    have hpcoef : 0 ≤ p * (p - 1) / 4 := by
+      exact div_nonneg (mul_nonneg (by linarith) (by linarith)) (by norm_num)
+    have hsum_pow : 0 ≤ ((x + t) / 2) ^ (p - 2) :=
+      Real.rpow_nonneg hsum.le _
+    have hdiff_pow : 0 ≤ ((x - t) / 2) ^ (p - 2) :=
+      Real.rpow_nonneg hdiff.le _
+    have hcoeff : 0 ≤ coeffLeTwo p := by
+      exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
+    exact mul_nonneg hpcoef (add_nonneg hsum_pow (mul_nonneg hcoeff hdiff_pow))
+
+lemma DyuCandidate_mono_x_on_Q1_A1_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
+    (hy_pos : 0 < y) (hx_lower : y / a p ≤ x) (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have ha_pos : 0 < a p := by
+    rw [a_eq_leTwo p hp1 hp2]
+    exact div_pos (by linarith) (by linarith)
+  have hx_pos : 0 < x := by
+    have hy_div_pos : 0 < y / a p := div_pos hy_pos ha_pos
+    exact lt_of_lt_of_le hy_div_pos hx_lower
+  have hz_pos : 0 < z := lt_of_lt_of_le hx_pos hxz
+  have hQx : QuarterPlane x y := by
+    refine ⟨hx_pos.le, ?_, ?_⟩
+    · have hy_lt_div : y < y / a p := by
+        rw [div_eq_mul_inv]
+        have ha_lt : a p < 1 := a_lt_one_of_one_lt_of_lt_two p hp1 hp2
+        have hinv : 1 < (a p)⁻¹ := by
+          rw [one_lt_inv₀ ha_pos]
+          exact ha_lt
+        nlinarith
+      exact le_trans hy_lt_div.le hx_lower
+    · linarith
+  have hQz : QuarterPlane z y := by
+    refine ⟨hz_pos.le, le_trans hQx.2.1 hxz, ?_⟩
+    linarith
+  have hclx : closureA1 p x y := by
+    refine ⟨hx_pos.le, by linarith, ?_⟩
+    have hmul := mul_le_mul_of_nonneg_left hx_lower ha_pos.le
+    field_simp [ha_pos.ne'] at hmul
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hmul
+  have hclz : closureA1 p z y := by
+    refine ⟨hz_pos.le, by linarith, ?_⟩
+    have hz_lower : y / a p ≤ z := le_trans hx_lower hxz
+    have hmul := mul_le_mul_of_nonneg_left hz_lower ha_pos.le
+    field_simp [ha_pos.ne'] at hmul
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hmul
+  have hdx : DyuCandidate p x y = DyuA1 p x y := by
+    rw [DyuCandidate_eq_Q1_leTwo p hQx]
+    simp [DyauxFunction1, hclx]
+  have hdz : DyuCandidate p z y = DyuA1 p z y := by
+    rw [DyuCandidate_eq_Q1_leTwo p hQz]
+    simp [DyauxFunction1, hclz]
+  rw [hdx, hdz]
+  exact DyuA1_mono_x_of_pos_leTwo p hp1 hp2 hx_pos hxz
+
+lemma DyuCandidate_mono_x_on_Q3_A1_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
+    (hy_pos : 0 < y) (hx_lower : -y ≤ x) (hz_upper : z ≤ a p * y)
+    (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_one_lt_of_lt_two p hp1 hp2
+  have ha_lt : a p < 1 := a_lt_one_of_one_lt_of_lt_two p hp1 hp2
+  have hQx : QuarterPlane3 x y := by
+    refine ⟨hy_pos.le, hx_lower, ?_⟩
+    exact le_trans (le_trans hxz hz_upper)
+      ((mul_le_mul_of_nonneg_right ha_lt.le hy_pos.le).trans_eq (one_mul y))
+  have hQz : QuarterPlane3 z y := by
+    refine ⟨hy_pos.le, le_trans hx_lower hxz, ?_⟩
+    exact le_trans hz_upper
+      ((mul_le_mul_of_nonneg_right ha_lt.le hy_pos.le).trans_eq (one_mul y))
+  have hclx : closureA1 p y x := ⟨hy_pos.le, hx_lower, le_trans hxz hz_upper⟩
+  have hclz : closureA1 p y z := ⟨hy_pos.le, le_trans hx_lower hxz, hz_upper⟩
+  have hdx : DyuCandidate p x y = DxuA1 p y x := by
+    rw [DyuCandidate_eq_Q3_leTwo p hp1 hp2 hQx]
+    simp [DxauxFunction1, hclx]
+  have hdz : DyuCandidate p z y = DxuA1 p y z := by
+    rw [DyuCandidate_eq_Q3_leTwo p hp1 hp2 hQz]
+    simp [DxauxFunction1, hclz]
+  rw [hdx, hdz]
+  exact DxuA1_mono_y_of_pos_leTwo p hp1 hp2 hy_pos hxz
+
+lemma DyuCandidate_mono_x_on_Q2_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
+    (hy_pos : 0 < y) (hz_upper : z ≤ -y) (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have hQx : QuarterPlane2 x y := ⟨by linarith, by linarith, by linarith⟩
+  have hQz : QuarterPlane2 z y := ⟨by linarith, by linarith, by linarith⟩
+  have hclx : closureA1 p (-x) (-y) := by
+    have ha_nonneg : 0 ≤ a p := a_nonneg_of_one_lt_of_lt_two p hp1 hp2
+    refine ⟨by linarith, by linarith, ?_⟩
+    have hx_nonpos : x ≤ 0 := le_trans hxz (le_trans hz_upper (by linarith))
+    have hmul : a p * x ≤ 0 := mul_nonpos_of_nonneg_of_nonpos ha_nonneg hx_nonpos
+    linarith
+  have hclz : closureA1 p (-z) (-y) := by
+    have ha_nonneg : 0 ≤ a p := a_nonneg_of_one_lt_of_lt_two p hp1 hp2
+    refine ⟨by linarith, by linarith, ?_⟩
+    have hz_nonpos : z ≤ 0 := le_trans hz_upper (by linarith)
+    have hmul : a p * z ≤ 0 := mul_nonpos_of_nonneg_of_nonpos ha_nonneg hz_nonpos
+    linarith
+  have hdx : DyuCandidate p x y = -DyuA1 p (-x) (-y) := by
+    rw [DyuCandidate_eq_Q2_leTwo p hQx]
+    simp [DyauxFunction1, hclx]
+  have hdz : DyuCandidate p z y = -DyuA1 p (-z) (-y) := by
+    rw [DyuCandidate_eq_Q2_leTwo p hQz]
+    simp [DyauxFunction1, hclz]
+  have hzpos : 0 < -z := by linarith
+  have hmono : DyuA1 p (-z) (-y) ≤ DyuA1 p (-x) (-y) :=
+    DyuA1_mono_x_of_pos_leTwo p hp1 hp2 hzpos (by linarith)
+  rw [hdx, hdz]
+  linarith
+
+lemma DyuCandidate_mono_x_on_Q1_A2_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
+    (hy_pos : 0 < y) (hyx : y < x) (hz_upper : z ≤ y / a p)
+    (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have ha_pos : 0 < a p := by
+    rw [a_eq_leTwo p hp1 hp2]
+    exact div_pos (by linarith) (by linarith)
+  have hx_pos : 0 < x := lt_of_lt_of_le hy_pos hyx.le
+  have hz_pos : 0 < z := lt_of_lt_of_le hx_pos hxz
+  have hQx : QuarterPlane x y := ⟨hx_pos.le, hyx.le, by linarith⟩
+  have hQz : QuarterPlane z y := ⟨hz_pos.le, le_trans hyx.le hxz, by linarith⟩
+  have hax : a p * x ≤ y := by
+    have hmul := mul_le_mul_of_nonneg_left (le_trans hxz hz_upper) ha_pos.le
+    field_simp [ha_pos.ne'] at hmul
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hmul
+  have haz : a p * z ≤ y := by
+    have hmul := mul_le_mul_of_nonneg_left hz_upper ha_pos.le
+    field_simp [ha_pos.ne'] at hmul
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hmul
+  have hclx : closureA2 p x y := ⟨hx_pos.le, hax, hyx.le⟩
+  have hclz : closureA2 p z y := ⟨hz_pos.le, haz, le_trans hyx.le hxz⟩
+  have hdx : DyuCandidate p x y = DyvLeTwo p x y := by
+    rw [DyuCandidate_eq_Q1_leTwo p hQx]
+    exact auxFunction1_Dy_eq_DyvLeTwo_leTwo p hp1 hp2 x y hclx
+  have hdz : DyuCandidate p z y = DyvLeTwo p z y := by
+    rw [DyuCandidate_eq_Q1_leTwo p hQz]
+    exact auxFunction1_Dy_eq_DyvLeTwo_leTwo p hp1 hp2 z y hclz
+  have hmono := DyvLeTwo_mono_x_on_Icc_of_pos_leTwo
+    (p := p) (hp1 := hp1) (lo := x) (hi := z) (y := y)
+    (by linarith) (by linarith)
+  rw [hdx, hdz]
+  exact hmono ⟨le_rfl, hxz⟩ ⟨hxz, le_rfl⟩ hxz
+
+lemma DyuCandidate_mono_x_on_Q3_A2_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
+    (hy_pos : 0 < y) (hx_lower : a p * y ≤ x) (hz_upper : z < y)
+    (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_one_lt_of_lt_two p hp1 hp2
+  have ha_lt : a p < 1 := a_lt_one_of_one_lt_of_lt_two p hp1 hp2
+  have hQx : QuarterPlane3 x y := by
+    refine ⟨hy_pos.le, ?_, le_trans hxz hz_upper.le⟩
+    have haxy_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+    linarith
+  have hQz : QuarterPlane3 z y := by
+    refine ⟨hy_pos.le, ?_, hz_upper.le⟩
+    have haxy_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+    linarith
+  have hclx : closureA2 p y x := ⟨hy_pos.le, hx_lower, le_trans hxz hz_upper.le⟩
+  have hclz : closureA2 p y z := ⟨hy_pos.le, le_trans hx_lower hxz, hz_upper.le⟩
+  have hdx : DyuCandidate p x y = DxvLeTwo p y x := by
+    rw [DyuCandidate_eq_Q3_leTwo p hp1 hp2 hQx]
+    exact auxFunction1_Dx_eq_DxvLeTwo_leTwo p hp1 hp2 y x hclx
+  have hdz : DyuCandidate p z y = DxvLeTwo p y z := by
+    rw [DyuCandidate_eq_Q3_leTwo p hp1 hp2 hQz]
+    exact auxFunction1_Dx_eq_DxvLeTwo_leTwo p hp1 hp2 y z hclz
+  have hmono := DxvLeTwo_mono_y_on_Icc_of_pos_leTwo
+    (p := p) (hp1 := hp1) (x := y) (lo := x) (hi := z)
+    hy_pos (by
+      have hsum : 0 ≤ x := by
+        have haxy_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+        exact le_trans haxy_nonneg hx_lower
+      linarith) (by linarith)
+  rw [hdx, hdz]
+  exact hmono ⟨le_rfl, hxz⟩ ⟨hxz, le_rfl⟩ hxz
+
+lemma DyuCandidate_mono_x_Q3_A2_to_diag_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
+    (hy_pos : 0 < y) (hx_lower : a p * y ≤ x) (hx_upper : x < y) :
+    DyuCandidate p x y ≤ DyuCandidate p y y := by
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_one_lt_of_lt_two p hp1 hp2
+  have hQx : QuarterPlane3 x y := by
+    refine ⟨hy_pos.le, ?_, hx_upper.le⟩
+    have haxy_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+    linarith
+  have hQy : QuarterPlane y y := ⟨hy_pos.le, le_rfl, by linarith⟩
+  have hclx : closureA2 p y x := ⟨hy_pos.le, hx_lower, hx_upper.le⟩
+  have hcly : closureA2 p y y := by
+    have ha_lt : a p < 1 := a_lt_one_of_one_lt_of_lt_two p hp1 hp2
+    exact ⟨hy_pos.le,
+      (mul_le_mul_of_nonneg_right ha_lt.le hy_pos.le).trans_eq (one_mul y), le_rfl⟩
+  have hdx : DyuCandidate p x y = DxvLeTwo p y x := by
+    rw [DyuCandidate_eq_Q3_leTwo p hp1 hp2 hQx]
+    exact auxFunction1_Dx_eq_DxvLeTwo_leTwo p hp1 hp2 y x hclx
+  have hdy : DyuCandidate p y y = DyvLeTwo p y y := by
+    rw [DyuCandidate_eq_Q1_leTwo p hQy]
+    exact auxFunction1_Dy_eq_DyvLeTwo_leTwo p hp1 hp2 y y hcly
+  have hsum_le : ((y + x) / 2) ^ (p - 1) ≤ y ^ (p - 1) := by
+    have hbase_nonneg : 0 ≤ (y + x) / 2 := by
+      have haxy_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+      have hx_nonneg : 0 ≤ x := le_trans haxy_nonneg hx_lower
+      linarith
+    have hbase_le : (y + x) / 2 ≤ y := by linarith
+    exact Real.rpow_le_rpow hbase_nonneg hbase_le (by linarith)
+  have hdiff_nonneg : 0 ≤ ((y - x) / 2) ^ (p - 1) := by
+    exact Real.rpow_nonneg (by linarith [hx_upper.le]) _
+  have hcoeff_nonneg : 0 ≤ coeffLeTwo p := by
+    exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
+  have hp_half_nonneg : 0 ≤ p / 2 := by linarith
+  rw [hdx, hdy]
+  have hzero : (0 : ℝ) ^ (p - 1) = 0 := Real.zero_rpow (by linarith)
+  have hx_nonneg : 0 ≤ x := by
+    have haxy_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+    exact le_trans haxy_nonneg hx_lower
+  have hsum_pos : 0 < (y + x) / 2 := by linarith
+  have hdiff_pos : 0 < (y - x) / 2 := by linarith
+  simp [DxvLeTwo, DyvLeTwo, hy_pos, abs_of_pos hy_pos,
+    abs_of_pos hsum_pos, abs_of_pos hdiff_pos, hzero]
+  have hA := mul_le_mul_of_nonneg_right hsum_le hp_half_nonneg
+  have hB : 0 ≤ coeffLeTwo p * ((y - x) / 2) ^ (p - 1) * (p / 2) := by
+    positivity
+  nlinarith
+
+lemma DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
+    (hy_pos : 0 < y) (hyz : y < z) (hz_upper : z ≤ y / a p) :
+    DyuCandidate p y y ≤ DyuCandidate p z y := by
+  have ha_pos : 0 < a p := by
+    rw [a_eq_leTwo p hp1 hp2]
+    exact div_pos (by linarith) (by linarith)
+  have hz_pos : 0 < z := lt_trans hy_pos hyz
+  have hQy : QuarterPlane y y := ⟨hy_pos.le, le_rfl, by linarith⟩
+  have hQz : QuarterPlane z y := ⟨hz_pos.le, hyz.le, by linarith⟩
+  have hcly : closureA2 p y y := by
+    have ha_lt : a p < 1 := a_lt_one_of_one_lt_of_lt_two p hp1 hp2
+    exact ⟨hy_pos.le,
+      (mul_le_mul_of_nonneg_right ha_lt.le hy_pos.le).trans_eq (one_mul y), le_rfl⟩
+  have haz : a p * z ≤ y := by
+    have hmul := mul_le_mul_of_nonneg_left hz_upper ha_pos.le
+    field_simp [ha_pos.ne'] at hmul
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hmul
+  have hclz : closureA2 p z y := ⟨hz_pos.le, haz, hyz.le⟩
+  have hdy : DyuCandidate p y y = DyvLeTwo p y y := by
+    rw [DyuCandidate_eq_Q1_leTwo p hQy]
+    exact auxFunction1_Dy_eq_DyvLeTwo_leTwo p hp1 hp2 y y hcly
+  have hdz : DyuCandidate p z y = DyvLeTwo p z y := by
+    rw [DyuCandidate_eq_Q1_leTwo p hQz]
+    exact auxFunction1_Dy_eq_DyvLeTwo_leTwo p hp1 hp2 z y hclz
+  have hsum_le : y ^ (p - 1) ≤ ((z + y) / 2) ^ (p - 1) := by
+    have hbase_nonneg : 0 ≤ y := hy_pos.le
+    have hbase_le : y ≤ (z + y) / 2 := by linarith
+    exact Real.rpow_le_rpow hbase_nonneg hbase_le (by linarith)
+  have hdiff_nonneg : 0 ≤ ((z - y) / 2) ^ (p - 1) := by
+    exact Real.rpow_nonneg (by linarith [hyz.le]) _
+  have hcoeff_nonneg : 0 ≤ coeffLeTwo p := by
+    exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
+  have hp_half_nonneg : 0 ≤ p / 2 := by linarith
+  rw [hdy, hdz]
+  have hzero : (0 : ℝ) ^ (p - 1) = 0 := Real.zero_rpow (by linarith)
+  have hsum_pos : 0 < (z + y) / 2 := by linarith
+  have hdiff_pos : 0 < (z - y) / 2 := by linarith
+  simp [DyvLeTwo, hy_pos, hz_pos, abs_of_pos hy_pos,
+    abs_of_pos hsum_pos, abs_of_pos hdiff_pos, hzero]
+  have hA := mul_le_mul_of_nonneg_right hsum_le hp_half_nonneg
+  have hB : 0 ≤ coeffLeTwo p * ((z - y) / 2) ^ (p - 1) * (p / 2) := by
+    positivity
+  nlinarith
+
+lemma DyuCandidate_antidiag_le_Q3_boundary_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
+    (hy_pos : 0 < y) :
+    DyuCandidate p (-y) y ≤ DyuCandidate p (a p * y) y := by
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_one_lt_of_lt_two p hp1 hp2
+  have hle : -y ≤ a p * y := by
+    have hnonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+    linarith
+  exact DyuCandidate_mono_x_on_Q3_A1_leTwo
+    (p := p) (hp1 := hp1) (hp2 := hp2) (x := -y) (z := a p * y) (y := y)
+    hy_pos le_rfl le_rfl hle
+
+lemma DyuCandidate_Q3_boundary_le_diag_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
+    (hy_pos : 0 < y) :
+    DyuCandidate p (a p * y) y ≤ DyuCandidate p y y := by
+  have ha_lt : a p < 1 := a_lt_one_of_one_lt_of_lt_two p hp1 hp2
+  exact DyuCandidate_mono_x_Q3_A2_to_diag_leTwo
+    (p := p) (hp1 := hp1) (hp2 := hp2) (x := a p * y) (y := y)
+    hy_pos le_rfl (by simpa using mul_lt_mul_of_pos_right ha_lt hy_pos)
+
+lemma DyuCandidate_diag_le_Q1_boundary_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
+    (hy_pos : 0 < y) :
+    DyuCandidate p y y ≤ DyuCandidate p (y / a p) y := by
+  have ha_pos : 0 < a p := by
+    rw [a_eq_leTwo p hp1 hp2]
+    exact div_pos (by linarith) (by linarith)
+  have ha_lt : a p < 1 := a_lt_one_of_one_lt_of_lt_two p hp1 hp2
+  have hy_lt_div : y < y / a p := by
+    rw [div_eq_mul_inv]
+    have hinv : 1 < (a p)⁻¹ := by
+      rw [one_lt_inv₀ ha_pos]
+      exact ha_lt
+    nlinarith
+  exact DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
+    (p := p) (hp1 := hp1) (hp2 := hp2) (z := y / a p) (y := y)
+    hy_pos hy_lt_div le_rfl
+
+lemma DyuCandidate_mono_x_of_y_pos_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
+    (hy_pos : 0 < y) (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have ha_pos : 0 < a p := by
+    rw [a_eq_leTwo p hp1 hp2]
+    exact div_pos (by linarith) (by linarith)
+  have ha_nonneg : 0 ≤ a p := ha_pos.le
+  have ha_lt : a p < 1 := a_lt_one_of_one_lt_of_lt_two p hp1 hp2
+  have hneg_le_boundary : -y ≤ a p * y := by
+    have hnonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+    linarith
+  have hboundary_lt_diag : a p * y < y := by
+    simpa using mul_lt_mul_of_pos_right ha_lt hy_pos
+  have hdiag_lt_q1 : y < y / a p := by
+    rw [div_eq_mul_inv]
+    have hinv : 1 < (a p)⁻¹ := by
+      rw [one_lt_inv₀ ha_pos]
+      exact ha_lt
+    nlinarith
+  by_cases hz_q2 : z ≤ -y
+  · exact DyuCandidate_mono_x_on_Q2_leTwo
+      (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (z := z) (y := y)
+      hy_pos hz_q2 hxz
+  · have hz_gt_neg : -y < z := lt_of_not_ge hz_q2
+    have start_to_neg :
+        x ≤ -y →
+        DyuCandidate p x y ≤ DyuCandidate p (-y) y := by
+      intro hx_neg
+      exact DyuCandidate_mono_x_on_Q2_leTwo
+        (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (z := -y) (y := y)
+        hy_pos le_rfl hx_neg
+    by_cases hz_q3a1 : z ≤ a p * y
+    · by_cases hx_neg : x ≤ -y
+      · exact le_trans (start_to_neg hx_neg)
+          (DyuCandidate_mono_x_on_Q3_A1_leTwo
+            (p := p) (hp1 := hp1) (hp2 := hp2)
+            (x := -y) (z := z) (y := y)
+            hy_pos le_rfl hz_q3a1 (le_of_lt hz_gt_neg))
+      · exact DyuCandidate_mono_x_on_Q3_A1_leTwo
+          (p := p) (hp1 := hp1) (hp2 := hp2)
+          (x := x) (z := z) (y := y)
+          hy_pos (le_of_lt (lt_of_not_ge hx_neg)) hz_q3a1 hxz
+    · have hz_gt_boundary : a p * y < z := lt_of_not_ge hz_q3a1
+      by_cases hz_diag : z < y
+      · by_cases hx_neg : x ≤ -y
+        · exact le_trans (start_to_neg hx_neg)
+            (le_trans (DyuCandidate_antidiag_le_Q3_boundary_leTwo
+              (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
+              (DyuCandidate_mono_x_on_Q3_A2_leTwo
+                (p := p) (hp1 := hp1) (hp2 := hp2)
+                (x := a p * y) (z := z) (y := y)
+                hy_pos le_rfl hz_diag (le_of_lt hz_gt_boundary)))
+        · by_cases hx_boundary : x ≤ a p * y
+          · exact le_trans
+              (DyuCandidate_mono_x_on_Q3_A1_leTwo
+                (p := p) (hp1 := hp1) (hp2 := hp2)
+                (x := x) (z := a p * y) (y := y)
+                hy_pos (le_of_lt (lt_of_not_ge hx_neg)) le_rfl hx_boundary)
+              (DyuCandidate_mono_x_on_Q3_A2_leTwo
+                (p := p) (hp1 := hp1) (hp2 := hp2)
+                (x := a p * y) (z := z) (y := y)
+                hy_pos le_rfl hz_diag (le_of_lt hz_gt_boundary))
+          · exact DyuCandidate_mono_x_on_Q3_A2_leTwo
+              (p := p) (hp1 := hp1) (hp2 := hp2)
+              (x := x) (z := z) (y := y)
+              hy_pos (le_of_lt (lt_of_not_ge hx_boundary)) hz_diag hxz
+      · have hy_le_z : y ≤ z := le_of_not_gt hz_diag
+        by_cases hz_q1a2 : z ≤ y / a p
+        · by_cases hx_neg : x ≤ -y
+          · exact le_trans (start_to_neg hx_neg)
+              (le_trans (DyuCandidate_antidiag_le_Q3_boundary_leTwo
+                (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
+                (le_trans (DyuCandidate_Q3_boundary_le_diag_leTwo
+                  (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
+                  (by
+                    rcases hy_le_z.lt_or_eq with hyz | rfl
+                    · exact DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2) (z := z) (y := y)
+                        hy_pos hyz hz_q1a2
+                    · exact le_rfl)))
+          · by_cases hx_boundary : x ≤ a p * y
+            · exact le_trans
+                (DyuCandidate_mono_x_on_Q3_A1_leTwo
+                  (p := p) (hp1 := hp1) (hp2 := hp2)
+                  (x := x) (z := a p * y) (y := y)
+                  hy_pos (le_of_lt (lt_of_not_ge hx_neg)) le_rfl hx_boundary)
+                (le_trans (DyuCandidate_Q3_boundary_le_diag_leTwo
+                  (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
+                  (by
+                    rcases hy_le_z.lt_or_eq with hyz | rfl
+                    · exact DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2) (z := z) (y := y)
+                        hy_pos hyz hz_q1a2
+                    · exact le_rfl))
+            · by_cases hx_diag : x < y
+              · exact le_trans
+                  (DyuCandidate_mono_x_Q3_A2_to_diag_leTwo
+                    (p := p) (hp1 := hp1) (hp2 := hp2)
+                    (x := x) (y := y) hy_pos
+                    (le_of_lt (lt_of_not_ge hx_boundary)) hx_diag)
+                  (by
+                    rcases hy_le_z.lt_or_eq with hyz | rfl
+                    · exact DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2) (z := z) (y := y)
+                        hy_pos hyz hz_q1a2
+                    · exact le_rfl)
+              · have hy_lt_x_or_eq : y ≤ x := le_of_not_gt hx_diag
+                rcases hy_lt_x_or_eq.lt_or_eq with hyx | rfl
+                · exact DyuCandidate_mono_x_on_Q1_A2_leTwo
+                    (p := p) (hp1 := hp1) (hp2 := hp2)
+                    (x := x) (z := z) (y := y) hy_pos hyx hz_q1a2 hxz
+                · rcases hy_le_z.lt_or_eq with hyz | rfl
+                  · exact DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
+                      (p := p) (hp1 := hp1) (hp2 := hp2) (z := z) (y := y)
+                      hy_pos hyz hz_q1a2
+                  · exact le_rfl
+        · have hz_gt_q1 : y / a p < z := lt_of_not_ge hz_q1a2
+          by_cases hx_q1 : y / a p ≤ x
+          · exact DyuCandidate_mono_x_on_Q1_A1_leTwo
+              (p := p) (hp1 := hp1) (hp2 := hp2)
+              (x := x) (z := z) (y := y) hy_pos hx_q1 hxz
+          · have hx_lt_q1 : x < y / a p := lt_of_not_ge hx_q1
+            have to_q1_boundary :
+                DyuCandidate p x y ≤ DyuCandidate p (y / a p) y := by
+              by_cases hx_neg : x ≤ -y
+              · exact le_trans (start_to_neg hx_neg)
+                  (le_trans (DyuCandidate_antidiag_le_Q3_boundary_leTwo
+                    (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
+                    (le_trans (DyuCandidate_Q3_boundary_le_diag_leTwo
+                      (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
+                      (DyuCandidate_diag_le_Q1_boundary_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)))
+              · by_cases hx_boundary : x ≤ a p * y
+                · exact le_trans
+                    (DyuCandidate_mono_x_on_Q3_A1_leTwo
+                      (p := p) (hp1 := hp1) (hp2 := hp2)
+                      (x := x) (z := a p * y) (y := y)
+                      hy_pos (le_of_lt (lt_of_not_ge hx_neg)) le_rfl hx_boundary)
+                    (le_trans (DyuCandidate_Q3_boundary_le_diag_leTwo
+                      (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
+                      (DyuCandidate_diag_le_Q1_boundary_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos))
+                · by_cases hx_diag : x < y
+                  · exact le_trans
+                      (DyuCandidate_mono_x_Q3_A2_to_diag_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2)
+                        (x := x) (y := y) hy_pos
+                        (le_of_lt (lt_of_not_ge hx_boundary)) hx_diag)
+                      (DyuCandidate_diag_le_Q1_boundary_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
+                  · have hy_le_x : y ≤ x := le_of_not_gt hx_diag
+                    rcases hy_le_x.lt_or_eq with hyx | rfl
+                    · exact DyuCandidate_mono_x_on_Q1_A2_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2)
+                        (x := x) (z := y / a p) (y := y)
+                        hy_pos hyx le_rfl hx_lt_q1.le
+                    · exact DyuCandidate_diag_le_Q1_boundary_leTwo
+                        (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos
+            exact le_trans to_q1_boundary
+              (DyuCandidate_mono_x_on_Q1_A1_leTwo
+                (p := p) (hp1 := hp1) (hp2 := hp2)
+                (x := y / a p) (z := z) (y := y)
+                hy_pos le_rfl (le_of_lt hz_gt_q1))
+
+lemma DyuCandidate_neg_neg_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
+    DyuCandidate p x y = -DyuCandidate p (-x) (-y) := by
+  rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
+  · have hQ2 : QuarterPlane2 (-x) (-y) := ⟨by linarith [hQ1.1],
+      by linarith [hQ1.2.2], by linarith [hQ1.2.1]⟩
+    rw [DyuCandidate_eq_Q1_leTwo p hQ1, DyuCandidate_eq_Q2_leTwo p hQ2]
+    simp
+  rcases hrest with hQ2 | hrest
+  · have hQ1 : QuarterPlane (-x) (-y) := ⟨by linarith [hQ2.1],
+      by linarith [hQ2.2.2], by linarith [hQ2.2.1]⟩
+    rw [DyuCandidate_eq_Q2_leTwo p hQ2, DyuCandidate_eq_Q1_leTwo p hQ1]
+  rcases hrest with hQ3 | hQ4
+  · have hQ4 : QuarterPlane4 (-x) (-y) := ⟨by linarith [hQ3.1],
+      by linarith [hQ3.2.2], by linarith [hQ3.2.1]⟩
+    rw [DyuCandidate_eq_Q3_leTwo p hp1 hp2 hQ3,
+      DyuCandidate_eq_Q4_leTwo p hp1 hp2 hQ4]
+    simp
+  · have hQ3 : QuarterPlane3 (-x) (-y) := ⟨by linarith [hQ4.1],
+      by linarith [hQ4.2.2], by linarith [hQ4.2.1]⟩
+    rw [DyuCandidate_eq_Q4_leTwo p hp1 hp2 hQ4,
+      DyuCandidate_eq_Q3_leTwo p hp1 hp2 hQ3]
+
+lemma DyuA1_nonneg_of_nonneg_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (hx : 0 ≤ x) :
+    0 ≤ DyuA1 p x y := by
+  rcases hx.lt_or_eq with hxpos | rfl
+  · have ha : 0 ≤ alpha p := alpha_nonneg_of_one_lt_of_lt_two p hp1 hp2
+    have hpow : 0 ≤ x ^ (p - 1) := Real.rpow_nonneg hxpos.le _
+    have hpStar_nonneg : 0 ≤ pStar p / 2 := by
+      have hpStar : pStar p = q p := pStar_eq_q_of_one_lt_of_lt_two p hp1 hp2
+      have hp_ne_one : p ≠ 1 := by linarith
+      have hpden_pos : 0 < p - 1 := by linarith
+      rw [hpStar]
+      simp [q, hp_ne_one]
+      exact div_nonneg (div_nonneg (by linarith) hpden_pos.le) (by norm_num)
+    simp [DyuA1, hxpos]
+    positivity
+  · simp [DyuA1]
+
+lemma DyuCandidate_axis_nonneg_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x : ℝ} (hx : 0 ≤ x) :
+    DyuCandidate p x 0 = DyuA1 p x 0 := by
+  have hQ : QuarterPlane x 0 := ⟨hx, by simpa using hx, by linarith⟩
+  have hcl : closureA1 p x 0 := by
+    refine ⟨hx, by linarith, ?_⟩
+    exact mul_nonneg (a_nonneg_of_one_lt_of_lt_two p hp1 hp2) hx
+  rw [DyuCandidate_eq_Q1_leTwo p hQ]
+  simp [DyauxFunction1, hcl]
+
+lemma DyuCandidate_axis_nonpos_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x : ℝ} (hx : x ≤ 0) :
+    DyuCandidate p x 0 = -DyuA1 p (-x) 0 := by
+  have hQ : QuarterPlane2 x 0 := ⟨hx, by linarith, hx⟩
+  have hcl : closureA1 p (-x) 0 := by
+    have hnonneg : 0 ≤ -x := by linarith
+    refine ⟨hnonneg, by linarith, ?_⟩
+    exact mul_nonneg (a_nonneg_of_one_lt_of_lt_two p hp1 hp2) hnonneg
+  rw [DyuCandidate_eq_Q2_leTwo p hQ]
+  simp [DyauxFunction1, hcl]
+
+lemma DyuCandidate_mono_x_axis_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z : ℝ}
+    (hxz : x ≤ z) :
+    DyuCandidate p x 0 ≤ DyuCandidate p z 0 := by
+  by_cases hz_nonpos : z ≤ 0
+  · have hx_nonpos : x ≤ 0 := le_trans hxz hz_nonpos
+    rw [DyuCandidate_axis_nonpos_leTwo p hp1 hp2 hx_nonpos,
+      DyuCandidate_axis_nonpos_leTwo p hp1 hp2 hz_nonpos]
+    have hmono : DyuA1 p (-z) 0 ≤ DyuA1 p (-x) 0 := by
+      rcases hz_nonpos.lt_or_eq with hzneg | hz0
+      · exact DyuA1_mono_x_of_pos_leTwo p hp1 hp2 (by linarith) (by linarith)
+      · subst z
+        simpa [DyuA1] using
+          DyuA1_nonneg_of_nonneg_leTwo (p := p) (hp1 := hp1) (hp2 := hp2)
+            (x := -x) (y := 0) (by linarith : 0 ≤ -x)
+    linarith
+  · have hz_pos : 0 < z := lt_of_not_ge hz_nonpos
+    by_cases hx_nonneg : 0 ≤ x
+    · rw [DyuCandidate_axis_nonneg_leTwo p hp1 hp2 hx_nonneg,
+        DyuCandidate_axis_nonneg_leTwo p hp1 hp2 hz_pos.le]
+      rcases hx_nonneg.lt_or_eq with hxpos | rfl
+      · exact DyuA1_mono_x_of_pos_leTwo p hp1 hp2 hxpos hxz
+      · simpa [DyuA1] using
+          DyuA1_nonneg_of_nonneg_leTwo (p := p) (hp1 := hp1) (hp2 := hp2)
+            (x := z) (y := 0) hz_pos.le
+    · have hx_neg : x < 0 := lt_of_not_ge hx_nonneg
+      have hleft : DyuCandidate p x 0 ≤ DyuCandidate p 0 0 := by
+        rw [DyuCandidate_axis_nonpos_leTwo p hp1 hp2 hx_neg.le,
+          DyuCandidate_axis_nonneg_leTwo p hp1 hp2 (le_refl 0)]
+        have hnonneg : 0 ≤ DyuA1 p (-x) 0 :=
+          DyuA1_nonneg_of_nonneg_leTwo (p := p) (hp1 := hp1) (hp2 := hp2)
+            (x := -x) (y := 0) (by linarith)
+        have hzero : DyuA1 p 0 0 = 0 := by simp [DyuA1]
+        rw [hzero]
+        linarith
+      have hright : DyuCandidate p 0 0 ≤ DyuCandidate p z 0 := by
+        rw [DyuCandidate_axis_nonneg_leTwo p hp1 hp2 (le_refl 0),
+          DyuCandidate_axis_nonneg_leTwo p hp1 hp2 hz_pos.le]
+        simpa [DyuA1] using
+          DyuA1_nonneg_of_nonneg_leTwo (p := p) (hp1 := hp1) (hp2 := hp2)
+            (x := z) (y := 0) hz_pos.le
+      exact le_trans hleft hright
+
+lemma DyuCandidate_mono_x_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
+    (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  rcases lt_trichotomy y 0 with hy_neg | hy_zero | hy_pos
+  · have hpos : 0 < -y := by linarith
+    have hmono :
+        DyuCandidate p (-z) (-y) ≤ DyuCandidate p (-x) (-y) :=
+      DyuCandidate_mono_x_of_y_pos_leTwo
+        (p := p) (hp1 := hp1) (hp2 := hp2)
+        (x := -z) (z := -x) (y := -y) hpos (by linarith)
+    rw [DyuCandidate_neg_neg_leTwo p hp1 hp2 x y,
+      DyuCandidate_neg_neg_leTwo p hp1 hp2 z y]
+    linarith
+  · subst y
+    exact DyuCandidate_mono_x_axis_leTwo p hp1 hp2 hxz
+  · exact DyuCandidate_mono_x_of_y_pos_leTwo
+      (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (z := z) (y := y) hy_pos hxz
+
+lemma DyuCandidate_mixed_mono_mul_le_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h k : ℝ}
+    (hk : h * k ≤ 0) :
+    DyuCandidate p (x + h) y * k ≤ DyuCandidate p x y * k := by
+  rcases lt_trichotomy k 0 with hk_neg | hk_zero | hk_pos
+  · have hh_nonneg : 0 ≤ h := by
+      by_contra hh
+      have hh_neg : h < 0 := lt_of_not_ge hh
+      have hprod_pos : 0 < h * k := mul_pos_of_neg_of_neg hh_neg hk_neg
+      linarith
+    have hmono : DyuCandidate p x y ≤ DyuCandidate p (x + h) y :=
+      DyuCandidate_mono_x_leTwo p hp1 hp2 (by linarith)
+    exact mul_le_mul_of_nonpos_right hmono hk_neg.le
+  · subst k
+    simp
+  · have hh_nonpos : h ≤ 0 := by
+      by_contra hh
+      have hh_pos : 0 < h := lt_of_not_ge hh
+      have hprod_pos : 0 < h * k := mul_pos hh_pos hk_pos
+      linarith
+    have hmono : DyuCandidate p (x + h) y ≤ DyuCandidate p x y :=
+      DyuCandidate_mono_x_leTwo p hp1 hp2 (by linarith)
+    exact mul_le_mul_of_nonneg_right hmono hk_pos.le
+
+lemma uCandidate_hk_negative_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h k : ℝ}
+    (hk : h * k ≤  0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  by_cases hk0 : h * k = 0
+  · exact uCandidate_axis_tangent_leTwo p hp1 hp2 hk0
+  have hhor :
+      uCandidate p (x + h) y ≤
+        uCandidate p x y + DxuCandidate p x y * h := by
+    have h := uCandidate_axis_tangent_horizontal_leTwo
+      (p := p) (hp1 := hp1) (hp2 := hp2)
+      (x := x) (y := y) (h := h) (k := 0) rfl
+    simpa using h
+  have hvert :
+      uCandidate p (x + h) (y + k) ≤
+        uCandidate p (x + h) y + DyuCandidate p (x + h) y * k := by
+    have h := uCandidate_axis_tangent_vertical_leTwo
+      (p := p) (hp1 := hp1) (hp2 := hp2)
+      (x := x + h) (y := y) (h := 0) (k := k) rfl
+    simpa using h
+  have hmixed :
+      DyuCandidate p (x + h) y * k ≤ DyuCandidate p x y * k := by
+    exact DyuCandidate_mixed_mono_mul_le_leTwo p hp1 hp2 hk
+  calc
+    uCandidate p (x + h) (y + k)
+        ≤ uCandidate p (x + h) y + DyuCandidate p (x + h) y * k := hvert
+    _ ≤ (uCandidate p x y + DxuCandidate p x y * h) +
+          DyuCandidate p (x + h) y * k := by
+            linarith
+    _ ≤ (uCandidate p x y + DxuCandidate p x y * h) +
+          DyuCandidate p x y * k := by
+            linarith
+    _ = uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+      ring
 
 
 end Majorant_p_l_2
@@ -7536,7 +8577,7 @@ end Majorant_p_l_2
 theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
-        ∀ h k, h * k = 0 →
+        ∀ h k, h * k ≤  0 →
           u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
@@ -7546,7 +8587,7 @@ theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
   · intro x y
     refine ⟨Majorant_p_l_2.DxuCandidate p x y, Majorant_p_l_2.DyuCandidate p x y, ?_⟩
     intro h k hk
-    exact Majorant_p_l_2.uCandidate_axis_tangent_leTwo p hp.1 hp.2 hk
+    exact Majorant_p_l_2.uCandidate_hk_negative_leTwo p hp.1 hp.2 hk
   constructor
   · intro x y
     rw [Majorant_p_l_2.v_eq_vLeTwo_of_one_lt_of_lt_two p x y hp.1 hp.2]
