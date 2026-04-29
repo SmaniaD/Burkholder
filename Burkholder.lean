@@ -1,9 +1,7 @@
 import Mathlib.Probability.Martingale.Basic
 import Burkholder.Basic
 import Burkholder.Majorants
-import Burkholder.UnconditionalSchauderBasis
-
-
+import Burkholder.UnconditionalSchauderBasisNontrivialField
 noncomputable section
 
 open MeasureTheory
