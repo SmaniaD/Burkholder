@@ -12,37 +12,6 @@ namespace MeasureTheory
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /--
-A discrete process is strongly predictable if `u 0` is strongly measurable with respect to
-`ℱ 0` and `u (n + 1)` is strongly measurable with respect to `ℱ n`.
-
-This keeps the stronger predictable hypothesis explicit in this development.
--/
-def IsStronglyPredictable {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
-    [TopologicalSpace.PseudoMetrizableSpace E]
-    (ℱ : Filtration ℕ mΩ) (u : ℕ → Ω → E) : Prop :=
-  StronglyMeasurable[ℱ 0] (u 0) ∧ ∀ n, StronglyMeasurable[ℱ n] (u (n + 1))
-
-namespace IsStronglyPredictable
-
-theorem stronglyAdapted {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
-    [TopologicalSpace.PseudoMetrizableSpace E]
-    {ℱ : Filtration ℕ mΩ} {u : ℕ → Ω → E}
-    (hu : IsStronglyPredictable ℱ u) : StronglyAdapted ℱ u := by
-  intro n
-  cases n with
-  | zero => exact hu.1
-  | succ n => exact (hu.2 n).mono (ℱ.mono n.le_succ)
-
-theorem measurable_add_one {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
-    [BorelSpace E] [TopologicalSpace.PseudoMetrizableSpace E]
-    {ℱ : Filtration ℕ mΩ} {u : ℕ → Ω → E}
-    (hu : IsStronglyPredictable ℱ u) (n : ℕ) :
-    Measurable[ℱ n] (u (n + 1)) :=
-  (hu.2 n).measurable
-
-end IsStronglyPredictable
-
-/--
 The martingale difference sequence associated to a discrete real-valued process.
 
 With this convention, `martingaleDiff f 0 = f 0` and
@@ -137,14 +106,14 @@ theorem martingaleTransform_martingale {μ : Measure Ω} [IsFiniteMeasure μ]
   have hint : ∀ n, Integrable ((v ⋆ₘ f) n) μ := by
     intro n
     simpa [martingaleTransform, Finset.sum_apply] using
-      (integrable_finset_sum' (Finset.range (n + 1)) fun i _ => hprod_all i)
+      (integrable_finsetSum' (Finset.range (n + 1)) fun i _ => hprod_all i)
   have hprod : ∀ n, Integrable (v (n + 1) * (f (n + 1) - f n)) μ := by
     intro n
     simpa [martingaleDiff] using hprod_all (n + 1)
   refine martingale_of_condExp_sub_eq_zero_nat hadapt hint ?_
   intro n
   have hvmeas : StronglyMeasurable[ℱ n] (v (n + 1)) :=
-    (IsStronglyPredictable.measurable_add_one hv n).stronglyMeasurable
+    IsStronglyPredictable.measurable_add_one hv n
   have hdiff_int : Integrable (f (n + 1) - f n) μ :=
     (hf.integrable (n + 1)).sub (hf.integrable n)
   have hdiff_zero :
