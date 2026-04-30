@@ -199,7 +199,7 @@ Common assumptions for Burkholder-type martingale transform inequalities.
 -/
 structure BurkholderAssumptions (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableSpace Ω] (μ : Measure Ω)
   [IsFiniteMeasure μ] (ℱ : Filtration ℕ mΩ) (w f : ℕ → Ω → ℝ) : Prop where
-  hp_one : 1 < p
+  hp_one : 1 < p.toReal
   hp_top : p ≠ ∞
   hstrong : IsStronglyPredictable ℱ w
   hmart : Martingale f ℱ μ
@@ -208,19 +208,8 @@ structure BurkholderAssumptions (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableS
 
 
 
-/-hv_int : ∀ n,
-    Integrable
-      (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ
-  hu_int : ∀ (hp_real : p.toReal > 1) n,
-    Integrable
-      (fun ω => Burkholder.u p.toReal hp_real (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ
-  hu_integral_step : ∀ (hp_real : p.toReal > 1) n,
-    (∫ ω, Burkholder.u p.toReal hp_real (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ∂μ) ≤
-      ∫ ω, Burkholder.u p.toReal hp_real (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ
-  hLp_from_v_nonpos : ∀ n,
-    (∫ ω, Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) ≤ 0 →
-      eLpNorm ((w ⋆ₘ f) n) p μ ≤
-        ENNReal.ofReal (Burkholder.pStar p.toReal - 1) * eLpNorm (f n) p μ-/
+
+
 
 
 
@@ -276,6 +265,77 @@ lemma   inequality_for_transform_differences
             simp [plusOne, minusOne, martingaleTransform, martingaleDiff]
             ring
       _ ≤ 0 := by nlinarith
+
+lemma burkholder_martingaleDiff_memLp
+    {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+    (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+    MemLp (martingaleDiff f n) p μ := by
+  cases n with
+  | zero =>
+      simpa [martingaleDiff] using h.hLp 0
+  | succ n =>
+      simpa [martingaleDiff] using (h.hLp (n + 1)).sub (h.hLp n)
+
+lemma burkholder_plusOne_mul_martingaleDiff_memLp
+    {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+    (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+    MemLp (fun ω => plusOne w n ω * martingaleDiff f n ω) p μ := by
+  have hw_adapted : StronglyAdapted ℱ w :=
+    IsStronglyPredictable.stronglyAdapted h.hstrong
+  have hw_meas : AEStronglyMeasurable (w n) μ :=
+    ((hw_adapted n).mono (ℱ.le n)).aestronglyMeasurable
+  have hcoeff_meas : AEStronglyMeasurable (plusOne w n) μ := by
+    simpa [plusOne] using hw_meas.add aestronglyMeasurable_const
+  refine MemLp.of_le_mul (c := (2 : ℝ)) (burkholder_martingaleDiff_memLp h n)
+    (hcoeff_meas.mul (burkholder_martingaleDiff_memLp h n).1) ?_
+  filter_upwards [h.hbound n] with ω hwω
+  have hcoeff : |plusOne w n ω| ≤ 2 := by
+    rw [plusOne, abs_le]
+    have hw := abs_le.mp hwω
+    constructor <;> linarith
+  rw [Real.norm_eq_abs, abs_mul, Real.norm_eq_abs]
+  exact mul_le_mul_of_nonneg_right hcoeff (abs_nonneg (martingaleDiff f n ω))
+
+lemma burkholder_minusOne_mul_martingaleDiff_memLp
+    {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+    (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+    MemLp (fun ω => minusOne w n ω * martingaleDiff f n ω) p μ := by
+  have hw_adapted : StronglyAdapted ℱ w :=
+    IsStronglyPredictable.stronglyAdapted h.hstrong
+  have hw_meas : AEStronglyMeasurable (w n) μ :=
+    ((hw_adapted n).mono (ℱ.le n)).aestronglyMeasurable
+  have hcoeff_meas : AEStronglyMeasurable (minusOne w n) μ := by
+    simpa [minusOne] using hw_meas.sub aestronglyMeasurable_const
+  refine MemLp.of_le_mul (c := (2 : ℝ)) (burkholder_martingaleDiff_memLp h n)
+    (hcoeff_meas.mul (burkholder_martingaleDiff_memLp h n).1) ?_
+  filter_upwards [h.hbound n] with ω hwω
+  have hcoeff : |minusOne w n ω| ≤ 2 := by
+    rw [minusOne, abs_le]
+    have hw := abs_le.mp hwω
+    constructor <;> linarith
+  rw [Real.norm_eq_abs, abs_mul, Real.norm_eq_abs]
+  exact mul_le_mul_of_nonneg_right hcoeff (abs_nonneg (martingaleDiff f n ω))
+
+lemma burkholder_X_memLp
+    {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+    (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+    MemLp (X_{n}[w, f]) p μ := by
+  simpa [martingaleTransform, Finset.sum_apply] using
+    memLp_finsetSum' (Finset.range (n + 1))
+      (fun i _hi => burkholder_plusOne_mul_martingaleDiff_memLp h i)
+
+lemma burkholder_Y_memLp
+    {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+    (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+    MemLp (Y_{n}[w, f]) p μ := by
+  simpa [martingaleTransform, Finset.sum_apply] using
+    memLp_finsetSum' (Finset.range (n + 1))
+      (fun i _hi => burkholder_minusOne_mul_martingaleDiff_memLp h i)
 
 
 /-- The chosen majorant dominates the Burkholder function `v`. -/
@@ -436,7 +496,17 @@ nonpositive expectation along the transformed pair `(X_n,Y_n)`. -/
 lemma burkholder_integral_v_XY_nonpos
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
-    (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+    (h : BurkholderAssumptions p Ω μ ℱ w f)
+    (hv_int : ∀ n,
+      Integrable
+        (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ)
+    (hu_int : ∀ (hp_real : p.toReal > 1) n,
+      Integrable
+        (fun ω => Burkholder.u p.toReal hp_real (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ)
+    (hu_integral_step : ∀ (hp_real : p.toReal > 1) n,
+      (∫ ω, Burkholder.u p.toReal hp_real (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ∂μ) ≤
+        ∫ ω, Burkholder.u p.toReal hp_real (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ)
+    (n : ℕ) :
     (∫ ω, Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) ≤ 0 := by
   have hp_real : p.toReal > 1 := by
     rw [← ENNReal.toReal_one]
@@ -451,9 +521,9 @@ lemma burkholder_integral_v_XY_nonpos
         exact integral_nonpos_of_ae
           (burkholder_u_X0Y0_nonpos_ae p.toReal hp_real hdiffs.2)
     | succ n ih =>
-        exact (h.hu_integral_step hp_real n).trans ih
-  exact (burkholder_v_XY_le_u_XY p.toReal hp_real n (h.hv_int n)
-    (h.hu_int hp_real n)).trans (hu_nonpos n)
+        exact (hu_integral_step hp_real n).trans ih
+  exact (burkholder_v_XY_le_u_XY p.toReal hp_real n (hv_int n)
+    (hu_int hp_real n)).trans (hu_nonpos n)
 
 
 
@@ -461,14 +531,17 @@ lemma burkholder_integral_v_XY_nonpos
 
 
 
-theorem Lp_Burkholder_inequality_martingaleTransform
-    (p : ℝ≥0∞) (_hp_one : 1 < p) (_hp_top : p ≠ ∞) :
-      ∀ {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
-        {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ},
-        BurkholderAssumptions p Ω μ ℱ w f →
+theorem Lp_Burkholder_inequality_martingaleTransform (p : ) (Ω : Type*) [mΩ : MeasurableSpace Ω] (μ : Measure Ω)
+  [IsFiniteMeasure μ] (ℱ : Filtration ℕ mΩ) (w f : ℕ → Ω → ℝ)
+  (hp_one : 1 < p)
+  (hstrong : IsStronglyPredictable ℱ w)
+  (hmart : Martingale f ℱ μ)
+  (hLp : ∀ n, MemLp (f n) p μ)
+  (hbound : ∀ n, ∀ᵐ ω ∂μ, |w n ω| ≤ 1) :
         ∀ n, eLpNorm ((w ⋆ₘ f) n) p μ ≤
           ENNReal.ofReal (Burkholder.pStar p.toReal - 1) * eLpNorm (f n) p μ := by
-  intro Ω mΩ μ hμ ℱ w f h n
-  exact h.hLp_from_v_nonpos n (burkholder_integral_v_XY_nonpos h n)
+  intro Ω mΩ μ hμ ℱ w f h hv_int hu_int hu_integral_step hLp_from_v_nonpos n
+  exact hLp_from_v_nonpos n
+    (burkholder_integral_v_XY_nonpos h hv_int hu_int hu_integral_step n)
 
 end MeasureTheory
