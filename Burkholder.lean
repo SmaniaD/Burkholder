@@ -85,6 +85,38 @@ lemma du_dx_growth_bound (p : ℝ) (hp : p > 1) :
       htangent, hmajor, hnonpos, haxis⟩
   exact hdu_dx_growth
 
+lemma du_dy_continuousOn (p : ℝ) (hp : p > 1) :
+    ContinuousOn
+      (fun z : ℝ × ℝ => Burkholder.du_dy p hp z.1 z.2) Set.univ := by
+  rcases
+    Classical.choose_spec
+      (Classical.choose_spec
+        (Classical.choose_spec
+          (Classical.choose_spec
+            (Majorants.exists_majorant_p_g_1 p hp)))) with
+    ⟨hC_nonneg,
+      hu_cont, hdu_dx_cont, hdu_dy_cont,
+      hu_growth, hdu_dx_growth, hdu_dy_growth,
+      htangent, hmajor, hnonpos, haxis⟩
+  exact hdu_dy_cont
+
+lemma du_dy_growth_bound (p : ℝ) (hp : p > 1) :
+    ∀ x y,
+      |Burkholder.du_dy p hp x y|
+        ≤ Burkholder.C p hp *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+  rcases
+    Classical.choose_spec
+      (Classical.choose_spec
+        (Classical.choose_spec
+          (Classical.choose_spec
+            (Majorants.exists_majorant_p_g_1 p hp)))) with
+    ⟨hC_nonneg,
+      hu_cont, hdu_dx_cont, hdu_dy_cont,
+      hu_growth, hdu_dx_growth, hdu_dy_growth,
+      htangent, hmajor, hnonpos, haxis⟩
+  exact hdu_dy_growth
+
 
 
 theorem u_isMajorant (p : ℝ) (hp : p > 1) :
@@ -413,55 +445,33 @@ lemma burkholder_v_XY_integrable
   (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
   Integrable
     (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
-
-  have hp_ne_zero : p ≠ 0 := by
-    intro hp0
-    have : (1 : ℝ) < 0 := by
-      simpa [hp0] using h.hp_one
-    linarith
-
   have hX : MemLp (X_{n}[w, f]) p μ := burkholder_X_memLp h n
   have hY : MemLp (Y_{n}[w, f]) p μ := burkholder_Y_memLp h n
 
-  have hXpow :
-      Integrable (fun ω => |X_{n}[w, f] ω| ^ p.toReal) μ := by
-    simpa [Real.norm_eq_abs] using
-      hX.integrable_norm_rpow hp_ne_zero h.hp_top
+  have hsum : MemLp
+      (fun ω => (X_{n}[w, f] ω + Y_{n}[w, f] ω) / 2) p μ := by
+    simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      (hX.add hY).const_mul (1 / 2 : ℝ)
 
-  have hYpow :
-      Integrable (fun ω => |Y_{n}[w, f] ω| ^ p.toReal) μ := by
-    simpa [Real.norm_eq_abs] using
-      hY.integrable_norm_rpow hp_ne_zero h.hp_top
+  have hdiff : MemLp
+      (fun ω => (X_{n}[w, f] ω - Y_{n}[w, f] ω) / 2) p μ := by
+    simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      (hX.sub hY).const_mul (1 / 2 : ℝ)
 
-
-  -- Use the correct majorant bound lemma (assuming the correct name is v_growth_bound, otherwise adjust)
-  obtain ⟨C, D, hv_bd⟩ :
-    ∃ C D : ℝ,
-      ∀ x y,
-        |Burkholder.v p.toReal x y|
-          ≤ C * (|x| ^ p.toReal + |y| ^ p.toReal) + D :=
-    Majorants.v_growth_bound p.toReal h.hp_one
-
-  have h_dom :
+  have hsum_pow :
       Integrable
-        (fun ω =>
-          C * (|X_{n}[w, f] ω| ^ p.toReal
-              + |Y_{n}[w, f] ω| ^ p.toReal) + D) μ := by
-    simpa using ((hXpow.add hYpow).const_mul C).add (integrable_const D)
+        (fun ω => Real.rpow (|(X_{n}[w, f] ω + Y_{n}[w, f] ω)| / 2) p.toReal) μ := by
+    simpa [Real.norm_eq_abs] using hsum.integrable_norm_rpow'
 
+  have hdiff_pow :
+      Integrable
+        (fun ω => Real.rpow (|(X_{n}[w, f] ω - Y_{n}[w, f] ω)| / 2) p.toReal) μ := by
+    simpa [Real.norm_eq_abs] using hdiff.integrable_norm_rpow'
 
-  -- Provide explicit measurability proof
-  have h_meas :
-    AEStronglyMeasurable
-      (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
-    apply (Continuous.comp₂ (Burkholder.v.continuous p.toReal h.hp_one)
-      (AEStronglyMeasurable.coe_fn hX.aestronglyMeasurable)
-      (AEStronglyMeasurable.coe_fn hY.aestronglyMeasurable)).aestronglyMeasurable
-
-  exact h_dom.mono' h_meas <| by
-    filter_upwards with ω
-    simpa [Real.norm_eq_abs] using
-      hv_bd (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
+  simpa [Burkholder.v, Majorants.v, abs_div] using
+    hsum_pow.sub
+      (hdiff_pow.const_mul
+        (Real.rpow (|Burkholder.pStar p.toReal - 1|) p.toReal))
 
 /-- Lp integrability of `u(X_n,Y_n)`. -/
 lemma burkholder_u_Xn_Yn_integrable
@@ -563,6 +573,7 @@ lemma burkholder_du_dx_Xn_Yn_Lq
       ENNReal.ofReal q = p / ENNReal.ofReal r := by
     rw [hp_eq_ofReal]
     dsimp [q, r, Burkholder.q, Majorants.q]
+    rw [if_neg (by linarith [h.hp_one])]
     rw [ENNReal.ofReal_div_of_pos]
     exact hr_pos
 
@@ -641,12 +652,524 @@ lemma burkholder_du_dx_Xn_Yn_Lq
       exact add_nonneg
         (Real.rpow_nonneg (abs_nonneg _) r)
         (Real.rpow_nonneg (abs_nonneg _) r)
-    simpa [r, Real.norm_eq_abs, abs_of_nonneg hsum_nonneg] using
+    have hnorm :
+        ‖Real.rpow |X_{n}[w, f] ω| r
+            + Real.rpow |Y_{n}[w, f] ω| r‖ =
+          Real.rpow |X_{n}[w, f] ω| r
+            + Real.rpow |Y_{n}[w, f] ω| r := by
+      simpa [Real.norm_eq_abs] using abs_of_nonneg hsum_nonneg
+    rw [hnorm]
+    simpa [r, Real.norm_eq_abs] using
       Burkholder.du_dx_growth_bound p.toReal h.hp_one
         (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
 
   exact hsum.of_le_mul hdu_meas hbound
 
+/-- `du_dy(X_n,Y_n)` belongs to `L^q`, where `q = p/(p-1)`. -/
+lemma burkholder_du_dy_Xn_Yn_Lq
+  {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+  {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+  (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+  MemLp
+    (fun ω =>
+      Burkholder.du_dy p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω))
+    (ENNReal.ofReal (Burkholder.q p.toReal)) μ := by
+
+  let r : ℝ := p.toReal - 1
+  let q : ℝ := Burkholder.q p.toReal
+
+  change
+    MemLp
+      (fun ω =>
+        Burkholder.du_dy p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω))
+      (ENNReal.ofReal q) μ
+
+  have hr_pos : 0 < r := by
+    dsimp [r]
+    linarith [h.hp_one]
+
+  have hp_eq_ofReal : p = ENNReal.ofReal p.toReal := by
+    exact (ENNReal.ofReal_toReal h.hp_top).symm
+
+  have hq_eq :
+      ENNReal.ofReal q = p / ENNReal.ofReal r := by
+    rw [hp_eq_ofReal]
+    dsimp [q, r, Burkholder.q, Majorants.q]
+    rw [if_neg (by linarith [h.hp_one])]
+    rw [ENNReal.ofReal_div_of_pos]
+    exact hr_pos
+
+  have hX : MemLp (X_{n}[w, f]) p μ :=
+    burkholder_X_memLp h n
+
+  have hY : MemLp (Y_{n}[w, f]) p μ :=
+    burkholder_Y_memLp h n
+
+  have hXpow₀ :
+      MemLp
+        (fun ω => ‖X_{n}[w, f] ω‖ ^ (ENNReal.ofReal r).toReal)
+        (p / ENNReal.ofReal r) μ :=
+    hX.norm_rpow_div (ENNReal.ofReal r)
+
+  have hYpow₀ :
+      MemLp
+        (fun ω => ‖Y_{n}[w, f] ω‖ ^ (ENNReal.ofReal r).toReal)
+        (p / ENNReal.ofReal r) μ :=
+    hY.norm_rpow_div (ENNReal.ofReal r)
+
+  have hXpow :
+      MemLp
+        (fun ω => Real.rpow |X_{n}[w, f] ω| r)
+        (ENNReal.ofReal q) μ := by
+    rw [hq_eq]
+    simpa [r, Real.norm_eq_abs, ENNReal.toReal_ofReal hr_pos.le] using hXpow₀
+
+  have hYpow :
+      MemLp
+        (fun ω => Real.rpow |Y_{n}[w, f] ω| r)
+        (ENNReal.ofReal q) μ := by
+    rw [hq_eq]
+    simpa [r, Real.norm_eq_abs, ENNReal.toReal_ofReal hr_pos.le] using hYpow₀
+
+  have hsum :
+      MemLp
+        (fun ω =>
+          Real.rpow |X_{n}[w, f] ω| r
+            + Real.rpow |Y_{n}[w, f] ω| r)
+        (ENNReal.ofReal q) μ := by
+    exact hXpow.add hYpow
+
+  have hpair_meas :
+      AEStronglyMeasurable
+        (fun ω => (X_{n}[w, f] ω, Y_{n}[w, f] ω)) μ :=
+    hX.aestronglyMeasurable.prodMk hY.aestronglyMeasurable
+
+  have hdu_cont_global :
+      Continuous
+        (fun z : ℝ × ℝ =>
+          Burkholder.du_dy p.toReal h.hp_one z.1 z.2) := by
+    rw [← continuousOn_univ]
+    exact Burkholder.du_dy_continuousOn p.toReal h.hp_one
+
+  have hdu_meas :
+      AEStronglyMeasurable
+        (fun ω =>
+          Burkholder.du_dy p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
+    simpa using hdu_cont_global.comp_aestronglyMeasurable hpair_meas
+
+  have hbound :
+      ∀ᵐ ω ∂μ,
+        ‖Burkholder.du_dy p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω)‖
+          ≤
+        Burkholder.C p.toReal h.hp_one *
+          ‖Real.rpow |X_{n}[w, f] ω| r
+            + Real.rpow |Y_{n}[w, f] ω| r‖ := by
+    filter_upwards with ω
+    have hsum_nonneg :
+        0 ≤
+          Real.rpow |X_{n}[w, f] ω| r
+            + Real.rpow |Y_{n}[w, f] ω| r := by
+      exact add_nonneg
+        (Real.rpow_nonneg (abs_nonneg _) r)
+        (Real.rpow_nonneg (abs_nonneg _) r)
+    have hnorm :
+        ‖Real.rpow |X_{n}[w, f] ω| r
+            + Real.rpow |Y_{n}[w, f] ω| r‖ =
+          Real.rpow |X_{n}[w, f] ω| r
+            + Real.rpow |Y_{n}[w, f] ω| r := by
+      simpa [Real.norm_eq_abs] using abs_of_nonneg hsum_nonneg
+    rw [hnorm]
+    simpa [r, Real.norm_eq_abs] using
+      Burkholder.du_dy_growth_bound p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
+
+  exact hsum.of_le_mul hdu_meas hbound
+
+lemma burkholder_du_dx_Xn_Yn_integrable_mul_diff
+  {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+  {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+  (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+  Integrable (fun ω => Burkholder.du_dx p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+            (X_{n+1}[w, f] ω - X_{n}[w, f] ω)) μ ∧
+            ∫ ω, Burkholder.du_dx p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+            (X_{n+1}[w, f] ω - X_{n}[w, f] ω) ∂μ = 0 := by
+  let q : ℝ := Burkholder.q p.toReal
+  have hpq_real : q.HolderConjugate p.toReal := by
+    dsimp [q, Burkholder.q, Majorants.q]
+    rw [if_neg (by linarith [h.hp_one])]
+    exact (Real.HolderConjugate.conjExponent h.hp_one).symm
+  have hpq : ENNReal.HolderConjugate (ENNReal.ofReal q) (ENNReal.ofReal p.toReal) := by
+    rw [ENNReal.holderConjugate_iff]
+    have hp_pos : 0 < p.toReal := by linarith [h.hp_one]
+    have hq_pos : 0 < q := zero_lt_one.trans (Real.holderConjugate_iff.mp hpq_real).1
+    rw [← ENNReal.ofReal_inv_of_pos hq_pos]
+    rw [← ENNReal.ofReal_inv_of_pos hp_pos]
+    rw [← ENNReal.ofReal_add]
+    · rw [hpq_real.inv_add_inv_eq_one]
+      simp
+    · exact inv_nonneg.mpr hq_pos.le
+    · exact inv_nonneg.mpr hp_pos.le
+  have hdu : MemLp
+      (fun ω =>
+        Burkholder.du_dx p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω))
+      (ENNReal.ofReal q) μ := by
+    simpa [q] using burkholder_du_dx_Xn_Yn_Lq h n
+  have hXdiff_memLp : MemLp
+      (fun ω => X_{n+1}[w, f] ω - X_{n}[w, f] ω) p μ := by
+    have hXdiff_eq :
+        (fun ω => X_{n+1}[w, f] ω - X_{n}[w, f] ω) =
+          fun ω => plusOne w (n + 1) ω * martingaleDiff f (n + 1) ω := by
+      funext ω
+      simpa using congrFun (martingaleTransform_succ_sub (plusOne w) f n) ω
+    rw [hXdiff_eq]
+    exact burkholder_plusOne_mul_martingaleDiff_memLp h (n + 1)
+  have hp_eq_ofReal : p = ENNReal.ofReal p.toReal := by
+    exact (ENNReal.ofReal_toReal h.hp_top).symm
+  have hmul_int : Integrable
+      (fun ω =>
+        Burkholder.du_dx p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+            (X_{n+1}[w, f] ω - X_{n}[w, f] ω)) μ := by
+    rw [hp_eq_ofReal] at hXdiff_memLp
+    letI : ENNReal.HolderTriple (ENNReal.ofReal q) (ENNReal.ofReal p.toReal) 1 := hpq
+    exact MemLp.integrable_mul hdu hXdiff_memLp
+  constructor
+  · exact hmul_int
+  · have hw_adapted : StronglyAdapted ℱ w :=
+      IsStronglyPredictable.stronglyAdapted h.hstrong
+    have hdiff_measurable_le :
+        ∀ {i n : ℕ}, i ≤ n → StronglyMeasurable[ℱ n] (martingaleDiff f i) := by
+      intro i n hin
+      cases i with
+      | zero =>
+          simpa [martingaleDiff] using
+            h.hmart.stronglyAdapted.stronglyMeasurable_le (Nat.zero_le n)
+      | succ i =>
+          have hi_succ : i + 1 ≤ n := hin
+          have hi : i ≤ n := Nat.le_trans (Nat.le_succ i) hi_succ
+          simpa [martingaleDiff] using
+            (h.hmart.stronglyAdapted.stronglyMeasurable_le hi_succ).sub
+              (h.hmart.stronglyAdapted.stronglyMeasurable_le hi)
+    have hplus_meas_le :
+        ∀ {i n : ℕ}, i ≤ n → StronglyMeasurable[ℱ n] (plusOne w i) := by
+      intro i n hin
+      have hw_meas : StronglyMeasurable[ℱ n] (w i) :=
+        hw_adapted.stronglyMeasurable_le hin
+      simpa [plusOne] using
+        hw_meas.add (measurable_const.stronglyMeasurable)
+    have hminus_meas_le :
+        ∀ {i n : ℕ}, i ≤ n → StronglyMeasurable[ℱ n] (minusOne w i) := by
+      intro i n hin
+      have hw_meas : StronglyMeasurable[ℱ n] (w i) :=
+        hw_adapted.stronglyMeasurable_le hin
+      simpa [minusOne] using
+        hw_meas.sub (measurable_const.stronglyMeasurable)
+    have hX_meas : StronglyMeasurable[ℱ n] (X_{n}[w, f]) := by
+      simpa [martingaleTransform, Finset.sum_apply] using
+        (Finset.stronglyMeasurable_sum (Finset.range (n + 1)) fun i hi => by
+          have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+          exact (hplus_meas_le hin).mul (hdiff_measurable_le hin))
+    have hY_meas : StronglyMeasurable[ℱ n] (Y_{n}[w, f]) := by
+      simpa [martingaleTransform, Finset.sum_apply] using
+        (Finset.stronglyMeasurable_sum (Finset.range (n + 1)) fun i hi => by
+          have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+          exact (hminus_meas_le hin).mul (hdiff_measurable_le hin))
+    have hdu_cont_global :
+        Continuous
+          (fun z : ℝ × ℝ =>
+            Burkholder.du_dx p.toReal h.hp_one z.1 z.2) := by
+      rw [← continuousOn_univ]
+      exact Burkholder.du_dx_continuousOn p.toReal h.hp_one
+    have hA_meas :
+        StronglyMeasurable[ℱ n]
+          (fun ω =>
+            Burkholder.du_dx p.toReal h.hp_one
+              (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) := by
+      simpa using hdu_cont_global.comp_stronglyMeasurable
+        (hX_meas.prodMk hY_meas)
+    have hp_one_en : (1 : ℝ≥0∞) ≤ p := by
+      rw [hp_eq_ofReal]
+      simpa using ENNReal.ofReal_le_ofReal h.hp_one.le
+    have hXdiff_int :
+        Integrable (fun ω => X_{n+1}[w, f] ω - X_{n}[w, f] ω) μ :=
+      hXdiff_memLp.integrable hp_one_en
+    have hfdiff_int : Integrable (fun ω => f (n + 1) ω - f n ω) μ :=
+      (h.hmart.integrable (n + 1)).sub (h.hmart.integrable n)
+    have hfdiff_zero :
+        μ[f (n + 1) - f n | ℱ n] =ᵐ[μ] 0 := by
+      have hnext : μ[f (n + 1) | ℱ n] =ᵐ[μ] f n :=
+        h.hmart.condExp_ae_eq (Nat.le_succ n)
+      have hcurr : μ[f n | ℱ n] =ᵐ[μ] f n := by
+        rw [condExp_of_stronglyMeasurable (ℱ.le n)
+          (h.hmart.stronglyMeasurable n) (h.hmart.integrable n)]
+      calc
+        μ[f (n + 1) - f n | ℱ n]
+            =ᵐ[μ] μ[f (n + 1) | ℱ n] - μ[f n | ℱ n] :=
+              condExp_sub (h.hmart.integrable (n + 1)) (h.hmart.integrable n) (ℱ n)
+        _ =ᵐ[μ] f n - f n := hnext.sub hcurr
+        _ =ᵐ[μ] 0 := by simp
+    have hplus_succ_meas : StronglyMeasurable[ℱ n] (plusOne w (n + 1)) := by
+      simpa [plusOne] using
+        (IsStronglyPredictable.measurable_add_one h.hstrong n).add
+          (measurable_const.stronglyMeasurable)
+    have hXdiff_eq :
+        (fun ω => X_{n+1}[w, f] ω - X_{n}[w, f] ω) =
+          fun ω => plusOne w (n + 1) ω * (f (n + 1) ω - f n ω) := by
+      funext ω
+      simpa [plusOne, martingaleDiff] using
+        congrFun (martingaleTransform_succ_sub (plusOne w) f n) ω
+    have hplus_fdiff_int :
+        Integrable
+          (fun ω => plusOne w (n + 1) ω * (f (n + 1) ω - f n ω)) μ := by
+      simpa [plusOne, martingaleDiff] using
+        (burkholder_plusOne_mul_martingaleDiff_memLp h (n + 1)).integrable hp_one_en
+    have hXdiff_zero :
+        μ[(fun ω => X_{n+1}[w, f] ω - X_{n}[w, f] ω) | ℱ n] =ᵐ[μ] 0 := by
+      have hpull :
+          μ[(fun ω => plusOne w (n + 1) ω * (f (n + 1) ω - f n ω)) | ℱ n]
+            =ᵐ[μ]
+          (fun ω => plusOne w (n + 1) ω *
+            μ[f (n + 1) - f n | ℱ n] ω) :=
+        condExp_mul_of_stronglyMeasurable_left
+          hplus_succ_meas hplus_fdiff_int hfdiff_int
+      calc
+        μ[(fun ω => X_{n+1}[w, f] ω - X_{n}[w, f] ω) | ℱ n]
+            =ᵐ[μ]
+          μ[(fun ω => plusOne w (n + 1) ω * (f (n + 1) ω - f n ω)) | ℱ n] := by
+            rw [hXdiff_eq]
+        _ =ᵐ[μ]
+          (fun ω => plusOne w (n + 1) ω *
+            μ[f (n + 1) - f n | ℱ n] ω) := hpull
+        _ =ᵐ[μ] 0 := by
+          filter_upwards [hfdiff_zero] with ω hω
+          simp [hω]
+    have hpull :
+        μ[(fun ω =>
+          Burkholder.du_dx p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+              (X_{n+1}[w, f] ω - X_{n}[w, f] ω)) | ℱ n]
+          =ᵐ[μ]
+        (fun ω =>
+          Burkholder.du_dx p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+              μ[(fun ω => X_{n+1}[w, f] ω - X_{n}[w, f] ω) | ℱ n] ω) :=
+      condExp_mul_of_stronglyMeasurable_left hA_meas hmul_int hXdiff_int
+    calc
+      (∫ ω, Burkholder.du_dx p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+            (X_{n+1}[w, f] ω - X_{n}[w, f] ω) ∂μ)
+          = ∫ ω, μ[(fun ω =>
+              Burkholder.du_dx p.toReal h.hp_one
+                (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+                  (X_{n+1}[w, f] ω - X_{n}[w, f] ω)) | ℱ n] ω ∂μ := by
+            exact (integral_condExp (ℱ.le n)).symm
+      _ = ∫ ω,
+          Burkholder.du_dx p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+              μ[(fun ω => X_{n+1}[w, f] ω - X_{n}[w, f] ω) | ℱ n] ω ∂μ := by
+            exact integral_congr_ae hpull
+      _ = 0 := by
+        refine integral_eq_zero_of_ae ?_
+        filter_upwards [hXdiff_zero] with ω hω
+        simp [hω]
+
+lemma burkholder_du_dy_Xn_Yn_integrable_mul_diff
+  {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+  {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+  (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+  Integrable (fun ω => Burkholder.du_dy p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+            (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω)) μ ∧
+            ∫ ω, Burkholder.du_dy p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+            (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ∂μ = 0 := by
+  let q : ℝ := Burkholder.q p.toReal
+  have hpq_real : q.HolderConjugate p.toReal := by
+    dsimp [q, Burkholder.q, Majorants.q]
+    rw [if_neg (by linarith [h.hp_one])]
+    exact (Real.HolderConjugate.conjExponent h.hp_one).symm
+  have hpq : ENNReal.HolderConjugate (ENNReal.ofReal q) (ENNReal.ofReal p.toReal) := by
+    rw [ENNReal.holderConjugate_iff]
+    have hp_pos : 0 < p.toReal := by linarith [h.hp_one]
+    have hq_pos : 0 < q := zero_lt_one.trans (Real.holderConjugate_iff.mp hpq_real).1
+    rw [← ENNReal.ofReal_inv_of_pos hq_pos]
+    rw [← ENNReal.ofReal_inv_of_pos hp_pos]
+    rw [← ENNReal.ofReal_add]
+    · rw [hpq_real.inv_add_inv_eq_one]
+      simp
+    · exact inv_nonneg.mpr hq_pos.le
+    · exact inv_nonneg.mpr hp_pos.le
+  have hdu : MemLp
+      (fun ω =>
+        Burkholder.du_dy p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω))
+      (ENNReal.ofReal q) μ := by
+    simpa [q] using burkholder_du_dy_Xn_Yn_Lq h n
+  have hYdiff_memLp : MemLp
+      (fun ω => Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) p μ := by
+    have hYdiff_eq :
+        (fun ω => Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) =
+          fun ω => minusOne w (n + 1) ω * martingaleDiff f (n + 1) ω := by
+      funext ω
+      simpa using congrFun (martingaleTransform_succ_sub (minusOne w) f n) ω
+    rw [hYdiff_eq]
+    exact burkholder_minusOne_mul_martingaleDiff_memLp h (n + 1)
+  have hp_eq_ofReal : p = ENNReal.ofReal p.toReal := by
+    exact (ENNReal.ofReal_toReal h.hp_top).symm
+  have hmul_int : Integrable
+      (fun ω =>
+        Burkholder.du_dy p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+            (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω)) μ := by
+    rw [hp_eq_ofReal] at hYdiff_memLp
+    letI : ENNReal.HolderTriple (ENNReal.ofReal q) (ENNReal.ofReal p.toReal) 1 := hpq
+    exact MemLp.integrable_mul hdu hYdiff_memLp
+  constructor
+  · exact hmul_int
+  · have hw_adapted : StronglyAdapted ℱ w :=
+      IsStronglyPredictable.stronglyAdapted h.hstrong
+    have hdiff_measurable_le :
+        ∀ {i n : ℕ}, i ≤ n → StronglyMeasurable[ℱ n] (martingaleDiff f i) := by
+      intro i n hin
+      cases i with
+      | zero =>
+          simpa [martingaleDiff] using
+            h.hmart.stronglyAdapted.stronglyMeasurable_le (Nat.zero_le n)
+      | succ i =>
+          have hi_succ : i + 1 ≤ n := hin
+          have hi : i ≤ n := Nat.le_trans (Nat.le_succ i) hi_succ
+          simpa [martingaleDiff] using
+            (h.hmart.stronglyAdapted.stronglyMeasurable_le hi_succ).sub
+              (h.hmart.stronglyAdapted.stronglyMeasurable_le hi)
+    have hplus_meas_le :
+        ∀ {i n : ℕ}, i ≤ n → StronglyMeasurable[ℱ n] (plusOne w i) := by
+      intro i n hin
+      have hw_meas : StronglyMeasurable[ℱ n] (w i) :=
+        hw_adapted.stronglyMeasurable_le hin
+      simpa [plusOne] using
+        hw_meas.add (measurable_const.stronglyMeasurable)
+    have hminus_meas_le :
+        ∀ {i n : ℕ}, i ≤ n → StronglyMeasurable[ℱ n] (minusOne w i) := by
+      intro i n hin
+      have hw_meas : StronglyMeasurable[ℱ n] (w i) :=
+        hw_adapted.stronglyMeasurable_le hin
+      simpa [minusOne] using
+        hw_meas.sub (measurable_const.stronglyMeasurable)
+    have hX_meas : StronglyMeasurable[ℱ n] (X_{n}[w, f]) := by
+      simpa [martingaleTransform, Finset.sum_apply] using
+        (Finset.stronglyMeasurable_sum (Finset.range (n + 1)) fun i hi => by
+          have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+          exact (hplus_meas_le hin).mul (hdiff_measurable_le hin))
+    have hY_meas : StronglyMeasurable[ℱ n] (Y_{n}[w, f]) := by
+      simpa [martingaleTransform, Finset.sum_apply] using
+        (Finset.stronglyMeasurable_sum (Finset.range (n + 1)) fun i hi => by
+          have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+          exact (hminus_meas_le hin).mul (hdiff_measurable_le hin))
+    have hdu_cont_global :
+        Continuous
+          (fun z : ℝ × ℝ =>
+            Burkholder.du_dy p.toReal h.hp_one z.1 z.2) := by
+      rw [← continuousOn_univ]
+      exact Burkholder.du_dy_continuousOn p.toReal h.hp_one
+    have hA_meas :
+        StronglyMeasurable[ℱ n]
+          (fun ω =>
+            Burkholder.du_dy p.toReal h.hp_one
+              (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) := by
+      simpa using hdu_cont_global.comp_stronglyMeasurable
+        (hX_meas.prodMk hY_meas)
+    have hp_one_en : (1 : ℝ≥0∞) ≤ p := by
+      rw [hp_eq_ofReal]
+      simpa using ENNReal.ofReal_le_ofReal h.hp_one.le
+    have hYdiff_int :
+        Integrable (fun ω => Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) μ :=
+      hYdiff_memLp.integrable hp_one_en
+    have hfdiff_int : Integrable (fun ω => f (n + 1) ω - f n ω) μ :=
+      (h.hmart.integrable (n + 1)).sub (h.hmart.integrable n)
+    have hfdiff_zero :
+        μ[f (n + 1) - f n | ℱ n] =ᵐ[μ] 0 := by
+      have hnext : μ[f (n + 1) | ℱ n] =ᵐ[μ] f n :=
+        h.hmart.condExp_ae_eq (Nat.le_succ n)
+      have hcurr : μ[f n | ℱ n] =ᵐ[μ] f n := by
+        rw [condExp_of_stronglyMeasurable (ℱ.le n)
+          (h.hmart.stronglyMeasurable n) (h.hmart.integrable n)]
+      calc
+        μ[f (n + 1) - f n | ℱ n]
+            =ᵐ[μ] μ[f (n + 1) | ℱ n] - μ[f n | ℱ n] :=
+              condExp_sub (h.hmart.integrable (n + 1)) (h.hmart.integrable n) (ℱ n)
+        _ =ᵐ[μ] f n - f n := hnext.sub hcurr
+        _ =ᵐ[μ] 0 := by simp
+    have hminus_succ_meas : StronglyMeasurable[ℱ n] (minusOne w (n + 1)) := by
+      simpa [minusOne] using
+        (IsStronglyPredictable.measurable_add_one h.hstrong n).sub
+          (measurable_const.stronglyMeasurable)
+    have hYdiff_eq :
+        (fun ω => Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) =
+          fun ω => minusOne w (n + 1) ω * (f (n + 1) ω - f n ω) := by
+      funext ω
+      simpa [minusOne, martingaleDiff] using
+        congrFun (martingaleTransform_succ_sub (minusOne w) f n) ω
+    have hminus_fdiff_int :
+        Integrable
+          (fun ω => minusOne w (n + 1) ω * (f (n + 1) ω - f n ω)) μ := by
+      simpa [minusOne, martingaleDiff] using
+        (burkholder_minusOne_mul_martingaleDiff_memLp h (n + 1)).integrable hp_one_en
+    have hYdiff_zero :
+        μ[(fun ω => Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) | ℱ n] =ᵐ[μ] 0 := by
+      have hpull :
+          μ[(fun ω => minusOne w (n + 1) ω * (f (n + 1) ω - f n ω)) | ℱ n]
+            =ᵐ[μ]
+          (fun ω => minusOne w (n + 1) ω *
+            μ[f (n + 1) - f n | ℱ n] ω) :=
+        condExp_mul_of_stronglyMeasurable_left
+          hminus_succ_meas hminus_fdiff_int hfdiff_int
+      calc
+        μ[(fun ω => Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) | ℱ n]
+            =ᵐ[μ]
+          μ[(fun ω => minusOne w (n + 1) ω * (f (n + 1) ω - f n ω)) | ℱ n] := by
+            rw [hYdiff_eq]
+        _ =ᵐ[μ]
+          (fun ω => minusOne w (n + 1) ω *
+            μ[f (n + 1) - f n | ℱ n] ω) := hpull
+        _ =ᵐ[μ] 0 := by
+          filter_upwards [hfdiff_zero] with ω hω
+          simp [hω]
+    have hpull :
+        μ[(fun ω =>
+          Burkholder.du_dy p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+              (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω)) | ℱ n]
+          =ᵐ[μ]
+        (fun ω =>
+          Burkholder.du_dy p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+              μ[(fun ω => Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) | ℱ n] ω) :=
+      condExp_mul_of_stronglyMeasurable_left hA_meas hmul_int hYdiff_int
+    calc
+      (∫ ω, Burkholder.du_dy p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+            (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ∂μ)
+          = ∫ ω, μ[(fun ω =>
+              Burkholder.du_dy p.toReal h.hp_one
+                (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+                  (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω)) | ℱ n] ω ∂μ := by
+            exact (integral_condExp (ℱ.le n)).symm
+      _ = ∫ ω,
+          Burkholder.du_dy p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+              μ[(fun ω => Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) | ℱ n] ω ∂μ := by
+            exact integral_congr_ae hpull
+      _ = 0 := by
+        refine integral_eq_zero_of_ae ?_
+        filter_upwards [hYdiff_zero] with ω hω
+        simp [hω]
 
 /-- The chosen majorant dominates the Burkholder function `v`. -/
 lemma burkholder_v_le_u (p : ℝ) (hp : p > 1) (x y : ℝ) :
