@@ -9381,6 +9381,514 @@ lemma uCandidate_le_zero_of_mul_neg
       ext <;> linarith
     simpa using haux_axis (-y) ht htne
 
+lemma DyuCandidate_neg_neg
+    (p : ℝ) (hp : 2 < p) (x y : ℝ) :
+    DyuCandidate p x y = -DyuCandidate p (-x) (-y) := by
+  rcases mem_some_QuarterPlane x y with hQ1 | hrest
+  · have hQ2 : QuarterPlane2 (-x) (-y) := ⟨by linarith [hQ1.1],
+      by linarith [hQ1.2.2], by linarith [hQ1.2.1]⟩
+    rw [DyuCandidate_eq_Q1 p hQ1, DyuCandidate_eq_Q2 p hQ2]
+    simp
+  rcases hrest with hQ2 | hrest
+  · have hQ1 : QuarterPlane (-x) (-y) := ⟨by linarith [hQ2.1],
+      by linarith [hQ2.2.2], by linarith [hQ2.2.1]⟩
+    rw [DyuCandidate_eq_Q2 p hQ2, DyuCandidate_eq_Q1 p hQ1]
+  rcases hrest with hQ3 | hQ4
+  · have hQ4 : QuarterPlane4 (-x) (-y) := ⟨by linarith [hQ3.1],
+      by linarith [hQ3.2.2], by linarith [hQ3.2.1]⟩
+    rw [DyuCandidate_eq_Q3 p hp hQ3, DyuCandidate_eq_Q4 p hp hQ4]
+    simp
+  · have hQ3 : QuarterPlane3 (-x) (-y) := ⟨by linarith [hQ4.1],
+      by linarith [hQ4.2.2], by linarith [hQ4.2.1]⟩
+    rw [DyuCandidate_eq_Q4 p hp hQ4, DyuCandidate_eq_Q3 p hp hQ3]
+
+lemma alpha_nonneg_of_two_le (p : ℝ) (hp : 2 ≤ p) : 0 ≤ alpha p := by
+  exact le_trans zero_le_one (one_le_alpha p hp)
+
+lemma DyuA1_mono_x_of_pos
+    (p : ℝ) (hp : 2 ≤ p) {x z y : ℝ}
+    (hx : 0 < x) (hxz : x ≤ z) :
+    DyuA1 p x y ≤ DyuA1 p z y := by
+  have hz : 0 < z := lt_of_lt_of_le hx hxz
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+  have hpow : x ^ (p - 1) ≤ z ^ (p - 1) :=
+    Real.rpow_le_rpow hx.le hxz (by linarith : 0 ≤ p - 1)
+  have hcoef : 0 ≤ alpha p * (p / 2) := by
+    exact mul_nonneg (alpha_nonneg_of_two_le p hp) (by linarith : 0 ≤ p / 2)
+  simp [DyuA1, hx, hz, hpStar]
+  simpa [mul_assoc, mul_comm, mul_left_comm] using
+    mul_le_mul_of_nonneg_left hpow hcoef
+
+lemma DxuA1_mono_y_of_pos
+    (p : ℝ) (hp : 2 ≤ p) {x y z : ℝ}
+    (hx : 0 < x) (hyz : y ≤ z) :
+    DxuA1 p x y ≤ DxuA1 p x z := by
+  have hpStar : pStar p = p := pStar_eq_self_of_two_le p hp
+  have hcoef :
+      0 ≤ alpha p * (p / 2) * x ^ (p - 2) := by
+    exact mul_nonneg
+      (mul_nonneg (alpha_nonneg_of_two_le p hp) (by linarith : 0 ≤ p / 2))
+      (Real.rpow_nonneg hx.le _)
+  have hlin :
+      (2 - p) * x + (p - 1) * y ≤
+        (2 - p) * x + (p - 1) * z := by
+    linarith [mul_le_mul_of_nonneg_left hyz (by linarith : 0 ≤ p - 1)]
+  simp [DxuA1, hx, hpStar]
+  exact mul_le_mul_of_nonneg_left hlin hcoef
+
+lemma DyvGeTwo_mono_x_of_pos
+    (p : ℝ) (hp : 2 ≤ p) {x z y : ℝ}
+    (hxpos : 0 < x)
+    (hsum_x : 0 ≤ (x + y) / 2) (hdiff_x : 0 ≤ (x - y) / 2)
+    (hxz : x ≤ z) :
+    DyvGeTwo p x y ≤ DyvGeTwo p z y := by
+  have hp_exp : 0 ≤ p - 1 := by linarith
+  have hsum_le : (x + y) / 2 ≤ (z + y) / 2 := by linarith
+  have hdiff_le : (x - y) / 2 ≤ (z - y) / 2 := by linarith
+  have hsum_z : 0 ≤ (z + y) / 2 := le_trans hsum_x hsum_le
+  have hdiff_z : 0 ≤ (z - y) / 2 := le_trans hdiff_x hdiff_le
+  have hA := Real.rpow_le_rpow hsum_x hsum_le hp_exp
+  have hB := Real.rpow_le_rpow hdiff_x hdiff_le hp_exp
+  have hcoef : 0 ≤ (p - 1) ^ p := Real.rpow_nonneg (by linarith : 0 ≤ p - 1) _
+  have hhalf : 0 ≤ p / 2 := by linarith
+  have hzpos : 0 < z := lt_of_lt_of_le hxpos hxz
+  simp [DyvGeTwo, hxpos, hzpos, abs_of_nonneg hsum_x, abs_of_nonneg hsum_z,
+    abs_of_nonneg hdiff_x, abs_of_nonneg hdiff_z]
+  nlinarith [mul_le_mul_of_nonneg_right hA hhalf,
+    mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hB hcoef) hhalf]
+
+lemma DxvGeTwo_mono_y_of_pos
+    (p : ℝ) (hp : 2 ≤ p) {x y z : ℝ}
+    (hxpos : 0 < x)
+    (hsum_y : 0 ≤ (x + y) / 2) (hdiff_z : 0 ≤ (x - z) / 2)
+    (hyz : y ≤ z) :
+    DxvGeTwo p x y ≤ DxvGeTwo p x z := by
+  have hp_exp : 0 ≤ p - 1 := by linarith
+  have hsum_le : (x + y) / 2 ≤ (x + z) / 2 := by linarith
+  have hdiff_le : (x - z) / 2 ≤ (x - y) / 2 := by linarith
+  have hsum_z : 0 ≤ (x + z) / 2 := le_trans hsum_y hsum_le
+  have hdiff_y : 0 ≤ (x - y) / 2 := le_trans hdiff_z hdiff_le
+  have hA := Real.rpow_le_rpow hsum_y hsum_le hp_exp
+  have hB := Real.rpow_le_rpow hdiff_z hdiff_le hp_exp
+  have hcoef : 0 ≤ (p - 1) ^ p := Real.rpow_nonneg (by linarith : 0 ≤ p - 1) _
+  have hhalf : 0 ≤ p / 2 := by linarith
+  simp [DxvGeTwo, hxpos, abs_of_nonneg hsum_y, abs_of_nonneg hsum_z,
+    abs_of_nonneg hdiff_y, abs_of_nonneg hdiff_z]
+  nlinarith [mul_le_mul_of_nonneg_right hA hhalf,
+    mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hB hcoef) hhalf]
+
+lemma DyuCandidate_mono_x_on_Q2
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hz_upper : z ≤ -y) (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have hp' : 2 ≤ p := by linarith
+  have hQx : QuarterPlane2 x y := ⟨by linarith, by linarith, by linarith⟩
+  have hQz : QuarterPlane2 z y := ⟨by linarith, by linarith, by linarith⟩
+  have hclx : closureA2 p (-x) (-y) := by
+    refine ⟨by linarith, by linarith, ?_⟩
+    have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+    exact le_trans (by linarith : -y ≤ 0) (mul_nonneg ha_nonneg (by linarith : 0 ≤ -x))
+  have hclz : closureA2 p (-z) (-y) := by
+    refine ⟨by linarith, by linarith, ?_⟩
+    have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+    exact le_trans (by linarith : -y ≤ 0) (mul_nonneg ha_nonneg (by linarith : 0 ≤ -z))
+  have hx_eq : DyuCandidate p x y = -DyvGeTwo p (-x) (-y) := by
+    rw [DyuCandidate_eq_Q2 p hQx]
+    exact congrArg Neg.neg (auxFunction1_Dy_eq_DyvGeTwo p hp' (-x) (-y) hclx)
+  have hz_eq : DyuCandidate p z y = -DyvGeTwo p (-z) (-y) := by
+    rw [DyuCandidate_eq_Q2 p hQz]
+    exact congrArg Neg.neg (auxFunction1_Dy_eq_DyvGeTwo p hp' (-z) (-y) hclz)
+  have hmono :
+      DyvGeTwo p (-z) (-y) ≤ DyvGeTwo p (-x) (-y) := by
+    exact DyvGeTwo_mono_x_of_pos p hp'
+      (by linarith) (by linarith) (by linarith) (by linarith)
+  rw [hx_eq, hz_eq]
+  linarith
+
+lemma DyuCandidate_mono_x_on_Q3_A2
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hx_lower : -y ≤ x) (hz_upper : z ≤ a p * y)
+    (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have hp' : 2 ≤ p := by linarith
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+  have ha_le_y : a p * y ≤ y :=
+    (mul_le_mul_of_nonneg_right (a_lt_one_of_two_le p hp').le hy_pos.le).trans_eq
+      (one_mul y)
+  have hQx : QuarterPlane3 x y := ⟨hy_pos.le, hx_lower,
+    le_trans (le_trans hxz hz_upper)
+      ((mul_le_mul_of_nonneg_right (a_lt_one_of_two_le p hp').le hy_pos.le).trans_eq
+        (one_mul y))⟩
+  have hQz : QuarterPlane3 z y := ⟨hy_pos.le, le_trans hx_lower hxz,
+    le_trans hz_upper
+      ((mul_le_mul_of_nonneg_right (a_lt_one_of_two_le p hp').le hy_pos.le).trans_eq
+        (one_mul y))⟩
+  have hclx : closureA2 p y x := ⟨hy_pos.le, hx_lower, hz_upper.trans' hxz⟩
+  have hclz : closureA2 p y z := ⟨hy_pos.le, le_trans hx_lower hxz, hz_upper⟩
+  have hx_eq : DyuCandidate p x y = DxvGeTwo p y x := by
+    rw [DyuCandidate_eq_Q3 p hp hQx]
+    exact auxFunction1_Dx_eq_DxvGeTwo p hp' y x hclx
+  have hz_eq : DyuCandidate p z y = DxvGeTwo p y z := by
+    rw [DyuCandidate_eq_Q3 p hp hQz]
+    exact auxFunction1_Dx_eq_DxvGeTwo p hp' y z hclz
+  rw [hx_eq, hz_eq]
+  exact DxvGeTwo_mono_y_of_pos p hp' hy_pos (by linarith) (by
+    have haz_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+    have hz_le_y : z ≤ y := le_trans hz_upper ha_le_y
+    linarith) hxz
+
+lemma DyuCandidate_mono_x_on_Q3_A1
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hx_lower : a p * y ≤ x) (hz_upper : z ≤ y)
+    (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have hp' : 2 ≤ p := by linarith
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+  have hQx : QuarterPlane3 x y := ⟨hy_pos.le, by
+      have haxy_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+      linarith, le_trans hxz hz_upper⟩
+  have hQz : QuarterPlane3 z y := ⟨hy_pos.le, by
+      have haxy_nonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+      linarith, hz_upper⟩
+  have hclx : closureA1 p y x := ⟨hy_pos.le, hx_lower, le_trans hxz hz_upper⟩
+  have hclz : closureA1 p y z := ⟨hy_pos.le, le_trans hx_lower hxz, hz_upper⟩
+  have hx_eq : DyuCandidate p x y = DxuA1 p y x := by
+    rw [DyuCandidate_eq_Q3 p hp hQx]
+    exact auxFunction1_Dx_eq_DxuA1 p y x hclx
+  have hz_eq : DyuCandidate p z y = DxuA1 p y z := by
+    rw [DyuCandidate_eq_Q3 p hp hQz]
+    exact auxFunction1_Dx_eq_DxuA1 p y z hclz
+  rw [hx_eq, hz_eq]
+  exact DxuA1_mono_y_of_pos p hp' hy_pos hxz
+
+lemma DyuCandidate_mono_x_on_Q1_A1
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hyx : y ≤ x) (hz_upper : z ≤ y / a p)
+    (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have hp' : 2 ≤ p := by linarith
+  have ha_pos : 0 < a p := a_pos_of_two_lt p hp
+  have hQx : QuarterPlane x y := ⟨(lt_of_lt_of_le hy_pos hyx).le, hyx, by linarith⟩
+  have hQz : QuarterPlane z y := ⟨(lt_of_lt_of_le hy_pos (le_trans hyx hxz)).le,
+    le_trans hyx hxz, by linarith⟩
+  have hclx : closureA1 p x y := by
+    refine ⟨(lt_of_lt_of_le hy_pos hyx).le, ?_, hyx⟩
+    have hmul := mul_le_mul_of_nonneg_left (le_trans hxz hz_upper) ha_pos.le
+    have hac : a p * (y / a p) = y := by field_simp [ha_pos.ne']
+    simpa [hac] using hmul
+  have hclz : closureA1 p z y := by
+    refine ⟨(lt_of_lt_of_le hy_pos (le_trans hyx hxz)).le, ?_, le_trans hyx hxz⟩
+    have hmul := mul_le_mul_of_nonneg_left hz_upper ha_pos.le
+    have hac : a p * (y / a p) = y := by field_simp [ha_pos.ne']
+    simpa [hac] using hmul
+  have hx_eq : DyuCandidate p x y = DyuA1 p x y := by
+    rw [DyuCandidate_eq_Q1 p hQx]
+    exact auxFunction1_Dy_eq_DyuA1 p x y hclx
+  have hz_eq : DyuCandidate p z y = DyuA1 p z y := by
+    rw [DyuCandidate_eq_Q1 p hQz]
+    exact auxFunction1_Dy_eq_DyuA1 p z y hclz
+  rw [hx_eq, hz_eq]
+  exact DyuA1_mono_x_of_pos p hp' (lt_of_lt_of_le hy_pos hyx) hxz
+
+lemma DyuCandidate_mono_x_on_Q1_A2
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hx_lower : y / a p ≤ x) (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have hp' : 2 ≤ p := by linarith
+  have ha_pos : 0 < a p := a_pos_of_two_lt p hp
+  have hx_pos : 0 < x := by
+    exact lt_of_lt_of_le (div_pos hy_pos ha_pos) hx_lower
+  have hz_pos : 0 < z := lt_of_lt_of_le hx_pos hxz
+  have hQx : QuarterPlane x y := ⟨hx_pos.le, by
+      have ha_lt : a p < 1 := a_lt_one_of_two_le p hp'
+      have hy_lt_div : y < y / a p := by
+        rw [div_eq_mul_inv]
+        have hlt_inv : 1 < (a p)⁻¹ := by
+          rw [one_lt_inv₀ ha_pos]
+          exact ha_lt
+        nlinarith
+      exact le_trans hy_lt_div.le hx_lower, by linarith⟩
+  have hQz : QuarterPlane z y := ⟨hz_pos.le, le_trans hQx.2.1 hxz, by linarith⟩
+  have hclx : closureA2 p x y := by
+    refine ⟨hx_pos.le, by linarith, ?_⟩
+    have hmul := mul_le_mul_of_nonneg_left hx_lower ha_pos.le
+    have hac : a p * (y / a p) = y := by field_simp [ha_pos.ne']
+    simpa [hac] using hmul
+  have hclz : closureA2 p z y := by
+    refine ⟨hz_pos.le, by linarith, ?_⟩
+    have hmul := mul_le_mul_of_nonneg_left (le_trans hx_lower hxz) ha_pos.le
+    have hac : a p * (y / a p) = y := by field_simp [ha_pos.ne']
+    simpa [hac] using hmul
+  have hx_eq : DyuCandidate p x y = DyvGeTwo p x y := by
+    rw [DyuCandidate_eq_Q1 p hQx]
+    exact auxFunction1_Dy_eq_DyvGeTwo p hp' x y hclx
+  have hz_eq : DyuCandidate p z y = DyvGeTwo p z y := by
+    rw [DyuCandidate_eq_Q1 p hQz]
+    exact auxFunction1_Dy_eq_DyvGeTwo p hp' z y hclz
+  rw [hx_eq, hz_eq]
+  exact DyvGeTwo_mono_x_of_pos p hp' hx_pos (by linarith) (by
+    have ha_lt : a p < 1 := a_lt_one_of_two_le p hp'
+    have hy_lt_div : y < y / a p := by
+      rw [div_eq_mul_inv]
+      have hlt_inv : 1 < (a p)⁻¹ := by
+        rw [one_lt_inv₀ ha_pos]
+        exact ha_lt
+      nlinarith
+    linarith) hxz
+
+lemma DyuCandidate_mono_x_of_y_pos
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hy_pos : 0 < y) (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  have hp' : 2 ≤ p := by linarith
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+  have ha_lt : a p < 1 := a_lt_one_of_two_le p hp'
+  have ha_pos : 0 < a p := a_pos_of_two_lt p hp
+  have hneg_le_a : -y ≤ a p * y := by
+    have hnonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
+    linarith
+  have ha_le_y : a p * y ≤ y :=
+    (mul_le_mul_of_nonneg_right ha_lt.le hy_pos.le).trans_eq (one_mul y)
+  have hy_le_div : y ≤ y / a p := by
+    have hy_lt_div : y < y / a p := by
+      rw [div_eq_mul_inv]
+      have hlt_inv : 1 < (a p)⁻¹ := by
+        rw [one_lt_inv₀ ha_pos]
+        exact ha_lt
+      nlinarith
+    exact hy_lt_div.le
+  by_cases hz_q2 : z ≤ -y
+  · exact DyuCandidate_mono_x_on_Q2 p hp hy_pos hz_q2 hxz
+  have hz_gt_q2 : -y < z := lt_of_not_ge hz_q2
+  by_cases hz_q3a2 : z ≤ a p * y
+  · by_cases hx_q2 : x ≤ -y
+    · exact le_trans (DyuCandidate_mono_x_on_Q2 p hp hy_pos le_rfl hx_q2)
+        (DyuCandidate_mono_x_on_Q3_A2 p hp hy_pos le_rfl hz_q3a2 hz_gt_q2.le)
+    · exact DyuCandidate_mono_x_on_Q3_A2 p hp hy_pos (le_of_lt (lt_of_not_ge hx_q2))
+        hz_q3a2 hxz
+  have hz_gt_q3a2 : a p * y < z := lt_of_not_ge hz_q3a2
+  have to_q3_boundary_of_x_le_a (hx_a : x ≤ a p * y) :
+      DyuCandidate p x y ≤ DyuCandidate p (a p * y) y := by
+    by_cases hx_q2 : x ≤ -y
+    · exact le_trans (DyuCandidate_mono_x_on_Q2 p hp hy_pos le_rfl hx_q2)
+        (DyuCandidate_mono_x_on_Q3_A2 p hp hy_pos le_rfl le_rfl hneg_le_a)
+    · exact DyuCandidate_mono_x_on_Q3_A2 p hp hy_pos
+        (le_of_lt (lt_of_not_ge hx_q2)) le_rfl hx_a
+  by_cases hz_q3a1 : z ≤ y
+  · by_cases hx_a : x ≤ a p * y
+    · exact le_trans (to_q3_boundary_of_x_le_a hx_a)
+        (DyuCandidate_mono_x_on_Q3_A1 p hp hy_pos le_rfl hz_q3a1 (le_of_lt hz_gt_q3a2))
+    · exact DyuCandidate_mono_x_on_Q3_A1 p hp hy_pos
+        (le_of_lt (lt_of_not_ge hx_a)) hz_q3a1 hxz
+  have hz_gt_y : y < z := lt_of_not_ge hz_q3a1
+  have to_diag_of_x_le_y (hx_y_bound : x ≤ y) :
+      DyuCandidate p x y ≤ DyuCandidate p y y := by
+    by_cases hx_a : x ≤ a p * y
+    · exact le_trans (to_q3_boundary_of_x_le_a hx_a)
+        (DyuCandidate_mono_x_on_Q3_A1 p hp hy_pos le_rfl le_rfl ha_le_y)
+    · exact DyuCandidate_mono_x_on_Q3_A1 p hp hy_pos
+        (le_of_lt (lt_of_not_ge hx_a)) le_rfl hx_y_bound
+  by_cases hz_q1a1 : z ≤ y / a p
+  · by_cases hx_y : x ≤ y
+    · exact le_trans (to_diag_of_x_le_y hx_y)
+        (DyuCandidate_mono_x_on_Q1_A1 p hp hy_pos le_rfl hz_q1a1 hz_gt_y.le)
+    · exact DyuCandidate_mono_x_on_Q1_A1 p hp hy_pos
+        (le_of_lt (lt_of_not_ge hx_y)) hz_q1a1 hxz
+  have hz_gt_div : y / a p < z := lt_of_not_ge hz_q1a1
+  have to_q1_boundary_of_x_le_div (hx_div_bound : x ≤ y / a p) :
+      DyuCandidate p x y ≤ DyuCandidate p (y / a p) y := by
+    by_cases hx_y : x ≤ y
+    · exact le_trans (to_diag_of_x_le_y hx_y)
+        (DyuCandidate_mono_x_on_Q1_A1 p hp hy_pos le_rfl le_rfl hy_le_div)
+    · exact DyuCandidate_mono_x_on_Q1_A1 p hp hy_pos
+        (le_of_lt (lt_of_not_ge hx_y)) le_rfl hx_div_bound
+  by_cases hx_div : x ≤ y / a p
+  · exact le_trans (to_q1_boundary_of_x_le_div hx_div)
+      (DyuCandidate_mono_x_on_Q1_A2 p hp hy_pos le_rfl (le_of_lt hz_gt_div))
+  · exact DyuCandidate_mono_x_on_Q1_A2 p hp hy_pos
+      (le_of_lt (lt_of_not_ge hx_div)) hxz
+
+lemma DyvGeTwo_axis_nonneg
+    (p : ℝ) (hp : 2 ≤ p) {x : ℝ} (hx : 0 ≤ x) :
+    0 ≤ DyvGeTwo p x 0 := by
+  rcases hx.eq_or_lt with rfl | hx_pos
+  · simp [DyvGeTwo]
+  · have hsum : 0 ≤ (x + 0) / 2 := by linarith
+    have hdiff : 0 ≤ (x - 0) / 2 := by linarith
+    have hbase : 0 ≤ |x / 2| ^ (p - 1) := Real.rpow_nonneg (abs_nonneg _) _
+    have hcoef : 0 ≤ (p - 1) ^ p := Real.rpow_nonneg (by linarith : 0 ≤ p - 1) _
+    have hhalf : 0 ≤ p / 2 := by linarith
+    simp [DyvGeTwo, hx_pos]
+    nlinarith [mul_nonneg hbase hhalf,
+      mul_nonneg (mul_nonneg hcoef hbase) hhalf]
+
+lemma DyuCandidate_axis_mono_x
+    (p : ℝ) (hp : 2 < p) {x z : ℝ}
+    (hxz : x ≤ z) :
+    DyuCandidate p x 0 ≤ DyuCandidate p z 0 := by
+  have hp' : 2 ≤ p := by linarith
+  by_cases hz_nonpos : z ≤ 0
+  · have hx_nonpos : x ≤ 0 := le_trans hxz hz_nonpos
+    have hx_eq : DyuCandidate p x 0 = -DyvGeTwo p (-x) 0 := by
+      have hQ : QuarterPlane2 x 0 := ⟨hx_nonpos, by linarith, hx_nonpos⟩
+      have hcl : closureA2 p (-x) 0 := by
+        have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+        exact ⟨by linarith, by linarith,
+          mul_nonneg ha_nonneg (by linarith : 0 ≤ -x)⟩
+      rw [DyuCandidate_eq_Q2 p hQ]
+      simpa using congrArg Neg.neg (auxFunction1_Dy_eq_DyvGeTwo p hp' (-x) 0 hcl)
+    by_cases hz0 : z = 0
+    · subst z
+      have hz_eq : DyuCandidate p 0 0 = 0 := by
+        have hQ : QuarterPlane 0 0 := ⟨le_rfl, le_rfl, by norm_num⟩
+        simp [DyuCandidate_eq_Q1 p hQ, DyauxFunction1, closureA2, closureA1, DyuA1]
+      rw [hx_eq, hz_eq]
+      linarith [DyvGeTwo_axis_nonneg p hp' (by linarith : 0 ≤ -x)]
+    · have hz_neg : z < 0 := lt_of_le_of_ne hz_nonpos hz0
+      have hz_eq : DyuCandidate p z 0 = -DyvGeTwo p (-z) 0 := by
+        have hQ : QuarterPlane2 z 0 := ⟨hz_nonpos, by linarith, hz_nonpos⟩
+        have hcl : closureA2 p (-z) 0 := by
+          have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+          exact ⟨by linarith, by linarith,
+            mul_nonneg ha_nonneg (by linarith : 0 ≤ -z)⟩
+        rw [DyuCandidate_eq_Q2 p hQ]
+        simpa using congrArg Neg.neg (auxFunction1_Dy_eq_DyvGeTwo p hp' (-z) 0 hcl)
+      have hmono : DyvGeTwo p (-z) 0 ≤ DyvGeTwo p (-x) 0 :=
+        DyvGeTwo_mono_x_of_pos p hp' (by linarith) (by linarith) (by linarith) (by linarith)
+      rw [hx_eq, hz_eq]
+      linarith
+  · have hz_pos : 0 < z := lt_of_not_ge hz_nonpos
+    by_cases hx_nonneg : 0 ≤ x
+    · have hx_pos_or : x = 0 ∨ 0 < x := by
+        rcases hx_nonneg.eq_or_lt with hx0 | hxpos
+        · exact Or.inl hx0.symm
+        · exact Or.inr hxpos
+      rcases hx_pos_or with rfl | hx_pos
+      · have hleft : DyuCandidate p 0 0 = 0 := by
+          have hQ : QuarterPlane 0 0 := ⟨le_rfl, le_rfl, by norm_num⟩
+          simp [DyuCandidate_eq_Q1 p hQ, DyauxFunction1, closureA2, closureA1, DyuA1]
+        have hright_nonneg : 0 ≤ DyuCandidate p z 0 := by
+          have hQ : QuarterPlane z 0 := ⟨hz_pos.le, by linarith, by linarith⟩
+          have hcl : closureA2 p z 0 := by
+            have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+            exact ⟨hz_pos.le, by linarith, mul_nonneg ha_nonneg hz_pos.le⟩
+          rw [DyuCandidate_eq_Q1 p hQ, auxFunction1_Dy_eq_DyvGeTwo p hp' z 0 hcl]
+          exact DyvGeTwo_axis_nonneg p hp' hz_pos.le
+        linarith
+      · have hx_eq : DyuCandidate p x 0 = DyvGeTwo p x 0 := by
+          have hQ : QuarterPlane x 0 := ⟨hx_pos.le, by linarith, by linarith⟩
+          have hcl : closureA2 p x 0 := by
+            have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+            exact ⟨hx_pos.le, by linarith, mul_nonneg ha_nonneg hx_pos.le⟩
+          rw [DyuCandidate_eq_Q1 p hQ]
+          exact auxFunction1_Dy_eq_DyvGeTwo p hp' x 0 hcl
+        have hz_eq : DyuCandidate p z 0 = DyvGeTwo p z 0 := by
+          have hQ : QuarterPlane z 0 := ⟨hz_pos.le, by linarith, by linarith⟩
+          have hcl : closureA2 p z 0 := by
+            have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+            exact ⟨hz_pos.le, by linarith, mul_nonneg ha_nonneg hz_pos.le⟩
+          rw [DyuCandidate_eq_Q1 p hQ]
+          exact auxFunction1_Dy_eq_DyvGeTwo p hp' z 0 hcl
+        rw [hx_eq, hz_eq]
+        exact DyvGeTwo_mono_x_of_pos p hp' hx_pos (by linarith) (by linarith) hxz
+    · have hx_neg : x < 0 := lt_of_not_ge hx_nonneg
+      have hzero : DyuCandidate p 0 0 = 0 := by
+        have hQ : QuarterPlane 0 0 := ⟨le_rfl, le_rfl, by norm_num⟩
+        simp [DyuCandidate_eq_Q1 p hQ, DyauxFunction1, closureA2, closureA1, DyuA1]
+      have hleft : DyuCandidate p x 0 ≤ 0 := by
+        have hQ : QuarterPlane2 x 0 := ⟨hx_neg.le, by linarith, hx_neg.le⟩
+        have hcl : closureA2 p (-x) 0 := by
+          have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+          exact ⟨by linarith, by linarith,
+            mul_nonneg ha_nonneg (by linarith : 0 ≤ -x)⟩
+        have hx_eq : DyuCandidate p x 0 = -DyvGeTwo p (-x) 0 := by
+          rw [DyuCandidate_eq_Q2 p hQ]
+          simpa using congrArg Neg.neg (auxFunction1_Dy_eq_DyvGeTwo p hp' (-x) 0 hcl)
+        rw [hx_eq]
+        linarith [DyvGeTwo_axis_nonneg p hp' (by linarith : 0 ≤ -x)]
+      have hright : 0 ≤ DyuCandidate p z 0 := by
+        have hQ : QuarterPlane z 0 := ⟨hz_pos.le, by linarith, by linarith⟩
+        have hcl : closureA2 p z 0 := by
+          have ha_nonneg : 0 ≤ a p := a_nonneg_of_two_le p hp'
+          exact ⟨hz_pos.le, by linarith, mul_nonneg ha_nonneg hz_pos.le⟩
+        rw [DyuCandidate_eq_Q1 p hQ, auxFunction1_Dy_eq_DyvGeTwo p hp' z 0 hcl]
+        exact DyvGeTwo_axis_nonneg p hp' hz_pos.le
+      linarith
+
+lemma DyuCandidate_mono_x
+    (p : ℝ) (hp : 2 < p) {x z y : ℝ}
+    (hxz : x ≤ z) :
+    DyuCandidate p x y ≤ DyuCandidate p z y := by
+  rcases lt_trichotomy y 0 with hy_neg | hy_zero | hy_pos
+  · have hmono :
+        DyuCandidate p (-z) (-y) ≤ DyuCandidate p (-x) (-y) :=
+      DyuCandidate_mono_x_of_y_pos p hp (by linarith : 0 < -y) (by linarith)
+    rw [DyuCandidate_neg_neg p hp x y, DyuCandidate_neg_neg p hp z y]
+    linarith
+  · subst y
+    exact DyuCandidate_axis_mono_x p hp hxz
+  · exact DyuCandidate_mono_x_of_y_pos p hp hy_pos hxz
+
+lemma DyuCandidate_mixed_mono_mul_le
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hk : h * k ≤ 0) :
+    DyuCandidate p (x + h) y * k ≤ DyuCandidate p x y * k := by
+  rcases lt_trichotomy k 0 with hk_neg | hk_zero | hk_pos
+  · have hh_nonneg : 0 ≤ h := by
+      by_contra hh
+      have hh_neg : h < 0 := lt_of_not_ge hh
+      have hprod_pos : 0 < h * k := mul_pos_of_neg_of_neg hh_neg hk_neg
+      linarith
+    have hmono : DyuCandidate p x y ≤ DyuCandidate p (x + h) y :=
+      DyuCandidate_mono_x p hp (by linarith)
+    exact mul_le_mul_of_nonpos_right hmono hk_neg.le
+  · subst k
+    simp
+  · have hh_nonpos : h ≤ 0 := by
+      by_contra hh
+      have hh_pos : 0 < h := lt_of_not_ge hh
+      have hprod_pos : 0 < h * k := mul_pos hh_pos hk_pos
+      linarith
+    have hmono : DyuCandidate p (x + h) y ≤ DyuCandidate p x y :=
+      DyuCandidate_mono_x p hp (by linarith)
+    exact mul_le_mul_of_nonneg_right hmono hk_pos.le
+
+
+lemma uCandidate_hk_negative_geTwo
+    (p : ℝ) (hp : 2 < p) {x y h k : ℝ}
+    (hk : h * k ≤  0) :
+    uCandidate p (x + h) (y + k) ≤
+      uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+  by_cases hk0 : h * k = 0
+  · exact uCandidate_axis_tangent p hp hk0
+  have hhor :
+      uCandidate p (x + h) y ≤
+        uCandidate p x y + DxuCandidate p x y * h := by
+    have h := uCandidate_axis_tangent_horizontal
+      (p := p) (hp := hp) (x := x) (y := y) (h := h) (k := 0) rfl
+    simpa using h
+  have hvert :
+      uCandidate p (x + h) (y + k) ≤
+        uCandidate p (x + h) y + DyuCandidate p (x + h) y * k := by
+    have h := uCandidate_axis_tangent_vertical
+      (p := p) (hp := hp) (x := x + h) (y := y) (h := 0) (k := k) rfl
+    simpa using h
+  have hmixed :
+      DyuCandidate p (x + h) y * k ≤ DyuCandidate p x y * k := by
+    exact DyuCandidate_mixed_mono_mul_le p hp hk
+  calc
+    uCandidate p (x + h) (y + k)
+        ≤ uCandidate p (x + h) y + DyuCandidate p (x + h) y * k := hvert
+    _ ≤ (uCandidate p x y + DxuCandidate p x y * h) +
+          DyuCandidate p (x + h) y * k := by
+            linarith
+    _ ≤ (uCandidate p x y + DxuCandidate p x y * h) +
+          DyuCandidate p x y * k := by
+            linarith
+    _ = uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
+      ring
+
+
 end  Majorant_p_g_2
 
 /-! 13. Majorant existence statement -/
@@ -9393,7 +9901,7 @@ inequality, pointwise majorization, and negativity on the opposing-sign region.
 theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
-        ∀ h k, h * k = 0 →
+        ∀ h k, h * k ≤  0 →
           u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
@@ -9403,7 +9911,7 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
   · intro x y
     refine ⟨Majorant_p_g_2.DxuCandidate p x y, Majorant_p_g_2.DyuCandidate p x y, ?_⟩
     intro h k hk
-    exact Majorant_p_g_2.uCandidate_axis_tangent p hp hk
+    exact Majorant_p_g_2.uCandidate_hk_negative_geTwo p hp hk
   constructor
   · -- pointwise majorization
     intros x y
