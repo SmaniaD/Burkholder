@@ -1,5 +1,6 @@
 import Mathlib.Probability.Martingale.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Burkholder.Basic
 import Burkholder.Majorants
@@ -1198,28 +1199,21 @@ lemma burkholder_u_tangent_step (p : ℝ) (hp : p > 1) (x y h k : ℝ)
 
 noncomputable def burkholder_tangentDx (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
-    (hcross : ∀ ω,
+    (_hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
         (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ≤  0) :
     Ω → ℝ :=
   fun ω =>
-    Classical.choose
-      (burkholder_u_tangent_step p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
-        (X_{n+1}[w, f] ω - X_{n}[w, f] ω)
-        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) (hcross ω))
+    Burkholder.du_dx p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
 
 noncomputable def burkholder_tangentDy (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
-    (hcross : ∀ ω,
+    (_hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
         (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ≤ 0) :
     Ω → ℝ :=
   fun ω =>
-    Classical.choose
-      (Classical.choose_spec
-        (burkholder_u_tangent_step p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
-          (X_{n+1}[w, f] ω - X_{n}[w, f] ω)
-          (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) (hcross ω)))
+    Burkholder.du_dy p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
 
 lemma burkholder_u_n_nplus1 (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
@@ -1229,68 +1223,118 @@ lemma burkholder_u_n_nplus1 (p : ℝ) (hp : p > 1)
     ∀ ω,
       Burkholder.u p hp (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ≤
         Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) +
-          burkholder_tangentDx p hp n hcross ω *
+          Burkholder.du_dx p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
             (X_{n+1}[w, f] ω - X_{n}[w, f] ω) +
-          burkholder_tangentDy p hp n hcross ω *
+          Burkholder.du_dy p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
             (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) := by
   intro ω
-  have htangent :=
+  rcases
     Classical.choose_spec
       (Classical.choose_spec
-        (burkholder_u_tangent_step p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
-          (X_{n+1}[w, f] ω - X_{n}[w, f] ω)
-          (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) (hcross ω)))
-  simpa [burkholder_tangentDx, burkholder_tangentDy, sub_add_cancel] using htangent
+        (Classical.choose_spec
+          (Classical.choose_spec
+            (Majorants.exists_majorant_p_g_1 p hp)))) with
+    ⟨hC_nonneg,
+      hu_cont, hdu_dx_cont, hdu_dy_cont,
+      hu_growth, hdu_dx_growth, hdu_dy_growth,
+      htangent, hmajor, hnonpos, haxis⟩
+  simpa [Burkholder.u, Burkholder.du_dx, Burkholder.du_dy, sub_add_cancel] using
+    htangent
+      (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
+      (X_{n+1}[w, f] ω - X_{n}[w, f] ω)
+      (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) (hcross ω)
 
-lemma burkholder_u_XY_integral_succ_le (p : ℝ) (hp : p > 1)
-    {μ : Measure Ω} {w f : ℕ → Ω → ℝ} (n : ℕ)
-    (hcross : ∀ ω,
-      (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
-        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ≤ 0)
-    (hu_succ_int : Integrable
-      (fun ω => Burkholder.u p hp (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω)) μ)
-    (hu_int : Integrable
-      (fun ω => Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ)
-    (hlinear_int : Integrable
-      (fun ω =>
-        burkholder_tangentDx p hp n hcross ω *
-          (X_{n+1}[w, f] ω - X_{n}[w, f] ω) +
-        burkholder_tangentDy p hp n hcross ω *
-          (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω)) μ)
-    (hlinear_nonpos :
-      (∫ ω,
-        burkholder_tangentDx p hp n hcross ω *
-          (X_{n+1}[w, f] ω - X_{n}[w, f] ω) +
-        burkholder_tangentDy p hp n hcross ω *
-          (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ∂μ) ≤ 0) :
-    (∫ ω, Burkholder.u p hp (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ∂μ) ≤
-      ∫ ω, Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ := by
+lemma burkholder_u_XY_integral_succ_le
+    {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+    (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+    (∫ ω,
+      Burkholder.u p.toReal h.hp_one
+        (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ∂μ) ≤
+      ∫ ω,
+        Burkholder.u p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ := by
   let linear : Ω → ℝ := fun ω =>
-    burkholder_tangentDx p hp n hcross ω *
+    Burkholder.du_dx p.toReal h.hp_one (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) +
-    burkholder_tangentDy p hp n hcross ω *
+    Burkholder.du_dy p.toReal h.hp_one (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
       (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω)
+  have hu_succ_int :
+      Integrable
+        (fun ω =>
+          Burkholder.u p.toReal h.hp_one
+            (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω)) μ :=
+    burkholder_u_Xn_Yn_integrable h (n + 1)
+  have hu_int :
+      Integrable
+        (fun ω =>
+          Burkholder.u p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ :=
+    burkholder_u_Xn_Yn_integrable h n
+  have hdx := burkholder_du_dx_Xn_Yn_integrable_mul_diff h n
+  have hdy := burkholder_du_dy_Xn_Yn_integrable_mul_diff h n
+  have hlinear_int : Integrable linear μ := by
+    dsimp [linear]
+    exact hdx.1.add hdy.1
+  have hlinear_zero : ∫ ω, linear ω ∂μ = 0 := by
+    dsimp [linear]
+    rw [integral_add hdx.1 hdy.1, hdx.2, hdy.2, add_zero]
   have hbound : ∀ᵐ ω ∂μ,
-      Burkholder.u p hp (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ≤
-        Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) + linear ω := by
-    filter_upwards with ω
-    have h := burkholder_u_n_nplus1 p hp n hcross ω
+      Burkholder.u p.toReal h.hp_one
+        (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ≤
+        Burkholder.u p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω) + linear ω := by
+    filter_upwards [(inequality_for_transform_differences h).1 n] with ω hcrossω
+    rcases
+      Classical.choose_spec
+        (Classical.choose_spec
+          (Classical.choose_spec
+            (Classical.choose_spec
+              (Majorants.exists_majorant_p_g_1 p.toReal h.hp_one)))) with
+      ⟨hC_nonneg,
+        hu_cont, hdu_dx_cont, hdu_dy_cont,
+        hu_growth, hdu_dx_growth, hdu_dy_growth,
+        htangent, hmajor, hnonpos, haxis⟩
+    have hpoint :
+        Burkholder.u p.toReal h.hp_one
+          (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ≤
+        Burkholder.u p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω) +
+          Burkholder.du_dx p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+              (X_{n+1}[w, f] ω - X_{n}[w, f] ω) +
+          Burkholder.du_dy p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) *
+              (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) := by
+      simpa [Burkholder.u, Burkholder.du_dx, Burkholder.du_dy, sub_add_cancel] using
+        htangent
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
+          (X_{n+1}[w, f] ω - X_{n}[w, f] ω)
+          (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) hcrossω
     dsimp [linear]
     linarith
   have hright_int : Integrable
-      (fun ω => Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) + linear ω) μ :=
+      (fun ω =>
+        Burkholder.u p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω) + linear ω) μ :=
     hu_int.add hlinear_int
   calc
-    (∫ ω, Burkholder.u p hp (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ∂μ)
-        ≤ ∫ ω, Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) + linear ω ∂μ :=
+    (∫ ω,
+      Burkholder.u p.toReal h.hp_one
+        (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ∂μ)
+        ≤ ∫ ω,
+          Burkholder.u p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) + linear ω ∂μ :=
           integral_mono_ae hu_succ_int hright_int hbound
-    _ = (∫ ω, Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) +
+    _ = (∫ ω,
+          Burkholder.u p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) +
           ∫ ω, linear ω ∂μ := by
             rw [integral_add hu_int hlinear_int]
-    _ ≤ ∫ ω, Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ := by
-      have hlin : ∫ ω, linear ω ∂μ ≤ 0 := by
-        simpa [linear] using hlinear_nonpos
-      exact add_le_of_nonpos_right hlin
+    _ ≤ ∫ ω,
+        Burkholder.u p.toReal h.hp_one
+          (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ := by
+      rw [hlinear_zero, add_zero]
 
 /-- Applying `v ≤ u` pointwise to the transform variables `X_n,Y_n`. -/
 lemma burkholder_v_XY_le_u_XY_pointwise (p : ℝ) (hp : p > 1)
@@ -1330,33 +1374,22 @@ lemma burkholder_integral_v_XY_nonpos
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f)
-    (hv_int : ∀ n,
-      Integrable
-        (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ)
-    (hu_int : ∀ (hp_real : p.toReal > 1) n,
-      Integrable
-        (fun ω => Burkholder.u p.toReal hp_real (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ)
-    (hu_integral_step : ∀ (hp_real : p.toReal > 1) n,
-      (∫ ω, Burkholder.u p.toReal hp_real (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ∂μ) ≤
-        ∫ ω, Burkholder.u p.toReal hp_real (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ)
     (n : ℕ) :
     (∫ ω, Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) ≤ 0 := by
-  have hp_real : p.toReal > 1 := by
-    rw [← ENNReal.toReal_one]
-    exact (ENNReal.toReal_lt_toReal ENNReal.one_ne_top h.hp_top).2 h.hp_one
   have hdiffs := inequality_for_transform_differences h
   have hu_nonpos : ∀ n,
-      (∫ ω, Burkholder.u p.toReal hp_real
+      (∫ ω, Burkholder.u p.toReal h.hp_one
         (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) ≤ 0 := by
     intro n
     induction n with
     | zero =>
         exact integral_nonpos_of_ae
-          (burkholder_u_X0Y0_nonpos_ae p.toReal hp_real hdiffs.2)
+          (burkholder_u_X0Y0_nonpos_ae p.toReal h.hp_one hdiffs.2)
     | succ n ih =>
-        exact (hu_integral_step hp_real n).trans ih
-  exact (burkholder_v_XY_le_u_XY p.toReal hp_real n (hv_int n)
-    (hu_int hp_real n)).trans (hu_nonpos n)
+        exact (burkholder_u_XY_integral_succ_le h n).trans ih
+  exact (burkholder_v_XY_le_u_XY p.toReal h.hp_one n
+    (burkholder_v_XY_integrable h n)
+    (burkholder_u_Xn_Yn_integrable h n)).trans (hu_nonpos n)
 
 
 
@@ -1371,11 +1404,160 @@ theorem Lp_Burkholder_inequality_martingaleTransform (p : ℝ≥0∞) (Ω : Type
   (hstrong : IsStronglyPredictable ℱ w)
   (hmart : Martingale f ℱ μ)
   (hLp : ∀ n, MemLp (f n) p μ)
-  (hbound : ∀ n, ∀ᵐ ω ∂μ, |w n ω| ≤ 1) :
+  (hbound : ∀ n, ∀ᵐ ω ∂μ, |w n ω| ≤ 1):
         ∀ n, eLpNorm ((w ⋆ₘ f) n) p μ ≤
           ENNReal.ofReal (Burkholder.pStar p.toReal - 1) * eLpNorm (f n) p μ := by
-  intro Ω mΩ μ hμ ℱ w f h hv_int hu_int hu_integral_step hLp_from_v_nonpos n
-  exact hLp_from_v_nonpos n
-    (burkholder_integral_v_XY_nonpos h hv_int hu_int hu_integral_step n)
+  have hp_toReal : 1 < p.toReal := by
+    rw [← ENNReal.toReal_one]
+    exact (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hfin).2 hp_one
+  have hp_ne_zero : p ≠ 0 := by
+    exact (zero_lt_one.trans hp_one).ne'
+  let h : BurkholderAssumptions p Ω μ ℱ w f :=
+    { hp_one := hp_toReal
+      hp_top := hfin
+      hstrong := hstrong
+      hmart := hmart
+      hLp := hLp
+      hbound := hbound }
+  intro n
+  let A : Ω → ℝ := fun ω => (X_{n}[w, f] ω + Y_{n}[w, f] ω) / 2
+  let B : Ω → ℝ := fun ω => (X_{n}[w, f] ω - Y_{n}[w, f] ω) / 2
+  let c : ℝ := Burkholder.pStar p.toReal - 1
+  have hA_eq : A = (w ⋆ₘ f) n := by
+    funext ω
+    dsimp [A]
+    change
+      (((plusOne w ⋆ₘ f) n ω + (minusOne w ⋆ₘ f) n ω) / 2) =
+        (w ⋆ₘ f) n ω
+    simp only [martingaleTransform, Finset.sum_apply]
+    rw [← Finset.sum_add_distrib]
+    calc
+      ((Finset.range (n + 1)).sum fun i =>
+          plusOne w i ω * martingaleDiff f i ω +
+            minusOne w i ω * martingaleDiff f i ω) / 2
+          = ((Finset.range (n + 1)).sum fun i =>
+              2 * (w i ω * martingaleDiff f i ω)) / 2 := by
+              congr 1
+              apply Finset.sum_congr rfl
+              intro i hi
+              simp [plusOne, minusOne]
+              ring
+      _ = (Finset.range (n + 1)).sum (fun i => w i ω * martingaleDiff f i ω) := by
+          rw [← Finset.mul_sum]
+          ring
+  have hB_eq : B = f n := by
+    funext ω
+    dsimp [B]
+    change
+      (((plusOne w ⋆ₘ f) n ω - (minusOne w ⋆ₘ f) n ω) / 2) =
+        f n ω
+    simp only [martingaleTransform, Finset.sum_apply]
+    rw [← Finset.sum_sub_distrib]
+    clear A B hA_eq
+    have hsum_diff :
+        (Finset.range (n + 1)).sum (fun i => martingaleDiff f i ω) = f n ω := by
+      induction n with
+      | zero =>
+          simp [martingaleDiff]
+      | succ n ih =>
+          rw [Finset.sum_range_succ, ih]
+          simp [martingaleDiff]
+    calc
+      ((Finset.range (n + 1)).sum fun i =>
+          plusOne w i ω * martingaleDiff f i ω -
+            minusOne w i ω * martingaleDiff f i ω) / 2
+          = ((Finset.range (n + 1)).sum fun i =>
+              2 * martingaleDiff f i ω) / 2 := by
+              congr 1
+              apply Finset.sum_congr rfl
+              intro i hi
+              simp [plusOne, minusOne]
+              ring
+      _ = (Finset.range (n + 1)).sum (fun i => martingaleDiff f i ω) := by
+          rw [← Finset.mul_sum]
+          ring
+      _ = f n ω := hsum_diff
+  have hA_mem : MemLp A p μ := by
+    change MemLp
+      (fun ω => (X_{n}[w, f] ω + Y_{n}[w, f] ω) / 2) p μ
+    simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using
+      ((burkholder_X_memLp h n).add (burkholder_Y_memLp h n)).const_mul (1 / 2 : ℝ)
+  have hB_mem : MemLp B p μ := by
+    rw [hB_eq]
+    exact hLp n
+  have hc_nonneg : 0 ≤ c := by
+    dsimp [c, Burkholder.pStar, Majorants.pStar]
+    have hp_le_max : p.toReal ≤ max p.toReal (Majorants.q p.toReal) := le_max_left _ _
+    linarith
+  have hv_nonpos := burkholder_integral_v_XY_nonpos h n
+  have hA_int :
+      Integrable (fun ω => Real.rpow |A ω| p.toReal) μ := by
+    simpa [Real.norm_eq_abs] using hA_mem.integrable_norm_rpow'
+  have hB_int :
+      Integrable (fun ω => Real.rpow |B ω| p.toReal) μ := by
+    simpa [Real.norm_eq_abs] using hB_mem.integrable_norm_rpow'
+  have hpow_int_le :
+      (∫ ω, Real.rpow |A ω| p.toReal ∂μ) ≤
+        Real.rpow c p.toReal *
+          ∫ ω, Real.rpow |B ω| p.toReal ∂μ := by
+    have hc_abs : |Majorants.pStar p.toReal - 1| = c := by
+      simpa [c, Burkholder.pStar] using abs_of_nonneg hc_nonneg
+    have hv_nonpos' :
+        (∫ ω,
+          Real.rpow |A ω| p.toReal -
+            Real.rpow c p.toReal * Real.rpow |B ω| p.toReal ∂μ) ≤ 0 := by
+      simpa [A, B, c, Burkholder.v, Majorants.v, Burkholder.pStar,
+        hc_abs] using hv_nonpos
+    rw [integral_sub hA_int (hB_int.const_mul (Real.rpow c p.toReal)),
+      integral_const_mul] at hv_nonpos'
+    linarith
+  have hA_int_nonneg : 0 ≤ ∫ ω, Real.rpow |A ω| p.toReal ∂μ :=
+    integral_nonneg fun ω => Real.rpow_nonneg (abs_nonneg _) _
+  have hB_int_nonneg : 0 ≤ ∫ ω, Real.rpow |B ω| p.toReal ∂μ :=
+    integral_nonneg fun ω => Real.rpow_nonneg (abs_nonneg _) _
+  have hlp_real :
+      lpNorm A p μ ≤ c * lpNorm B p μ := by
+    rw [lpNorm_eq_integral_norm_rpow_toReal hp_ne_zero hfin hA_mem.aestronglyMeasurable,
+      lpNorm_eq_integral_norm_rpow_toReal hp_ne_zero hfin hB_mem.aestronglyMeasurable]
+    have hroot := Real.rpow_le_rpow hA_int_nonneg hpow_int_le
+      (inv_nonneg.mpr (le_trans zero_le_one hp_toReal.le))
+    calc
+      (∫ x, ‖A x‖ ^ p.toReal ∂μ) ^ p.toReal⁻¹
+          = (∫ x, Real.rpow |A x| p.toReal ∂μ) ^ p.toReal⁻¹ := by
+              simp [Real.norm_eq_abs]
+      _ ≤ (Real.rpow c p.toReal *
+            ∫ x, Real.rpow |B x| p.toReal ∂μ) ^ p.toReal⁻¹ := hroot
+      _ = c * (∫ x, Real.rpow |B x| p.toReal ∂μ) ^ p.toReal⁻¹ := by
+          change
+            Real.rpow
+              (Real.rpow c p.toReal *
+                (∫ x, Real.rpow |B x| p.toReal ∂μ)) p.toReal⁻¹ =
+              c * Real.rpow (∫ x, Real.rpow |B x| p.toReal ∂μ) p.toReal⁻¹
+          have hc_root : Real.rpow (Real.rpow c p.toReal) p.toReal⁻¹ = c := by
+            have hmul_root :
+                Real.rpow c (p.toReal * p.toReal⁻¹) =
+                  Real.rpow (Real.rpow c p.toReal) p.toReal⁻¹ :=
+              Real.rpow_mul hc_nonneg p.toReal p.toReal⁻¹
+            rw [← hmul_root, mul_inv_cancel₀ (ne_of_gt (zero_lt_one.trans hp_toReal))]
+            change c ^ (1 : ℝ) = c
+            exact Real.rpow_one c
+          have hmul :
+              Real.rpow
+                (Real.rpow c p.toReal *
+                  (∫ x, Real.rpow |B x| p.toReal ∂μ)) p.toReal⁻¹ =
+                Real.rpow (Real.rpow c p.toReal) p.toReal⁻¹ *
+                  Real.rpow (∫ x, Real.rpow |B x| p.toReal ∂μ) p.toReal⁻¹ :=
+            Real.mul_rpow
+              (x := Real.rpow c p.toReal)
+              (y := ∫ x, Real.rpow |B x| p.toReal ∂μ)
+              (z := p.toReal⁻¹)
+              (Real.rpow_nonneg hc_nonneg p.toReal) hB_int_nonneg
+          rw [hmul, hc_root]
+      _ = c * (∫ x, ‖B x‖ ^ p.toReal ∂μ) ^ p.toReal⁻¹ := by
+          simp [Real.norm_eq_abs]
+  rw [← hA_eq, ← hB_eq]
+  rw [← MeasureTheory.ofReal_lpNorm hA_mem, ← MeasureTheory.ofReal_lpNorm hB_mem]
+  exact (ENNReal.ofReal_le_ofReal hlp_real).trans_eq (by
+    rw [ENNReal.ofReal_mul hc_nonneg])
 
 end MeasureTheory
