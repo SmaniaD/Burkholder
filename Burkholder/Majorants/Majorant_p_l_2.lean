@@ -8569,30 +8569,848 @@ lemma uCandidate_hk_negative_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * h + DyuCandidate p x y * k := by
       ring
 
+/-! ## Polynomial growth of the candidate and its first partials -/
+
+def uA1GrowthConst (p : ℝ) : ℝ :=
+  |alpha p| * (1 + |pStar p|)
+
+def vLeTwoGrowthConst (p : ℝ) : ℝ :=
+  1 + |coeffLeTwo p|
+
+def auxGrowthConst (p : ℝ) : ℝ :=
+  max (uA1GrowthConst p) (vLeTwoGrowthConst p)
+
+def uCandidateGrowthConst (p : ℝ) : ℝ :=
+  max 0 (auxGrowthConst p)
+
+lemma uA1GrowthConst_nonneg (p : ℝ) :
+    0 ≤ uA1GrowthConst p := by
+  unfold uA1GrowthConst
+  positivity
+
+lemma vLeTwoGrowthConst_nonneg (p : ℝ) :
+    0 ≤ vLeTwoGrowthConst p := by
+  unfold vLeTwoGrowthConst
+  positivity
+
+lemma auxGrowthConst_nonneg (p : ℝ) :
+    0 ≤ auxGrowthConst p := by
+  unfold auxGrowthConst
+  exact le_trans (uA1GrowthConst_nonneg p) (le_max_left _ _)
+
+lemma uCandidateGrowthConst_nonneg (p : ℝ) :
+    0 ≤ uCandidateGrowthConst p := by
+  unfold uCandidateGrowthConst
+  exact le_max_left _ _
+
+lemma closureA1_x0_y0
+    (p x y : ℝ) (h : closureA1 p x y) (hxnot : ¬ 0 < x) :
+    x = 0 ∧ y = 0 := by
+  have hx0 : x = 0 := le_antisymm (le_of_not_gt hxnot) h.1
+  subst x
+  have hy0 : y = 0 := by
+    have hle : y ≤ 0 := by simpa using h.2.2
+    have hge : 0 ≤ y := by simpa using h.2.1
+    exact le_antisymm hle hge
+  exact ⟨rfl, hy0⟩
+
+lemma closureA2_x0_y0
+    (p x y : ℝ) (h : closureA2 p x y) (hxnot : ¬ 0 < x) :
+    x = 0 ∧ y = 0 := by
+  have hx0 : x = 0 := le_antisymm (le_of_not_gt hxnot) h.1
+  subst x
+  have hy0 : y = 0 := by
+    have hge : 0 ≤ y := by simpa using h.2.1
+    have hle : y ≤ 0 := by simpa using h.2.2
+    exact le_antisymm hle hge
+  exact ⟨rfl, hy0⟩
+
+lemma closureA1_abs_y_le_x
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA1 p x y) :
+    |y| ≤ x := by
+  rcases h with ⟨hx, hlow, hup⟩
+  have ha_le_one : a p ≤ 1 := (a_lt_one_of_one_lt_of_lt_two p hp1 hp2).le
+  have hy_upper : y ≤ x := by
+    calc
+      y ≤ a p * x := hup
+      _ ≤ 1 * x := mul_le_mul_of_nonneg_right ha_le_one hx
+      _ = x := one_mul x
+  exact abs_le.mpr ⟨hlow, hy_upper⟩
+
+lemma closureA2_abs_y_le_x
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
+    |y| ≤ x := by
+  rcases h with ⟨hx, hlow, hup⟩
+  have ha_nonneg : 0 ≤ a p := a_nonneg_of_one_lt_of_lt_two p hp1 hp2
+  have hneg : -x ≤ y := by
+    exact le_trans (neg_nonpos.mpr hx) (le_trans (mul_nonneg ha_nonneg hx) hlow)
+  exact abs_le.mpr ⟨hneg, hup⟩
+
+lemma auxFunction1_eq_uA1 (p x y : ℝ) (h1 : closureA1 p x y) :
+    auxFunction1 p x y = uA1 p x y := by
+  simp [auxFunction1, h1]
+
+lemma auxFunction1_Dx_eq_DxuA1 (p x y : ℝ) (h1 : closureA1 p x y) :
+    DxauxFunction1 p x y = DxuA1 p x y := by
+  simp [DxauxFunction1, h1]
+
+lemma auxFunction1_Dy_eq_DyuA1 (p x y : ℝ) (h1 : closureA1 p x y) :
+    DyauxFunction1 p x y = DyuA1 p x y := by
+  simp [DyauxFunction1, h1]
+
+lemma abs_uA1_le_growth
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA1 p x y) :
+    |uA1 p x y| ≤ uA1GrowthConst p * Real.rpow x p := by
+  rcases h with ⟨hx, hlow, hup⟩
+  by_cases hxpos : 0 < x
+  · have hyabs : |y| ≤ x :=
+      closureA1_abs_y_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+    have hx_abs : |x| = x := abs_of_nonneg hx
+    have hxmy : |x - y| ≤ 2 * x := by
+      have htmp : |x - y| ≤ |x| + |y| := by
+        simpa [sub_eq_add_neg] using abs_add_le x (-y)
+      calc
+        |x - y| ≤ |x| + |y| := htmp
+        _ = x + |y| := by rw [hx_abs]
+        _ ≤ x + x := by gcongr
+        _ = 2 * x := by ring
+    have hlin :
+        |x - pStar p * (x - y) / 2| ≤ (1 + |pStar p|) * x := by
+      have htmp :
+          |x - pStar p * (x - y) / 2|
+            ≤ |x| + |pStar p * (x - y) / 2| := by
+        simpa [sub_eq_add_neg] using abs_add_le x (-(pStar p * (x - y) / 2))
+      have hdiv : |pStar p * (x - y) / 2| = |pStar p| * |x - y| / 2 := by
+        rw [abs_div, abs_mul, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+      rw [hx_abs, hdiv] at htmp
+      calc
+        |x - pStar p * (x - y) / 2| ≤ x + |pStar p| * |x - y| / 2 := htmp
+        _ ≤ x + |pStar p| * (2 * x) / 2 := by gcongr
+        _ = (1 + |pStar p|) * x := by ring
+    have hpow : Real.rpow x (p - 1) * x = Real.rpow x p := by
+      calc
+        Real.rpow x (p - 1) * x
+            = Real.rpow x (p - 1) * Real.rpow x (1 : ℝ) := by simp [Real.rpow_one]
+        _ = Real.rpow x ((p - 1) + 1) := by
+              simpa using (Real.rpow_add hxpos (p - 1) 1).symm
+        _ = Real.rpow x p := by ring_nf
+    have hpow_nonneg : 0 ≤ Real.rpow x (p - 1) := Real.rpow_nonneg hx _
+    calc
+      |uA1 p x y|
+          = |alpha p| * Real.rpow x (p - 1) *
+              |x - pStar p * (x - y) / 2| := by
+            simp only [uA1, hxpos, if_true]
+            rw [abs_mul, abs_mul, abs_of_nonneg hpow_nonneg]
+      _ ≤ |alpha p| * Real.rpow x (p - 1) * ((1 + |pStar p|) * x) := by
+            gcongr
+      _ = uA1GrowthConst p * Real.rpow x p := by
+            unfold uA1GrowthConst
+            rw [← hpow]
+            ring
+  · have h00 : x = 0 ∧ y = 0 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hxpos
+    rcases h00 with ⟨rfl, rfl⟩
+    have hnonneg : 0 ≤ uA1GrowthConst p * Real.rpow 0 p :=
+      mul_nonneg (uA1GrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
+    simpa [uA1] using hnonneg
+
+lemma closureA2_abs_add_div_two_le_x
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
+    |(x + y) / 2| ≤ x := by
+  rcases h with ⟨hx, hlow, hup⟩
+  have hyabs : |y| ≤ x := closureA2_abs_y_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+  have hx_abs : |x| = x := abs_of_nonneg hx
+  have htmp : |x + y| ≤ |x| + |y| := abs_add_le x y
+  have hdiv := div_le_div_of_nonneg_right htmp (by norm_num : (0 : ℝ) ≤ 2)
+  have habs_div : |(x + y) / 2| = |x + y| / 2 := by
+    rw [abs_div, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+  calc
+    |(x + y) / 2| = |x + y| / 2 := habs_div
+    _ ≤ (|x| + |y|) / 2 := hdiv
+    _ = (x + |y|) / 2 := by rw [hx_abs]
+    _ ≤ (x + x) / 2 := by gcongr
+    _ = x := by ring
+
+lemma closureA2_abs_sub_div_two_le_x
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
+    |(x - y) / 2| ≤ x := by
+  rcases h with ⟨hx, hlow, hup⟩
+  have hyabs : |y| ≤ x := closureA2_abs_y_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+  have hx_abs : |x| = x := abs_of_nonneg hx
+  have htmp : |x - y| ≤ |x| + |y| := by
+    simpa [sub_eq_add_neg] using abs_add_le x (-y)
+  have hdiv := div_le_div_of_nonneg_right htmp (by norm_num : (0 : ℝ) ≤ 2)
+  have habs_div : |(x - y) / 2| = |x - y| / 2 := by
+    rw [abs_div, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+  calc
+    |(x - y) / 2| = |x - y| / 2 := habs_div
+    _ ≤ (|x| + |y|) / 2 := hdiv
+    _ = (x + |y|) / 2 := by rw [hx_abs]
+    _ ≤ (x + x) / 2 := by gcongr
+    _ = x := by ring
+
+lemma abs_vLeTwo_le_growth_on_closureA2
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
+    |vLeTwo p x y| ≤ vLeTwoGrowthConst p * Real.rpow x p := by
+  rcases h with ⟨hx, hlow, hup⟩
+  have hsum : |(x + y) / 2| ≤ x :=
+    closureA2_abs_add_div_two_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+  have hdiff : |(x - y) / 2| ≤ x :=
+    closureA2_abs_sub_div_two_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+  have hp_nonneg : 0 ≤ p := by linarith
+  have hsum_pow :
+      Real.rpow |(x + y) / 2| p ≤ Real.rpow x p :=
+    Real.rpow_le_rpow (abs_nonneg _) hsum hp_nonneg
+  have hdiff_pow :
+      Real.rpow |(x - y) / 2| p ≤ Real.rpow x p :=
+    Real.rpow_le_rpow (abs_nonneg _) hdiff hp_nonneg
+  calc
+    |vLeTwo p x y|
+        ≤ Real.rpow |(x + y) / 2| p +
+            |coeffLeTwo p| * Real.rpow |(x - y) / 2| p := by
+          unfold vLeTwo
+          calc
+            |Real.rpow |(x + y) / 2| p -
+                coeffLeTwo p * Real.rpow |(x - y) / 2| p|
+                ≤ |Real.rpow |(x + y) / 2| p| +
+                    |coeffLeTwo p * Real.rpow |(x - y) / 2| p| := by
+                  simpa [sub_eq_add_neg] using
+                    abs_add_le (Real.rpow |(x + y) / 2| p)
+                      (-(coeffLeTwo p * Real.rpow |(x - y) / 2| p))
+            _ = Real.rpow |(x + y) / 2| p +
+                |coeffLeTwo p| * Real.rpow |(x - y) / 2| p := by
+                  have hA :
+                      |Real.rpow |(x + y) / 2| p| =
+                        Real.rpow |(x + y) / 2| p :=
+                    abs_of_nonneg (Real.rpow_nonneg (abs_nonneg _) _)
+                  have hB :
+                      |coeffLeTwo p * Real.rpow |(x - y) / 2| p| =
+                        |coeffLeTwo p| * Real.rpow |(x - y) / 2| p := by
+                    have hpow_nonneg :
+                        0 ≤ Real.rpow |(x - y) / 2| p :=
+                      Real.rpow_nonneg (abs_nonneg _) _
+                    rw [abs_mul]
+                    rw [abs_of_nonneg hpow_nonneg]
+                  rw [hA, hB]
+    _ ≤ Real.rpow x p + |coeffLeTwo p| * Real.rpow x p := by gcongr
+    _ = vLeTwoGrowthConst p * Real.rpow x p := by
+          unfold vLeTwoGrowthConst
+          ring
+
+lemma abs_auxFunction1_le_growth
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} :
+    |auxFunction1 p x y| ≤ auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by
+  by_cases h1 : closureA1 p x y
+  · have hx : 0 ≤ x := h1.1
+    have hx_abs : |x| = x := abs_of_nonneg hx
+    calc
+      |auxFunction1 p x y| = |uA1 p x y| := by rw [auxFunction1_eq_uA1 p x y h1]
+      _ ≤ uA1GrowthConst p * Real.rpow x p := abs_uA1_le_growth p hp1 hp2 h1
+      _ ≤ auxGrowthConst p * Real.rpow |x| p := by
+        rw [hx_abs]
+        exact mul_le_mul_of_nonneg_right
+          (by unfold auxGrowthConst; exact le_max_left _ _)
+          (Real.rpow_nonneg hx _)
+      _ ≤ auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by
+        exact mul_le_mul_of_nonneg_left
+          (le_add_of_nonneg_right (Real.rpow_nonneg (abs_nonneg y) _))
+          (auxGrowthConst_nonneg p)
+  · by_cases h2 : closureA2 p x y
+    · have hx : 0 ≤ x := h2.1
+      have hx_abs : |x| = x := abs_of_nonneg hx
+      calc
+        |auxFunction1 p x y| = |vLeTwo p x y| := by
+          rw [auxFunction1_eq_vLeTwo_leTwo p hp1 hp2 x y h2]
+        _ ≤ vLeTwoGrowthConst p * Real.rpow x p :=
+          abs_vLeTwo_le_growth_on_closureA2 p hp1 hp2 h2
+        _ ≤ auxGrowthConst p * Real.rpow |x| p := by
+          rw [hx_abs]
+          exact mul_le_mul_of_nonneg_right
+            (by unfold auxGrowthConst; exact le_max_right _ _)
+            (Real.rpow_nonneg hx _)
+        _ ≤ auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by
+          exact mul_le_mul_of_nonneg_left
+            (le_add_of_nonneg_right (Real.rpow_nonneg (abs_nonneg y) _))
+            (auxGrowthConst_nonneg p)
+    · have hnonneg :
+          0 ≤ auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by
+        exact mul_nonneg (auxGrowthConst_nonneg p)
+          (add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
+            (Real.rpow_nonneg (abs_nonneg y) _))
+      simpa [auxFunction1, h1, h2] using hnonneg
+
+lemma abs_uCandidate_le_growth
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
+    |uCandidate p x y|
+      ≤ uCandidateGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by
+  have hCaux : auxGrowthConst p ≤ uCandidateGrowthConst p := by
+    unfold uCandidateGrowthConst
+    exact le_max_right _ _
+  have hsum_nonneg : 0 ≤ Real.rpow |x| p + Real.rpow |y| p :=
+    add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
+      (Real.rpow_nonneg (abs_nonneg y) _)
+  rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
+  · have haux := abs_auxFunction1_le_growth p hp1 hp2 (x := x) (y := y)
+    calc
+      |uCandidate p x y| = |auxFunction1 p x y| := by rw [uCandidate_eq_Q1_leTwo p hQ1]
+      _ ≤ auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := haux
+      _ ≤ uCandidateGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) :=
+        mul_le_mul_of_nonneg_right hCaux hsum_nonneg
+  rcases hrest with hQ2 | hrest
+  · have haux := abs_auxFunction1_le_growth p hp1 hp2 (x := -x) (y := -y)
+    calc
+      |uCandidate p x y| = |auxFunction1 p (-x) (-y)| := by rw [uCandidate_eq_Q2_leTwo p hQ2]
+      _ ≤ auxGrowthConst p * (Real.rpow |(-x)| p + Real.rpow |(-y)| p) := haux
+      _ = auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by simp
+      _ ≤ uCandidateGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) :=
+        mul_le_mul_of_nonneg_right hCaux hsum_nonneg
+  rcases hrest with hQ3 | hQ4
+  · have haux := abs_auxFunction1_le_growth p hp1 hp2 (x := y) (y := x)
+    calc
+      |uCandidate p x y| = |auxFunction1 p y x| := by rw [uCandidate_eq_Q3_leTwo p hQ3]
+      _ ≤ auxGrowthConst p * (Real.rpow |y| p + Real.rpow |x| p) := haux
+      _ = auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by ring
+      _ ≤ uCandidateGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) :=
+        mul_le_mul_of_nonneg_right hCaux hsum_nonneg
+  · have haux := abs_auxFunction1_le_growth p hp1 hp2 (x := -y) (y := -x)
+    calc
+      |uCandidate p x y| = |auxFunction1 p (-y) (-x)| := by rw [uCandidate_eq_Q4_leTwo p hQ4]
+      _ ≤ auxGrowthConst p * (Real.rpow |(-y)| p + Real.rpow |(-x)| p) := haux
+      _ = auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by simp [add_comm]
+      _ ≤ uCandidateGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) :=
+        mul_le_mul_of_nonneg_right hCaux hsum_nonneg
+
+lemma uCandidate_growth_bound
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x y, |uCandidate p x y| ≤ C * (Real.rpow |x| p + Real.rpow |y| p) := by
+  refine ⟨uCandidateGrowthConst p, uCandidateGrowthConst_nonneg p, ?_⟩
+  intro x y
+  exact abs_uCandidate_le_growth p hp1 hp2 x y
+
+def DxuA1GrowthConst (p : ℝ) : ℝ :=
+  |alpha p| * (|p| / 2) * (|(p - 2) / (p - 1)| + 1)
+
+def DyuA1GrowthConst (p : ℝ) : ℝ :=
+  |alpha p| * (|pStar p| / 2)
+
+def DvLeTwoGrowthConst (p : ℝ) : ℝ :=
+  |p| / 2 * (1 + |coeffLeTwo p|)
+
+def auxDerivativeGrowthConst (p : ℝ) : ℝ :=
+  max (max (DxuA1GrowthConst p) (DyuA1GrowthConst p)) (DvLeTwoGrowthConst p)
+
+def uCandidateDerivativeGrowthConst (p : ℝ) : ℝ :=
+  max 0 (auxDerivativeGrowthConst p)
+
+lemma DxuA1GrowthConst_nonneg (p : ℝ) :
+    0 ≤ DxuA1GrowthConst p := by
+  unfold DxuA1GrowthConst
+  positivity
+
+lemma DyuA1GrowthConst_nonneg (p : ℝ) :
+    0 ≤ DyuA1GrowthConst p := by
+  unfold DyuA1GrowthConst
+  positivity
+
+lemma DvLeTwoGrowthConst_nonneg (p : ℝ) :
+    0 ≤ DvLeTwoGrowthConst p := by
+  unfold DvLeTwoGrowthConst
+  positivity
+
+lemma auxDerivativeGrowthConst_nonneg (p : ℝ) :
+    0 ≤ auxDerivativeGrowthConst p := by
+  unfold auxDerivativeGrowthConst
+  exact le_trans (DxuA1GrowthConst_nonneg p) (le_trans (le_max_left _ _) (le_max_left _ _))
+
+lemma uCandidateDerivativeGrowthConst_nonneg (p : ℝ) :
+    0 ≤ uCandidateDerivativeGrowthConst p := by
+  unfold uCandidateDerivativeGrowthConst
+  exact le_max_left _ _
+
+lemma DxuA1GrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
+    DxuA1GrowthConst p ≤ auxDerivativeGrowthConst p := by
+  unfold auxDerivativeGrowthConst
+  exact le_trans (le_max_left _ _) (le_max_left _ _)
+
+lemma DyuA1GrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
+    DyuA1GrowthConst p ≤ auxDerivativeGrowthConst p := by
+  unfold auxDerivativeGrowthConst
+  exact le_trans (le_max_right _ _) (le_max_left _ _)
+
+lemma DvLeTwoGrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
+    DvLeTwoGrowthConst p ≤ auxDerivativeGrowthConst p := by
+  unfold auxDerivativeGrowthConst
+  exact le_max_right _ _
+
+lemma auxDerivativeGrowthConst_le_uCandidateDerivativeGrowthConst (p : ℝ) :
+    auxDerivativeGrowthConst p ≤ uCandidateDerivativeGrowthConst p := by
+  unfold uCandidateDerivativeGrowthConst
+  exact le_max_right _ _
+
+lemma abs_DxuA1_le_growth
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA1 p x y) :
+    |DxuA1 p x y| ≤ DxuA1GrowthConst p * Real.rpow x (p - 1) := by
+  rcases h with ⟨hx, hlow, hup⟩
+  by_cases hxpos : 0 < x
+  · have hyabs : |y| ≤ x := by
+      exact closureA1_abs_y_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+    have hbr :
+        |((p - 2) / (p - 1)) * x + y|
+          ≤ (|(p - 2) / (p - 1)| + 1) * x := by
+      have htmp :
+          |((p - 2) / (p - 1)) * x + y|
+            ≤ |((p - 2) / (p - 1)) * x| + |y| :=
+        abs_add_le _ _
+      have hx_abs : |x| = x := abs_of_nonneg hx
+      calc
+        |((p - 2) / (p - 1)) * x + y|
+            ≤ |((p - 2) / (p - 1)) * x| + |y| := htmp
+        _ = |(p - 2) / (p - 1)| * x + |y| := by rw [abs_mul, hx_abs]
+        _ ≤ |(p - 2) / (p - 1)| * x + x := by gcongr
+        _ = (|(p - 2) / (p - 1)| + 1) * x := by ring
+    have hpow : Real.rpow x (p - 2) * x = Real.rpow x (p - 1) := by
+      calc
+        Real.rpow x (p - 2) * x
+            = Real.rpow x (p - 2) * Real.rpow x (1 : ℝ) := by simp [Real.rpow_one]
+        _ = Real.rpow x ((p - 2) + 1) := by
+              simpa using (Real.rpow_add hxpos (p - 2) 1).symm
+        _ = Real.rpow x (p - 1) := by ring_nf
+    have hpow_nonneg : 0 ≤ Real.rpow x (p - 2) := Real.rpow_nonneg hx _
+    calc
+      |DxuA1 p x y|
+          = |alpha p| * (|p| / 2) * Real.rpow x (p - 2) *
+              |((p - 2) / (p - 1)) * x + y| := by
+            simp only [DxuA1, hxpos, if_true]
+            rw [abs_mul, abs_mul, abs_mul, abs_of_nonneg hpow_nonneg]
+            rw [abs_div, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+      _ ≤ |alpha p| * (|p| / 2) * Real.rpow x (p - 2) *
+            ((|(p - 2) / (p - 1)| + 1) * x) := by gcongr
+      _ = DxuA1GrowthConst p * Real.rpow x (p - 1) := by
+            unfold DxuA1GrowthConst
+            rw [← hpow]
+            ring
+  · have h00 : x = 0 ∧ y = 0 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hxpos
+    rcases h00 with ⟨rfl, rfl⟩
+    have hnonneg : 0 ≤ DxuA1GrowthConst p * Real.rpow 0 (p - 1) :=
+      mul_nonneg (DxuA1GrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
+    simpa [DxuA1] using hnonneg
+
+lemma abs_DyuA1_le_growth
+    (p : ℝ) {x y : ℝ} (h : closureA1 p x y) :
+    |DyuA1 p x y| ≤ DyuA1GrowthConst p * Real.rpow x (p - 1) := by
+  rcases h with ⟨hx, hlow, hup⟩
+  by_cases hxpos : 0 < x
+  · have hpow_nonneg : 0 ≤ Real.rpow x (p - 1) := Real.rpow_nonneg hx _
+    calc
+      |DyuA1 p x y|
+          = |alpha p| * Real.rpow x (p - 1) * (|pStar p| / 2) := by
+            simp only [DyuA1, hxpos, if_true]
+            rw [abs_mul, abs_mul, abs_of_nonneg hpow_nonneg]
+            rw [abs_div, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+      _ ≤ DyuA1GrowthConst p * Real.rpow x (p - 1) := by
+            unfold DyuA1GrowthConst
+            ring_nf
+            exact le_rfl
+  · have h00 : x = 0 ∧ y = 0 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hxpos
+    rcases h00 with ⟨rfl, rfl⟩
+    have hnonneg : 0 ≤ DyuA1GrowthConst p * Real.rpow 0 (p - 1) :=
+      mul_nonneg (DyuA1GrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
+    simpa [DyuA1] using hnonneg
+
+lemma abs_DxvLeTwo_le_growth_on_closureA2
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
+    |DxvLeTwo p x y| ≤ DvLeTwoGrowthConst p * Real.rpow x (p - 1) := by
+  rcases h with ⟨hx, hlow, hup⟩
+  by_cases hxpos : 0 < x
+  · have hsum : |(x + y) / 2| ≤ x :=
+      closureA2_abs_add_div_two_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+    have hdiff : |(x - y) / 2| ≤ x :=
+      closureA2_abs_sub_div_two_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+    have hp1_nonneg : 0 ≤ p - 1 := by linarith
+    have hsum_pow :
+        Real.rpow |(x + y) / 2| (p - 1) ≤ Real.rpow x (p - 1) :=
+      Real.rpow_le_rpow (abs_nonneg _) hsum hp1_nonneg
+    have hdiff_pow :
+        Real.rpow |(x - y) / 2| (p - 1) ≤ Real.rpow x (p - 1) :=
+      Real.rpow_le_rpow (abs_nonneg _) hdiff hp1_nonneg
+    calc
+      |DxvLeTwo p x y|
+          ≤ |p| / 2 * Real.rpow |(x + y) / 2| (p - 1) +
+              |coeffLeTwo p| * (|p| / 2) *
+                Real.rpow |(x - y) / 2| (p - 1) := by
+            unfold DxvLeTwo
+            simp only [hxpos, if_true]
+            calc
+              |Real.rpow |(x + y) / 2| (p - 1) * (p / 2) -
+                  coeffLeTwo p * Real.rpow |(x - y) / 2| (p - 1) * (p / 2)|
+                  ≤ |Real.rpow |(x + y) / 2| (p - 1) * (p / 2)| +
+                      |coeffLeTwo p * Real.rpow |(x - y) / 2| (p - 1) * (p / 2)| := by
+                    simpa [sub_eq_add_neg] using
+                      abs_add_le
+                        (Real.rpow |(x + y) / 2| (p - 1) * (p / 2))
+                        (-(coeffLeTwo p *
+                          Real.rpow |(x - y) / 2| (p - 1) * (p / 2)))
+              _ = |p| / 2 * Real.rpow |(x + y) / 2| (p - 1) +
+                    |coeffLeTwo p| * (|p| / 2) *
+                      Real.rpow |(x - y) / 2| (p - 1) := by
+                    have hA :
+                        |Real.rpow |(x + y) / 2| (p - 1) * (p / 2)| =
+                          |p| / 2 * Real.rpow |(x + y) / 2| (p - 1) := by
+                      have hpow_nonneg :
+                          0 ≤ Real.rpow (|x + y| / 2) (p - 1) :=
+                        Real.rpow_nonneg (by positivity) _
+                      rw [abs_mul, abs_div, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+                      rw [abs_of_nonneg hpow_nonneg]
+                      have hp_div : |p / 2| = |p| / 2 := by
+                        rw [abs_div, abs_of_pos (show (0 : ℝ) < (2 : ℝ) by norm_num)]
+                      rw [hp_div]
+                      ring
+                    have hB :
+                        |coeffLeTwo p * Real.rpow |(x - y) / 2| (p - 1) * (p / 2)| =
+                          |coeffLeTwo p| * (|p| / 2) *
+                            Real.rpow |(x - y) / 2| (p - 1) := by
+                      have hpow_nonneg :
+                          0 ≤ Real.rpow (|x - y| / 2) (p - 1) :=
+                        Real.rpow_nonneg (by positivity) _
+                      rw [abs_mul, abs_mul, abs_div,
+                        abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+                      rw [abs_of_nonneg hpow_nonneg]
+                      have hp_div : |p / 2| = |p| / 2 := by
+                        rw [abs_div, abs_of_pos (show (0 : ℝ) < (2 : ℝ) by norm_num)]
+                      rw [hp_div]
+                      ring
+                    rw [hA, hB]
+      _ ≤ |p| / 2 * Real.rpow x (p - 1) +
+              |coeffLeTwo p| * (|p| / 2) * Real.rpow x (p - 1) := by
+            gcongr
+      _ = DvLeTwoGrowthConst p * Real.rpow x (p - 1) := by
+            unfold DvLeTwoGrowthConst
+            ring
+  · have h00 : x = 0 ∧ y = 0 := closureA2_x0_y0 p x y ⟨hx, hlow, hup⟩ hxpos
+    rcases h00 with ⟨rfl, rfl⟩
+    have hnonneg : 0 ≤ DvLeTwoGrowthConst p * Real.rpow 0 (p - 1) :=
+      mul_nonneg (DvLeTwoGrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
+    simpa [DxvLeTwo] using hnonneg
+
+lemma abs_DyvLeTwo_le_growth_on_closureA2
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
+    |DyvLeTwo p x y| ≤ DvLeTwoGrowthConst p * Real.rpow x (p - 1) := by
+  rcases h with ⟨hx, hlow, hup⟩
+  by_cases hxpos : 0 < x
+  · have hsum : |(x + y) / 2| ≤ x :=
+      closureA2_abs_add_div_two_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+    have hdiff : |(x - y) / 2| ≤ x :=
+      closureA2_abs_sub_div_two_le_x p hp1 hp2 ⟨hx, hlow, hup⟩
+    have hp1_nonneg : 0 ≤ p - 1 := by linarith
+    have hsum_pow :
+        Real.rpow |(x + y) / 2| (p - 1) ≤ Real.rpow x (p - 1) :=
+      Real.rpow_le_rpow (abs_nonneg _) hsum hp1_nonneg
+    have hdiff_pow :
+        Real.rpow |(x - y) / 2| (p - 1) ≤ Real.rpow x (p - 1) :=
+      Real.rpow_le_rpow (abs_nonneg _) hdiff hp1_nonneg
+    calc
+      |DyvLeTwo p x y|
+          ≤ |p| / 2 * Real.rpow |(x + y) / 2| (p - 1) +
+              |coeffLeTwo p| * (|p| / 2) *
+                Real.rpow |(x - y) / 2| (p - 1) := by
+            unfold DyvLeTwo
+            simp only [hxpos, if_true]
+            calc
+              |Real.rpow |(x + y) / 2| (p - 1) * (p / 2) +
+                  coeffLeTwo p * Real.rpow |(x - y) / 2| (p - 1) * (p / 2)|
+                  ≤ |Real.rpow |(x + y) / 2| (p - 1) * (p / 2)| +
+                      |coeffLeTwo p * Real.rpow |(x - y) / 2| (p - 1) * (p / 2)| :=
+                    abs_add_le _ _
+              _ = |p| / 2 * Real.rpow |(x + y) / 2| (p - 1) +
+                    |coeffLeTwo p| * (|p| / 2) *
+                      Real.rpow |(x - y) / 2| (p - 1) := by
+                    have hA :
+                        |Real.rpow |(x + y) / 2| (p - 1) * (p / 2)| =
+                          |p| / 2 * Real.rpow |(x + y) / 2| (p - 1) := by
+                      have hpow_nonneg :
+                          0 ≤ Real.rpow (|x + y| / 2) (p - 1) :=
+                        Real.rpow_nonneg (by positivity) _
+                      rw [abs_mul, abs_div, abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+                      rw [abs_of_nonneg hpow_nonneg]
+                      have hp_div : |p / 2| = |p| / 2 := by
+                        rw [abs_div, abs_of_pos (show (0 : ℝ) < (2 : ℝ) by norm_num)]
+                      rw [hp_div]
+                      ring
+                    have hB :
+                        |coeffLeTwo p * Real.rpow |(x - y) / 2| (p - 1) * (p / 2)| =
+                          |coeffLeTwo p| * (|p| / 2) *
+                            Real.rpow |(x - y) / 2| (p - 1) := by
+                      have hpow_nonneg :
+                          0 ≤ Real.rpow (|x - y| / 2) (p - 1) :=
+                        Real.rpow_nonneg (by positivity) _
+                      rw [abs_mul, abs_mul, abs_div,
+                        abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+                      rw [abs_of_nonneg hpow_nonneg]
+                      have hp_div : |p / 2| = |p| / 2 := by
+                        rw [abs_div, abs_of_pos (show (0 : ℝ) < (2 : ℝ) by norm_num)]
+                      rw [hp_div]
+                      ring
+                    rw [hA, hB]
+      _ ≤ |p| / 2 * Real.rpow x (p - 1) +
+              |coeffLeTwo p| * (|p| / 2) * Real.rpow x (p - 1) := by
+            gcongr
+      _ = DvLeTwoGrowthConst p * Real.rpow x (p - 1) := by
+            unfold DvLeTwoGrowthConst
+            ring
+  · have h00 : x = 0 ∧ y = 0 := closureA2_x0_y0 p x y ⟨hx, hlow, hup⟩ hxpos
+    rcases h00 with ⟨rfl, rfl⟩
+    have hnonneg : 0 ≤ DvLeTwoGrowthConst p * Real.rpow 0 (p - 1) :=
+      mul_nonneg (DvLeTwoGrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
+    simpa [DyvLeTwo] using hnonneg
+
+lemma abs_DxauxFunction1_le_growth
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} :
+    |DxauxFunction1 p x y|
+      ≤ auxDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+  by_cases h1 : closureA1 p x y
+  · have hx : 0 ≤ x := h1.1
+    have hx_abs : |x| = x := abs_of_nonneg hx
+    calc
+      |DxauxFunction1 p x y| = |DxuA1 p x y| := by
+        rw [auxFunction1_Dx_eq_DxuA1 p x y h1]
+      _ ≤ DxuA1GrowthConst p * Real.rpow x (p - 1) :=
+        abs_DxuA1_le_growth p hp1 hp2 h1
+      _ ≤ auxDerivativeGrowthConst p * Real.rpow |x| (p - 1) := by
+        rw [hx_abs]
+        exact mul_le_mul_of_nonneg_right
+          (DxuA1GrowthConst_le_auxDerivativeGrowthConst p)
+          (Real.rpow_nonneg hx _)
+      _ ≤ auxDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+        exact mul_le_mul_of_nonneg_left
+          (le_add_of_nonneg_right (Real.rpow_nonneg (abs_nonneg y) _))
+          (auxDerivativeGrowthConst_nonneg p)
+  · by_cases h2 : closureA2 p x y
+    · have hx : 0 ≤ x := h2.1
+      have hx_abs : |x| = x := abs_of_nonneg hx
+      calc
+        |DxauxFunction1 p x y| = |DxvLeTwo p x y| := by
+          rw [auxFunction1_Dx_eq_DxvLeTwo_leTwo p hp1 hp2 x y h2]
+        _ ≤ DvLeTwoGrowthConst p * Real.rpow x (p - 1) :=
+          abs_DxvLeTwo_le_growth_on_closureA2 p hp1 hp2 h2
+        _ ≤ auxDerivativeGrowthConst p * Real.rpow |x| (p - 1) := by
+          rw [hx_abs]
+          exact mul_le_mul_of_nonneg_right
+            (DvLeTwoGrowthConst_le_auxDerivativeGrowthConst p)
+            (Real.rpow_nonneg hx _)
+        _ ≤ auxDerivativeGrowthConst p *
+            (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+          exact mul_le_mul_of_nonneg_left
+            (le_add_of_nonneg_right (Real.rpow_nonneg (abs_nonneg y) _))
+            (auxDerivativeGrowthConst_nonneg p)
+    · have hnonneg :
+          0 ≤ auxDerivativeGrowthConst p *
+            (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+        exact mul_nonneg (auxDerivativeGrowthConst_nonneg p)
+          (add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
+            (Real.rpow_nonneg (abs_nonneg y) _))
+      simpa [DxauxFunction1, h1, h2] using hnonneg
+
+lemma abs_DyauxFunction1_le_growth
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} :
+    |DyauxFunction1 p x y|
+      ≤ auxDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+  by_cases h1 : closureA1 p x y
+  · have hx : 0 ≤ x := h1.1
+    have hx_abs : |x| = x := abs_of_nonneg hx
+    calc
+      |DyauxFunction1 p x y| = |DyuA1 p x y| := by
+        rw [auxFunction1_Dy_eq_DyuA1 p x y h1]
+      _ ≤ DyuA1GrowthConst p * Real.rpow x (p - 1) :=
+        abs_DyuA1_le_growth p h1
+      _ ≤ auxDerivativeGrowthConst p * Real.rpow |x| (p - 1) := by
+        rw [hx_abs]
+        exact mul_le_mul_of_nonneg_right
+          (DyuA1GrowthConst_le_auxDerivativeGrowthConst p)
+          (Real.rpow_nonneg hx _)
+      _ ≤ auxDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+        exact mul_le_mul_of_nonneg_left
+          (le_add_of_nonneg_right (Real.rpow_nonneg (abs_nonneg y) _))
+          (auxDerivativeGrowthConst_nonneg p)
+  · by_cases h2 : closureA2 p x y
+    · have hx : 0 ≤ x := h2.1
+      have hx_abs : |x| = x := abs_of_nonneg hx
+      calc
+        |DyauxFunction1 p x y| = |DyvLeTwo p x y| := by
+          rw [auxFunction1_Dy_eq_DyvLeTwo_leTwo p hp1 hp2 x y h2]
+        _ ≤ DvLeTwoGrowthConst p * Real.rpow x (p - 1) :=
+          abs_DyvLeTwo_le_growth_on_closureA2 p hp1 hp2 h2
+        _ ≤ auxDerivativeGrowthConst p * Real.rpow |x| (p - 1) := by
+          rw [hx_abs]
+          exact mul_le_mul_of_nonneg_right
+            (DvLeTwoGrowthConst_le_auxDerivativeGrowthConst p)
+            (Real.rpow_nonneg hx _)
+        _ ≤ auxDerivativeGrowthConst p *
+            (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+          exact mul_le_mul_of_nonneg_left
+            (le_add_of_nonneg_right (Real.rpow_nonneg (abs_nonneg y) _))
+            (auxDerivativeGrowthConst_nonneg p)
+    · have hnonneg :
+          0 ≤ auxDerivativeGrowthConst p *
+            (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+        exact mul_nonneg (auxDerivativeGrowthConst_nonneg p)
+          (add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
+            (Real.rpow_nonneg (abs_nonneg y) _))
+      simpa [DyauxFunction1, h1, h2] using hnonneg
+
+lemma abs_DxuCandidate_le_growth
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
+    |DxuCandidate p x y|
+      ≤ uCandidateDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+  have hC : auxDerivativeGrowthConst p ≤ uCandidateDerivativeGrowthConst p :=
+    auxDerivativeGrowthConst_le_uCandidateDerivativeGrowthConst p
+  have hsum_nonneg :
+      0 ≤ Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1) :=
+    add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
+      (Real.rpow_nonneg (abs_nonneg y) _)
+  rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
+  · have haux := abs_DxauxFunction1_le_growth p hp1 hp2 (x := x) (y := y)
+    calc
+      |DxuCandidate p x y| = |DxauxFunction1 p x y| := by
+        rw [DxuCandidate_eq_Q1_leTwo p hQ1]
+      _ ≤ auxDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := haux
+      _ ≤ uCandidateDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) :=
+        mul_le_mul_of_nonneg_right hC hsum_nonneg
+  rcases hrest with hQ2 | hrest
+  · have haux := abs_DxauxFunction1_le_growth p hp1 hp2 (x := -x) (y := -y)
+    calc
+      |DxuCandidate p x y| = |DxauxFunction1 p (-x) (-y)| := by
+        rw [DxuCandidate_eq_Q2_leTwo p hQ2, abs_neg]
+      _ ≤ auxDerivativeGrowthConst p *
+          (Real.rpow |(-x)| (p - 1) + Real.rpow |(-y)| (p - 1)) := haux
+      _ = auxDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by simp
+      _ ≤ uCandidateDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) :=
+        mul_le_mul_of_nonneg_right hC hsum_nonneg
+  rcases hrest with hQ3 | hQ4
+  · have haux := abs_DyauxFunction1_le_growth p hp1 hp2 (x := y) (y := x)
+    calc
+      |DxuCandidate p x y| = |DyauxFunction1 p y x| := by
+        rw [DxuCandidate_eq_Q3_leTwo p hp1 hp2 hQ3]
+      _ ≤ auxDerivativeGrowthConst p *
+          (Real.rpow |y| (p - 1) + Real.rpow |x| (p - 1)) := haux
+      _ = auxDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by ring
+      _ ≤ uCandidateDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) :=
+        mul_le_mul_of_nonneg_right hC hsum_nonneg
+  · have haux := abs_DyauxFunction1_le_growth p hp1 hp2 (x := -y) (y := -x)
+    calc
+      |DxuCandidate p x y| = |DyauxFunction1 p (-y) (-x)| := by
+        rw [DxuCandidate_eq_Q4_leTwo p hp1 hp2 hQ4, abs_neg]
+      _ ≤ auxDerivativeGrowthConst p *
+          (Real.rpow |(-y)| (p - 1) + Real.rpow |(-x)| (p - 1)) := haux
+      _ = auxDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by simp [add_comm]
+      _ ≤ uCandidateDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) :=
+        mul_le_mul_of_nonneg_right hC hsum_nonneg
+
+lemma abs_DyuCandidate_le_growth
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
+    |DyuCandidate p x y|
+      ≤ uCandidateDerivativeGrowthConst p *
+          (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) := by
+  have h := abs_DxuCandidate_le_growth p hp1 hp2 y x
+  rw [DyuCandidate_eq_DxuCandidate_swap_leTwo p hp1 hp2 x y]
+  simpa [add_comm] using h
+
+lemma uCandidate_derivative_growth_bound
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      (∀ x y,
+        |DxuCandidate p x y| ≤
+          C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) ∧
+      (∀ x y,
+        |DyuCandidate p x y| ≤
+          C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) := by
+  refine ⟨uCandidateDerivativeGrowthConst p, uCandidateDerivativeGrowthConst_nonneg p, ?_, ?_⟩
+  · intro x y
+    exact abs_DxuCandidate_le_growth p hp1 hp2 x y
+  · intro x y
+    exact abs_DyuCandidate_le_growth p hp1 hp2 x y
+
 
 end Majorant_p_l_2
 
 
 
 theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
-    ∃ u : ℝ → ℝ → ℝ,
-      (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
-        ∀ h k, h * k ≤  0 →
-          u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
+    ∃ u du_dx du_dy : ℝ → ℝ → ℝ, ∃ C : ℝ,
+      0 ≤ C ∧
+      ContinuousOn (fun z : ℝ × ℝ => u z.1 z.2) Set.univ ∧
+      ContinuousOn (fun z : ℝ × ℝ => du_dx z.1 z.2) Set.univ ∧
+      ContinuousOn (fun z : ℝ × ℝ => du_dy z.1 z.2) Set.univ ∧
+      (∀ x y,
+        u x y ≤ C * (Real.rpow |x| p + Real.rpow |y| p)) ∧
+      (∀ x y,
+        |du_dx x y| ≤ C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) ∧
+      (∀ x y,
+        |du_dy x y| ≤ C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) ∧
+      (∀ x y h k, h * k ≤  0 →
+          u (x + h) (y + k) ≤ u x y + du_dx x y * h + du_dy x y * k) ∧
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
-      (∀ x y, x*y = 0 ∧ (x,y) ≠ (0,0) → u x y < 0) := by
+      (∀ x y, x*y = 0 ∧ (x,y) ≠ (0,0) → u x y < 0)  := by
+  obtain ⟨Cu, hCu_nonneg, hu_abs_growth⟩ :=
+    Majorant_p_l_2.uCandidate_growth_bound p hp.1 hp.2
+  obtain ⟨Cdu, hCdu_nonneg, hDxu_growth, hDyu_growth⟩ :=
+    Majorant_p_l_2.uCandidate_derivative_growth_bound p hp.1 hp.2
+  let C : ℝ := max Cu Cdu
+  have hC_nonneg : 0 ≤ C := by
+    exact le_trans hCu_nonneg (le_max_left _ _)
+  have hCu_le : Cu ≤ C := le_max_left _ _
+  have hCdu_le : Cdu ≤ C := le_max_right _ _
   use Majorant_p_l_2.uCandidate p
-  constructor
+  use Majorant_p_l_2.DxuCandidate p
+  use Majorant_p_l_2.DyuCandidate p
+  use C
+  refine ⟨hC_nonneg, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · -- The global continuity lemma for the glued candidate is separate from the growth estimates.
+    sorry
+  · -- The global continuity lemma for the glued `x`-partial is separate from the growth estimates.
+    sorry
+  · -- The global continuity lemma for the glued `y`-partial is separate from the growth estimates.
+    sorry
   · intro x y
-    refine ⟨Majorant_p_l_2.DxuCandidate p x y, Majorant_p_l_2.DyuCandidate p x y, ?_⟩
-    intro h k hk
+    have hsum_nonneg : 0 ≤ Real.rpow |x| p + Real.rpow |y| p :=
+      add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
+        (Real.rpow_nonneg (abs_nonneg y) _)
+    calc
+      Majorant_p_l_2.uCandidate p x y
+          ≤ |Majorant_p_l_2.uCandidate p x y| := le_abs_self _
+      _ ≤ Cu * (Real.rpow |x| p + Real.rpow |y| p) := hu_abs_growth x y
+      _ ≤ C * (Real.rpow |x| p + Real.rpow |y| p) :=
+        mul_le_mul_of_nonneg_right hCu_le hsum_nonneg
+  · intro x y
+    have hsum_nonneg : 0 ≤ Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1) :=
+      add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
+        (Real.rpow_nonneg (abs_nonneg y) _)
+    exact (hDxu_growth x y).trans
+      (mul_le_mul_of_nonneg_right hCdu_le hsum_nonneg)
+  · intro x y
+    have hsum_nonneg : 0 ≤ Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1) :=
+      add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
+        (Real.rpow_nonneg (abs_nonneg y) _)
+    exact (hDyu_growth x y).trans
+      (mul_le_mul_of_nonneg_right hCdu_le hsum_nonneg)
+  · intro x y h k hk
     exact Majorant_p_l_2.uCandidate_hk_negative_leTwo p hp.1 hp.2 hk
-  constructor
   · intro x y
     rw [Majorant_p_l_2.v_eq_vLeTwo_of_one_lt_of_lt_two p x y hp.1 hp.2]
     exact Majorant_p_l_2.vLeTwo_le_uCandidate_leTwo p hp.1 hp.2 x y
-  constructor
   · intro x y hxy
     exact Majorant_p_l_2.uCandidate_le_zero_of_mul_nonpos_leTwo p x y hp.1 hp.2 hxy
   · intro x y hxy

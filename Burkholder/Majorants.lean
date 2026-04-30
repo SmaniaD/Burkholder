@@ -40,8 +40,12 @@ theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
           exact False.elim (hxy.1 hp2)
         by_cases hp_gt_2 : 2 < p
         · -- Case p > 2
-          rcases exists_majorant_geTwo p hp_gt_2 with ⟨u, htangent, hmajor, hnonpos, haxis⟩
-          refine ⟨u, htangent, hmajor, hnonpos, ?_⟩
+          rcases exists_majorant_geTwo p hp_gt_2 with
+            ⟨u, du_dx, du_dy, C, hC_nonneg, hdu_dx_cont, hdu_dy_cont,
+              hdu_dx_growth, hdu_dy_growth, htangent, hmajor, hnonpos, haxis⟩
+          refine ⟨u, ?_, hmajor, hnonpos, ?_⟩
+          · intro x y
+            exact ⟨du_dx x y, du_dy x y, htangent x y⟩
           intro x y hxy
           exact haxis x y ⟨hxy.2.1, hxy.2.2⟩
         -- Case 1 < p < 2
