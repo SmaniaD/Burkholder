@@ -205,7 +205,10 @@ structure BurkholderAssumptions (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableS
   hmart : Martingale f ℱ μ
   hLp : ∀ n, MemLp (f n) p μ
   hbound : ∀ n, ∀ᵐ ω ∂μ, |w n ω| ≤ 1
-  hv_int : ∀ n,
+
+
+
+/-hv_int : ∀ n,
     Integrable
       (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ
   hu_int : ∀ (hp_real : p.toReal > 1) n,
@@ -217,7 +220,7 @@ structure BurkholderAssumptions (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableS
   hLp_from_v_nonpos : ∀ n,
     (∫ ω, Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) ≤ 0 →
       eLpNorm ((w ⋆ₘ f) n) p μ ≤
-        ENNReal.ofReal (Burkholder.pStar p.toReal - 1) * eLpNorm (f n) p μ
+        ENNReal.ofReal (Burkholder.pStar p.toReal - 1) * eLpNorm (f n) p μ-/
 
 
 
