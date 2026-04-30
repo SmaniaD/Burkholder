@@ -25,7 +25,7 @@ def v (p x y : ℝ) : ℝ :=
 /-- The package of properties saying that `u` is a Burkholder majorant for exponent `p`. -/
 def IsMajorant (p : ℝ) (u : ℝ → ℝ → ℝ) : Prop :=
   (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
-    ∀ h k, h * k = 0 →
+    ∀ h k, h * k ≤ 0 →
       u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
   (∀ x y, v p x y ≤ u x y) ∧
   (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
@@ -194,29 +194,45 @@ def minusOne (w : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
 scoped notation "X_{" n "}[" w "," f "]" => ((plusOne w) ⋆ₘ f) n
 scoped notation "Y_{" n "}[" w "," f "]" => ((minusOne w) ⋆ₘ f) n
 
-
+/--
+Common assumptions for Burkholder-type martingale transform inequalities.
+-/
+structure BurkholderAssumptions (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableSpace Ω] (μ : Measure Ω)
+  [IsFiniteMeasure μ] (ℱ : Filtration ℕ mΩ) (w f : ℕ → Ω → ℝ) : Prop where
+  hp_one : 1 < p
+  hp_top : p ≠ ∞
+  hstrong : IsStronglyPredictable ℱ w
+  hmart : Martingale f ℱ μ
+  hLp : ∀ n, MemLp (f n) p μ
+  hbound : ∀ n, ∀ᵐ ω ∂μ, |w n ω| ≤ 1
+  hv_int : ∀ n,
+    Integrable
+      (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ
+  hu_int : ∀ (hp_real : p.toReal > 1) n,
+    Integrable
+      (fun ω => Burkholder.u p.toReal hp_real (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ
+  hu_integral_step : ∀ (hp_real : p.toReal > 1) n,
+    (∫ ω, Burkholder.u p.toReal hp_real (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ∂μ) ≤
+      ∫ ω, Burkholder.u p.toReal hp_real (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ
+  hLp_from_v_nonpos : ∀ n,
+    (∫ ω, Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) ≤ 0 →
+      eLpNorm ((w ⋆ₘ f) n) p μ ≤
+        ENNReal.ofReal (Burkholder.pStar p.toReal - 1) * eLpNorm (f n) p μ
 
 
 
 lemma   inequality_for_transform_differences
-    (p : ℝ≥0∞) (_hp_one : 1 < p) (_hp_top : p ≠ ∞) :
-    ∃ C : ℝ≥0∞, C ≠ ∞ ∧
-      ∀ {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
-        {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ},
-        IsStronglyPredictable ℱ w →
-        Martingale f ℱ μ →
-        (∀ n, MemLp (f n) p μ) →
-        (∀ n, ∀ᵐ ω ∂μ, |w n ω| ≤ 1) →
+    {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+    (h : BurkholderAssumptions p Ω μ ℱ w f) :
         (∀ n, ∀ᵐ ω ∂μ,
           (X_{n+1}[w, f] ω -X_{n}[w, f] ω) * (Y_{n+1}[w, f] ω -Y_{n}[w, f] ω) ≤ 0) ∧
         (∀ᵐ ω ∂μ,
           (X_{0}[w, f] ω *
               Y_{0}[w, f] ω ≤ 0)) := by
-  refine ⟨0, by simp, ?_⟩
-  intro Ω mΩ μ hμ ℱ w f hw hf hfLp hw_bound
   constructor
   · intro n
-    filter_upwards [hw_bound (n + 1)] with ω hwω
+    filter_upwards [h.hbound (n + 1)] with ω hwω
     have hplus :
         X_{n+1}[w, f] ω - X_{n}[w, f] ω =
           (w (n + 1) ω + 1) * (f (n + 1) ω - f n ω) := by
@@ -244,7 +260,7 @@ lemma   inequality_for_transform_differences
             rw [hplus, hminus]
             ring
       _ ≤ 0 := by nlinarith
-  · filter_upwards [hw_bound 0] with ω hwω
+  · filter_upwards [h.hbound 0] with ω hwω
     have hw_sq : w 0 ω ^ 2 ≤ 1 := by
       have hneg : -1 ≤ w 0 ω := (abs_le.mp hwω).1
       have hpos : w 0 ω ≤ 1 := (abs_le.mp hwω).2
@@ -274,10 +290,10 @@ lemma burkholder_u_nonpos_of_mul_nonpos (p : ℝ) (hp : p > 1)
 The tangency/concavity property of the chosen majorant. This is the formal
 version of the step
 `u(x + h, y + k) ≤ u(x, y) + u_x(x,y) h + u_y(x,y) k`
-when `h * k = 0`.
+when `h * k <= 0`.
 -/
 lemma burkholder_u_tangent_step (p : ℝ) (hp : p > 1) (x y h k : ℝ)
-    (hhk : h * k = 0) :
+    (hhk : h * k ≤  0) :
     ∃ d_u_dx d_u_dy : ℝ,
       Burkholder.u p hp (x + h) (y + k) ≤
         Burkholder.u p hp x y + d_u_dx * h + d_u_dy * k := by
@@ -288,7 +304,7 @@ noncomputable def burkholder_tangentDx (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
     (hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
-        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) = 0) :
+        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ≤  0) :
     Ω → ℝ :=
   fun ω =>
     Classical.choose
@@ -300,7 +316,7 @@ noncomputable def burkholder_tangentDy (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
     (hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
-        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) = 0) :
+        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ≤ 0) :
     Ω → ℝ :=
   fun ω =>
     Classical.choose
@@ -309,11 +325,11 @@ noncomputable def burkholder_tangentDy (p : ℝ) (hp : p > 1)
           (X_{n+1}[w, f] ω - X_{n}[w, f] ω)
           (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) (hcross ω)))
 
-lemma burkholder_u_XY_tangent_bound (p : ℝ) (hp : p > 1)
+lemma burkholder_u_n_nplus1 (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
     (hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
-        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) = 0) :
+        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ≤ 0) :
     ∀ ω,
       Burkholder.u p hp (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ≤
         Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) +
@@ -334,7 +350,7 @@ lemma burkholder_u_XY_integral_succ_le (p : ℝ) (hp : p > 1)
     {μ : Measure Ω} {w f : ℕ → Ω → ℝ} (n : ℕ)
     (hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
-        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) = 0)
+        (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) ≤ 0)
     (hu_succ_int : Integrable
       (fun ω => Burkholder.u p hp (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω)) μ)
     (hu_int : Integrable
@@ -362,7 +378,7 @@ lemma burkholder_u_XY_integral_succ_le (p : ℝ) (hp : p > 1)
       Burkholder.u p hp (X_{n+1}[w, f] ω) (Y_{n+1}[w, f] ω) ≤
         Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) + linear ω := by
     filter_upwards with ω
-    have h := burkholder_u_XY_tangent_bound p hp n hcross ω
+    have h := burkholder_u_n_nplus1 p hp n hcross ω
     dsimp [linear]
     linarith
   have hright_int : Integrable
@@ -412,32 +428,44 @@ lemma burkholder_u_X0Y0_nonpos_ae (p : ℝ) (hp : p > 1)
   filter_upwards [hXY0] with ω hxy
   exact burkholder_u_nonpos_of_mul_nonpos p hp hxy
 
-/-- Consequently, `v(X_n,Y_n) ≤ 0` a.s. whenever `X_n Y_n ≤ 0` a.s. -/
-lemma burkholder_v_XY_nonpos_ae (p : ℝ) (hp : p > 1)
-    {μ : Measure Ω} {w f : ℕ → Ω → ℝ}
-    (hXY : ∀ n, ∀ᵐ ω ∂μ, X_{n}[w, f] ω * Y_{n}[w, f] ω ≤ 0) :
-    ∀ n, ∀ᵐ ω ∂μ,
-      Burkholder.v p (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ≤ 0 := by
-  intro n
-  filter_upwards [hXY n] with ω hxy
-  exact le_trans (burkholder_v_XY_le_u_XY_pointwise p hp n ω)
-    (burkholder_u_nonpos_of_mul_nonpos p hp hxy)
+/-- Under the Burkholder package of hypotheses, the Burkholder function has
+nonpositive expectation along the transformed pair `(X_n,Y_n)`. -/
+lemma burkholder_integral_v_XY_nonpos
+    {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+    (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+    (∫ ω, Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) ≤ 0 := by
+  have hp_real : p.toReal > 1 := by
+    rw [← ENNReal.toReal_one]
+    exact (ENNReal.toReal_lt_toReal ENNReal.one_ne_top h.hp_top).2 h.hp_one
+  have hdiffs := inequality_for_transform_differences h
+  have hu_nonpos : ∀ n,
+      (∫ ω, Burkholder.u p.toReal hp_real
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ∂μ) ≤ 0 := by
+    intro n
+    induction n with
+    | zero =>
+        exact integral_nonpos_of_ae
+          (burkholder_u_X0Y0_nonpos_ae p.toReal hp_real hdiffs.2)
+    | succ n ih =>
+        exact (h.hu_integral_step hp_real n).trans ih
+  exact (burkholder_v_XY_le_u_XY p.toReal hp_real n (h.hv_int n)
+    (h.hu_int hp_real n)).trans (hu_nonpos n)
+
+
 
 
 
 
 
 theorem Lp_Burkholder_inequality_martingaleTransform
-    (p : ℝ≥0∞) (hp_one : 1 < p) (hp_top : p ≠ ∞) :
-    ∃ C : ℝ≥0∞, C ≠ ∞ ∧
+    (p : ℝ≥0∞) (_hp_one : 1 < p) (_hp_top : p ≠ ∞) :
       ∀ {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
         {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ},
-        IsStronglyPredictable ℱ w →
-        Martingale f ℱ μ →
-        (∀ n, MemLp (f n) p μ) →
-        (∀ n, ∀ᵐ ω ∂μ, |w n ω| ≤ 1) →
+        BurkholderAssumptions p Ω μ ℱ w f →
         ∀ n, eLpNorm ((w ⋆ₘ f) n) p μ ≤
           ENNReal.ofReal (Burkholder.pStar p.toReal - 1) * eLpNorm (f n) p μ := by
-  sorry
+  intro Ω mΩ μ hμ ℱ w f h n
+  exact h.hLp_from_v_nonpos n (burkholder_integral_v_XY_nonpos h n)
 
 end MeasureTheory

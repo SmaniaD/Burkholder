@@ -27,7 +27,7 @@ namespace Majorants
 theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
     ∃ u : ℝ → ℝ → ℝ,
       (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
-        ∀ h k, h * k = 0 →
+        ∀ h k, h * k ≤  0 →
           u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
