@@ -31,7 +31,7 @@ theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
       ContinuousOn (fun z : ℝ × ℝ => du_dx z.1 z.2) Set.univ ∧
       ContinuousOn (fun z : ℝ × ℝ => du_dy z.1 z.2) Set.univ ∧
       (∀ x y,
-        u x y ≤ C * (Real.rpow |x| p + Real.rpow |y| p)) ∧
+       |u x y| ≤ C * (Real.rpow |x| p + Real.rpow |y| p)) ∧
       (∀ x y,
         |du_dx x y| ≤ C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) ∧
       (∀ x y,

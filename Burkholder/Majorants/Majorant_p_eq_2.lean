@@ -26,7 +26,7 @@ theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
       ContinuousOn (fun z : ℝ × ℝ => du_dx z.1 z.2) Set.univ ∧
       ContinuousOn (fun z : ℝ × ℝ => du_dy z.1 z.2) Set.univ ∧
       (∀ x y,
-        u x y ≤ C * (Real.rpow |x| p + Real.rpow |y| p)) ∧
+        |u x y| ≤ C * (Real.rpow |x| p + Real.rpow |y| p)) ∧
       (∀ x y,
         |du_dx x y| ≤ C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) ∧
       (∀ x y,
@@ -43,10 +43,11 @@ theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
   · exact continuous_snd.continuousOn
   · exact continuous_fst.continuousOn
   · intro x y
-    have hx2_nonneg : 0 ≤ x ^ 2 := sq_nonneg x
-    have hy2_nonneg : 0 ≤ y ^ 2 := sq_nonneg y
-    have hsq : 2 * x * y ≤ x ^ 2 + y ^ 2 := by nlinarith [sq_nonneg (x - y)]
-    have hxy_le : x * y ≤ x ^ 2 + y ^ 2 := by nlinarith
+    have hsq : 2 * |x| * |y| ≤ |x| ^ 2 + |y| ^ 2 := by
+      nlinarith [sq_nonneg (|x| - |y|)]
+    have hxy_le : |x * y| ≤ |x| ^ 2 + |y| ^ 2 := by
+      rw [abs_mul]
+      nlinarith [abs_nonneg x, abs_nonneg y]
     simpa [Real.rpow_two, sq_abs] using hxy_le
   · intro x y
     have hle : |y| ≤ |x| + |y| := by

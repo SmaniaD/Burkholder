@@ -10654,7 +10654,7 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
       ContinuousOn (fun z : ℝ × ℝ => du_dx z.1 z.2) Set.univ ∧
       ContinuousOn (fun z : ℝ × ℝ => du_dy z.1 z.2) Set.univ ∧
       (∀ x y,
-        u x y ≤ C * (Real.rpow |x| p + Real.rpow |y| p)) ∧
+        |u x y| ≤ C * (Real.rpow |x| p + Real.rpow |y| p)) ∧
       (∀ x y,
         |du_dx x y| ≤ C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) ∧
       (∀ x y,
@@ -10683,9 +10683,8 @@ theorem exists_majorant_geTwo (p : ℝ) (hp : 2 < p) :
       exact add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
         (Real.rpow_nonneg (abs_nonneg y) _)
     calc
-      Majorant_p_g_2.uCandidate p x y
-          ≤ |Majorant_p_g_2.uCandidate p x y| := le_abs_self _
-      _ ≤ Cu * (Real.rpow |x| p + Real.rpow |y| p) := hu_abs_growth x y
+      |Majorant_p_g_2.uCandidate p x y|
+          ≤ Cu * (Real.rpow |x| p + Real.rpow |y| p) := hu_abs_growth x y
       _ ≤ max Cdu Cu * (Real.rpow |x| p + Real.rpow |y| p) :=
         mul_le_mul_of_nonneg_right hCu_le hsum_nonneg
   · intro x y

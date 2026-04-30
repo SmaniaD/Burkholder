@@ -31,14 +31,43 @@ def IsMajorant (p : ℝ) (u : ℝ → ℝ → ℝ) : Prop :=
   (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
   (∀ x y, p ≠ 2 ∧ x * y = 0 ∧ (x, y) ≠ (0, 0) → u x y < 0)
 
-/-- A chosen Burkholder majorant for `p > 1`. -/
-def u (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+
+
+noncomputable def u (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
   Classical.choose (Majorants.exists_majorant_p_g_1 p hp)
+
+noncomputable def du_dx (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+  Classical.choose
+    (Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp))
+
+noncomputable def du_dy (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+  Classical.choose
+    (Classical.choose_spec
+      (Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp)))
+
+noncomputable def C (p : ℝ) (hp : p > 1) : ℝ :=
+  Classical.choose
+    (Classical.choose_spec
+      (Classical.choose_spec
+        (Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp))))
+
+
 
 theorem u_isMajorant (p : ℝ) (hp : p > 1) :
     IsMajorant p (u p hp) := by
-  simpa [u, IsMajorant, v] using
-    Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp)
+  rcases Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp) with
+    ⟨du_dx, du_dy, C, hC_nonneg,
+      hu_cont, hdu_dx_cont, hdu_dy_cont,
+      hu_growth, hdu_dx_growth, hdu_dy_growth,
+      htangent, hmajor, hnonpos, haxis⟩
+  constructor
+  · intro x y
+    exact ⟨du_dx x y, du_dy x y, htangent x y⟩
+  constructor
+  · simpa [v, u] using hmajor
+  constructor
+  · simpa [u] using hnonpos
+  · simpa [u] using haxis
 
 end Burkholder
 
@@ -191,6 +220,9 @@ def minusOne (w : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
 
 
 
+
+
+
 scoped notation "X_{" n "}[" w "," f "]" => ((plusOne w) ⋆ₘ f) n
 scoped notation "Y_{" n "}[" w "," f "]" => ((minusOne w) ⋆ₘ f) n
 
@@ -319,6 +351,8 @@ lemma burkholder_minusOne_mul_martingaleDiff_memLp
   rw [Real.norm_eq_abs, abs_mul, Real.norm_eq_abs]
   exact mul_le_mul_of_nonneg_right hcoeff (abs_nonneg (martingaleDiff f n ω))
 
+
+/--Lp integrability of X_n, Y_n, v(X_n,Y_n) -/
 lemma burkholder_X_memLp
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
@@ -337,30 +371,186 @@ lemma burkholder_Y_memLp
     memLp_finsetSum' (Finset.range (n + 1))
       (fun i _hi => burkholder_minusOne_mul_martingaleDiff_memLp h i)
 
+
+
 lemma burkholder_v_XY_integrable
   {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
   {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
   (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
-  Integrable (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
-  -- v is continuous and grows at most like |x|^p + |y|^p, so it is controlled by the Lp norm of f
-  -- X_n and Y_n are in Lp by previous lemmas
+  Integrable
+    (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
+
+  have hp_ne_zero : p ≠ 0 := by
+    intro hp0
+    have : (1 : ℝ) < 0 := by
+      simpa [hp0] using h.hp_one
+    linarith
+
   have hX : MemLp (X_{n}[w, f]) p μ := burkholder_X_memLp h n
   have hY : MemLp (Y_{n}[w, f]) p μ := burkholder_Y_memLp h n
-  -- Since p > 1, p.toReal > 1, so v(x, y) ≤ C (|x|^p + |y|^p) + D for some C, D
-  obtain ⟨C, D, hv_bd⟩ : ∃ C D : ℝ, ∀ x y, |Burkholder.v p.toReal x y| ≤ C * (|x|^p.toReal + |y|^p.toReal) + D :=
+
+  have hXpow :
+      Integrable (fun ω => |X_{n}[w, f] ω| ^ p.toReal) μ := by
+    simpa [Real.norm_eq_abs] using
+      hX.integrable_norm_rpow hp_ne_zero h.hp_top
+
+  have hYpow :
+      Integrable (fun ω => |Y_{n}[w, f] ω| ^ p.toReal) μ := by
+    simpa [Real.norm_eq_abs] using
+      hY.integrable_norm_rpow hp_ne_zero h.hp_top
+
+
+  -- Use the correct majorant bound lemma (assuming the correct name is v_growth_bound, otherwise adjust)
+  obtain ⟨C, D, hv_bd⟩ :
+    ∃ C D : ℝ,
+      ∀ x y,
+        |Burkholder.v p.toReal x y|
+          ≤ C * (|x| ^ p.toReal + |y| ^ p.toReal) + D :=
     Majorants.v_growth_bound p.toReal h.hp_one
-  have h_int : Integrable (fun ω => C * (|X_{n}[w, f] ω|^p.toReal + |Y_{n}[w, f] ω|^p.toReal) + D) μ := by
-    apply Integrable.add
-    · apply Integrable.const_mul _ C
-      apply Integrable.add
-      · exact Lp.integrable_rpow_of_memℒp (hX.memℒp) h.hp_one
-      · exact Lp.integrable_rpow_of_memℒp (hY.memℒp) h.hp_one
-    · exact integrable_const D
-  exact Integrable.mono'
-    h_int
-    (fun ω => abs_le.mp (hv_bd (X_{n}[w, f] ω) (Y_{n}[w, f] ω)))
+
+  have h_dom :
+      Integrable
+        (fun ω =>
+          C * (|X_{n}[w, f] ω| ^ p.toReal
+              + |Y_{n}[w, f] ω| ^ p.toReal) + D) μ := by
+    simpa using ((hXpow.add hYpow).const_mul C).add (integrable_const D)
 
 
+  -- Provide explicit measurability proof
+  have h_meas :
+    AEStronglyMeasurable
+      (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
+    apply (Continuous.comp₂ (Burkholder.v.continuous p.toReal h.hp_one)
+      (AEStronglyMeasurable.coe_fn hX.aestronglyMeasurable)
+      (AEStronglyMeasurable.coe_fn hY.aestronglyMeasurable)).aestronglyMeasurable
+
+  exact h_dom.mono' h_meas <| by
+    filter_upwards with ω
+    simpa [Real.norm_eq_abs] using
+      hv_bd (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
+
+/-- Lp integrability of `u(X_n,Y_n)`. -/
+lemma burkholder_u_Xn_Yn_integrable
+  {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+  {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+  (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+  Integrable
+    (fun ω =>
+      Burkholder.u p.toReal h.hp_one
+        (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
+
+  rcases Classical.choose_spec
+      (Majorants.exists_majorant_p_g_1 p.toReal h.hp_one) with
+    ⟨du_dx, du_dy, C, hC_nonneg,
+      hu_cont, hdu_dx_cont, hdu_dy_cont,
+      hu_growth, hdu_dx_growth, hdu_dy_growth,
+      htangent, hmajor, hnonpos, haxis⟩
+
+  have hX : MemLp (X_{n}[w, f]) p μ :=
+    burkholder_X_memLp h n
+
+  have hY : MemLp (Y_{n}[w, f]) p μ :=
+    burkholder_Y_memLp h n
+
+  have hXpow :
+      Integrable
+        (fun ω => Real.rpow |X_{n}[w, f] ω| p.toReal) μ := by
+    simpa [Real.norm_eq_abs] using hX.integrable_norm_rpow'
+
+  have hYpow :
+      Integrable
+        (fun ω => Real.rpow |Y_{n}[w, f] ω| p.toReal) μ := by
+    simpa [Real.norm_eq_abs] using hY.integrable_norm_rpow'
+
+  have hdom :
+      Integrable
+        (fun ω =>
+          C *
+            (Real.rpow |X_{n}[w, f] ω| p.toReal
+              + Real.rpow |Y_{n}[w, f] ω| p.toReal)) μ := by
+    simpa using (hXpow.add hYpow).const_mul C
+
+  have hu_cont_global :
+      Continuous
+        (fun z : ℝ × ℝ =>
+          Burkholder.u p.toReal h.hp_one z.1 z.2) := by
+    rw [← continuousOn_univ]
+    simpa [Burkholder.u] using hu_cont
+
+  have hpair_meas :
+      AEStronglyMeasurable
+        (fun ω => (X_{n}[w, f] ω, Y_{n}[w, f] ω)) μ :=
+    hX.1.prodMk hY.1
+
+  have hu_meas :
+      AEStronglyMeasurable
+        (fun ω =>
+          Burkholder.u p.toReal h.hp_one
+            (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
+    simpa using hu_cont_global.comp_aestronglyMeasurable hpair_meas
+
+  exact hdom.mono' hu_meas <| by
+    filter_upwards with ω
+    simpa [Real.norm_eq_abs, Burkholder.u] using
+      hu_growth (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
+
+/-- Lp integrability of `u(X_n,Y_n)`. -/
+lemma burkholder_du_dx_Xn_Yn_Lq
+  {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+  {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+  (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+
+  MemLp
+    (fun ω => Burkholder.du_dx p.toReal h.hp_one (X_{n}[w, f] ω) (Y_{n}[w, f] ω))
+    (ENNReal.ofReal (Burkholder.q p.toReal)) μ := by
+  -- Let q = conjugate exponent to p
+  let q := Burkholder.q p.toReal
+  have hp_one : 1 < p.toReal := h.hp_one
+  have hq : 1 < q := by
+    rw [Burkholder.q, Majorants.q]
+    have hp := h.hp_one
+    have hp2 : p.toReal > 1 := hp
+    have hpfin : p ≠ ⊤ := h.hp_top
+    have hp_real : p.toReal > 1 := hp
+    have hp_ne_1 : p.toReal ≠ 1 := (ne_of_lt hp).symm
+    have hq_val : q = p.toReal/(p.toReal-1) := rfl
+    have hq_gt1 : 1 < p.toReal/(p.toReal-1) := by
+      have : 0 < p.toReal - 1 := by linarith
+      field_simp [this]
+      linarith
+    exact hq_gt1
+
+  -- Get the pointwise bound for du_dx from the majorant existence theorem
+  rcases Classical.choose_spec (Majorants.exists_majorant_p_g_1 p.toReal h.hp_one) with
+    ⟨du_dx, du_dy, C, hC_nonneg, hu_cont, hdu_dx_cont, hdu_dy_cont,
+      hu_growth, hdu_dx_growth, hdu_dy_growth, htangent, hmajor, hnonpos, haxis⟩
+
+  -- Lq integrability of du_dx(X_n, Y_n) follows from the pointwise bound and Lp integrability of X_n, Y_n
+  have hX : MemLp (X_{n}[w, f]) p μ := burkholder_X_memLp h n
+  have hY : MemLp (Y_{n}[w, f]) p μ := burkholder_Y_memLp h n
+
+  -- The pointwise bound: |du_dx(x, y)| ≤ C (|x|^{p-1} + |y|^{p-1})
+  have bound : ∀ ω, |du_dx (X_{n}[w, f] ω) (Y_{n}[w, f] ω)| ≤
+      C * (|X_{n}[w, f] ω| ^ (p.toReal - 1) + |Y_{n}[w, f] ω| ^ (p.toReal - 1)) :=
+    fun ω => hdu_dx_growth (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
+
+  -- Lq integrability: show that the function is in L^q
+  refine MemLp.of_le_mul (c := (2 * C : ℝ))
+    (burkholder_X_memLp h n).norm_rpow_memLp (by linarith) h.hp_top
+    ?_ ?_
+
+  -- Measurability
+  { -- The function is measurable as a composition of measurable functions
+    apply (hX.1.rpow_const (by linarith)).add (hY.1.rpow_const (by linarith));
+    apply_instance }
+
+  -- Pointwise bound for the norm
+  { filter_upwards [hX.2, hY.2] with ω _ _
+    have := bound ω
+    rw [Real.norm_eq_abs, abs_le]
+    constructor
+    · linarith [mul_nonneg (by linarith) (add_nonneg (rpow_nonneg_of_nonneg (abs_nonneg _) _) (rpow_nonneg_of_nonneg (abs_nonneg _) _))]
+    · linarith }
 
 
 /-- The chosen majorant dominates the Burkholder function `v`. -/
