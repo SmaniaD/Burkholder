@@ -337,6 +337,31 @@ lemma burkholder_Y_memLp
     memLp_finsetSum' (Finset.range (n + 1))
       (fun i _hi => burkholder_minusOne_mul_martingaleDiff_memLp h i)
 
+lemma burkholder_v_XY_integrable
+  {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
+  {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
+  (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
+  Integrable (fun ω => Burkholder.v p.toReal (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ := by
+  -- v is continuous and grows at most like |x|^p + |y|^p, so it is controlled by the Lp norm of f
+  -- X_n and Y_n are in Lp by previous lemmas
+  have hX : MemLp (X_{n}[w, f]) p μ := burkholder_X_memLp h n
+  have hY : MemLp (Y_{n}[w, f]) p μ := burkholder_Y_memLp h n
+  -- Since p > 1, p.toReal > 1, so v(x, y) ≤ C (|x|^p + |y|^p) + D for some C, D
+  obtain ⟨C, D, hv_bd⟩ : ∃ C D : ℝ, ∀ x y, |Burkholder.v p.toReal x y| ≤ C * (|x|^p.toReal + |y|^p.toReal) + D :=
+    Majorants.v_growth_bound p.toReal h.hp_one
+  have h_int : Integrable (fun ω => C * (|X_{n}[w, f] ω|^p.toReal + |Y_{n}[w, f] ω|^p.toReal) + D) μ := by
+    apply Integrable.add
+    · apply Integrable.const_mul _ C
+      apply Integrable.add
+      · exact Lp.integrable_rpow_of_memℒp (hX.memℒp) h.hp_one
+      · exact Lp.integrable_rpow_of_memℒp (hY.memℒp) h.hp_one
+    · exact integrable_const D
+  exact Integrable.mono'
+    h_int
+    (fun ω => abs_le.mp (hv_bd (X_{n}[w, f] ω) (Y_{n}[w, f] ω)))
+
+
+
 
 /-- The chosen majorant dominates the Burkholder function `v`. -/
 lemma burkholder_v_le_u (p : ℝ) (hp : p > 1) (x y : ℝ) :
@@ -531,9 +556,10 @@ lemma burkholder_integral_v_XY_nonpos
 
 
 
-theorem Lp_Burkholder_inequality_martingaleTransform (p : ) (Ω : Type*) [mΩ : MeasurableSpace Ω] (μ : Measure Ω)
+theorem Lp_Burkholder_inequality_martingaleTransform (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableSpace Ω] (μ : Measure Ω)
   [IsFiniteMeasure μ] (ℱ : Filtration ℕ mΩ) (w f : ℕ → Ω → ℝ)
   (hp_one : 1 < p)
+  (hfin: p ≠ ∞)
   (hstrong : IsStronglyPredictable ℱ w)
   (hmart : Martingale f ℱ μ)
   (hLp : ∀ n, MemLp (f n) p μ)
