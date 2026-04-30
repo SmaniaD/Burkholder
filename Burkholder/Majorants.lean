@@ -25,13 +25,22 @@ namespace Majorants
 /- Final result: majorant exists for p > 1 -/
 
 theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
-    ∃ u : ℝ → ℝ → ℝ,
-      (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
-        ∀ h k, h * k ≤  0 →
-          u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
+    ∃ u du_dx du_dy : ℝ → ℝ → ℝ, ∃ C : ℝ,
+      0 ≤ C ∧
+      ContinuousOn (fun z : ℝ × ℝ => u z.1 z.2) Set.univ ∧
+      ContinuousOn (fun z : ℝ × ℝ => du_dx z.1 z.2) Set.univ ∧
+      ContinuousOn (fun z : ℝ × ℝ => du_dy z.1 z.2) Set.univ ∧
+      (∀ x y,
+        u x y ≤ C * (Real.rpow |x| p + Real.rpow |y| p)) ∧
+      (∀ x y,
+        |du_dx x y| ≤ C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) ∧
+      (∀ x y,
+        |du_dy x y| ≤ C * (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1))) ∧
+      (∀ x y h k, h * k ≤  0 →
+          u (x + h) (y + k) ≤ u x y + du_dx x y * h + du_dy x y * k) ∧
       (∀ x y, v p x y ≤ u x y) ∧
       (∀ x y, x * y ≤ 0 → u x y ≤ 0) ∧
-      (∀ x y , p≠ 2 ∧  x*y = 0 ∧ (x,y) ≠ (0,0) → u x y < 0)  := by
+      (∀ x y, x*y = 0 ∧ (x,y) ≠ (0,0) → u x y < 0)  := by
         by_cases hp2 : p = 2
         · -- Case p = 2
           rcases exists_majorant_p_eq_2 p hp2 with ⟨u, htangent, hmajor, hnonpos, _haxis⟩
