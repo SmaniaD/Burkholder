@@ -9342,6 +9342,543 @@ lemma uCandidate_derivative_growth_bound
   · intro x y
     exact abs_DyuCandidate_le_growth p hp1 hp2 x y
 
+/-! ## Continuity of the glued candidate and its first partials -/
+
+lemma uA1_eq_smooth_of_nonneg_leTwo
+    (p : ℝ) (hp1 : 1 < p) (x y : ℝ) (hx : 0 ≤ x) :
+    uA1 p x y = alpha p * Real.rpow x (p - 1) *
+      (x - pStar p * (x - y) / 2) := by
+  have hexp_ne : p - 1 ≠ 0 := by linarith
+  unfold uA1
+  rcases hx.lt_or_eq with hxpos | hxeq
+  · exact if_pos hxpos
+  · subst x
+    simp [Real.zero_rpow hexp_ne]
+
+lemma continuousOn_uA1_leTwo (p : ℝ) (hp1 : 1 < p) :
+    ContinuousOn (fun z : ℝ × ℝ => uA1 p z.1 z.2) {z | 0 ≤ z.1} := by
+  have hexp_nonneg : 0 ≤ p - 1 := by linarith
+  have heq : ∀ z : ℝ × ℝ, z ∈ {z : ℝ × ℝ | 0 ≤ z.1} →
+      uA1 p z.1 z.2 =
+        alpha p * Real.rpow z.1 (p - 1) * (z.1 - pStar p * (z.1 - z.2) / 2) :=
+    fun ⟨x, y⟩ hx => uA1_eq_smooth_of_nonneg_leTwo p hp1 x y hx
+  apply ContinuousOn.congr _ heq
+  apply ContinuousOn.mul
+  · exact continuousOn_const.mul
+      (continuousOn_fst.rpow_const fun _ _ => Or.inr hexp_nonneg)
+  · exact continuousOn_fst.sub
+      ((continuousOn_const.mul (continuousOn_fst.sub continuousOn_snd)).div_const 2)
+
+lemma isClosed_closureA1_set_leTwo (p : ℝ) :
+    IsClosed {z : ℝ × ℝ | closureA1 p z.1 z.2} := by
+  simp only [closureA1]
+  apply IsClosed.inter
+  · exact isClosed_le continuous_const continuous_fst
+  apply IsClosed.inter
+  · exact isClosed_le continuous_fst.neg continuous_snd
+  · exact isClosed_le continuous_snd (continuous_const.mul continuous_fst)
+
+lemma isClosed_closureA2_set_leTwo (p : ℝ) :
+    IsClosed {z : ℝ × ℝ | closureA2 p z.1 z.2} := by
+  simp only [closureA2]
+  apply IsClosed.inter
+  · exact isClosed_le continuous_const continuous_fst
+  apply IsClosed.inter
+  · exact isClosed_le (continuous_const.mul continuous_fst) continuous_snd
+  · exact isClosed_le continuous_snd continuous_fst
+
+lemma continuousOn_DxuA1_closureA1_leTwo
+    (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ContinuousOn (DxuA1Fun p) (closureA1Set p) := by
+  intro z hz
+  rcases z with ⟨x, y⟩
+  rcases hz with ⟨hx, hlow, hup⟩
+  by_cases hx0 : 0 < x
+  · have hpos : {w : ℝ × ℝ | 0 < w.1} ∈ nhds (x, y) := by
+      exact continuous_fst.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hx0)
+    have hEvent :
+        DxuA1Fun p =ᶠ[nhds (x, y)]
+          fun w : ℝ × ℝ =>
+            alpha p * (p / 2) * Real.rpow w.1 (p - 2) *
+              (((p - 2) / (p - 1)) * w.1 + w.2) := by
+      filter_upwards [hpos] with w hw
+      simp [DxuA1Fun, DxuA1, hw]
+    have hcont_rpow :
+        ContinuousAt (fun w : ℝ × ℝ => Real.rpow w.1 (p - 2)) (x, y) :=
+      continuous_fst.continuousAt.rpow_const (Or.inl (ne_of_gt hx0))
+    have hcont :
+        ContinuousAt
+          (fun w : ℝ × ℝ =>
+            alpha p * (p / 2) * Real.rpow w.1 (p - 2) *
+              (((p - 2) / (p - 1)) * w.1 + w.2)) (x, y) := by
+      have hlin :
+          ContinuousAt (fun w : ℝ × ℝ => ((p - 2) / (p - 1)) * w.1 + w.2) (x, y) := by
+        exact (continuous_const.mul continuous_fst).continuousAt.add continuous_snd.continuousAt
+      have halpha :
+          ContinuousAt (fun _ : ℝ × ℝ => alpha p) (x, y) :=
+        continuous_const.continuousAt
+      have hpdiv :
+          ContinuousAt (fun _ : ℝ × ℝ => p / 2) (x, y) :=
+        continuous_const.continuousAt
+      simpa [mul_assoc] using
+        (((halpha.mul hpdiv).mul hcont_rpow).mul hlin)
+    exact (hcont.congr_of_eventuallyEq hEvent).continuousWithinAt
+  · have h00 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
+    rcases h00 with ⟨rfl, rfl⟩
+    rw [ContinuousWithinAt, DxuA1Fun]
+    simp only [DxuA1, lt_irrefl, ite_false]
+    rw [tendsto_zero_iff_abs_tendsto_zero]
+    let C : ℝ := DxuA1GrowthConst p
+    have hbound :
+        ∀ᶠ z : ℝ × ℝ in nhdsWithin (0, 0) (closureA1Set p),
+          |DxuA1Fun p z| ≤ C * Real.rpow z.1 (p - 1) := by
+      refine Filter.mem_of_superset self_mem_nhdsWithin ?_
+      intro z hz'
+      simpa [closureA1Set, DxuA1Fun, C] using
+        abs_DxuA1_le_growth p hp1 hp2 (x := z.1) (y := z.2) hz'
+    have hrpow :
+        Filter.Tendsto (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1))
+          (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
+      have hcont :
+          ContinuousAt (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1)) (0, 0) :=
+        continuous_fst.continuousAt.rpow_const (Or.inr (by linarith : 0 ≤ p - 1))
+      have hzero : Real.rpow (0 : ℝ) (p - 1) = 0 := Real.zero_rpow (by linarith)
+      have ht : Filter.Tendsto (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1))
+          (nhds (0, 0)) (nhds 0) := by
+        convert hcont.tendsto using 1
+        simpa using hzero.symm
+      exact ht.mono_left nhdsWithin_le_nhds
+    have hmajor :
+        Filter.Tendsto (fun z : ℝ × ℝ => C * Real.rpow z.1 (p - 1))
+          (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
+      simpa using tendsto_const_nhds.mul hrpow
+    exact squeeze_zero' (Filter.Eventually.of_forall fun _ => abs_nonneg _) hbound hmajor
+
+lemma continuousOn_DyuA1_closureA1_leTwo
+    (p : ℝ) (hp1 : 1 < p) :
+    ContinuousOn (DyuA1Fun p) (closureA1Set p) := by
+  intro z hz
+  rcases z with ⟨x, y⟩
+  rcases hz with ⟨hx, hlow, hup⟩
+  by_cases hx0 : 0 < x
+  · have hpos : {w : ℝ × ℝ | 0 < w.1} ∈ nhds (x, y) := by
+      exact continuous_fst.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hx0)
+    have hEvent :
+        DyuA1Fun p =ᶠ[nhds (x, y)]
+          fun w : ℝ × ℝ => alpha p * Real.rpow w.1 (p - 1) * (pStar p / 2) := by
+      filter_upwards [hpos] with w hw
+      simp [DyuA1Fun, DyuA1, hw]
+    have hcont :
+        ContinuousAt
+          (fun w : ℝ × ℝ => alpha p * Real.rpow w.1 (p - 1) * (pStar p / 2))
+          (x, y) := by
+      have hcont_rpow :
+          ContinuousAt (fun w : ℝ × ℝ => Real.rpow w.1 (p - 1)) (x, y) :=
+        continuous_fst.continuousAt.rpow_const (Or.inl (ne_of_gt hx0))
+      simpa [mul_assoc] using
+        ((continuous_const.continuousAt.mul hcont_rpow).mul continuous_const.continuousAt)
+    exact (hcont.congr_of_eventuallyEq hEvent).continuousWithinAt
+  · have h00 := closureA1_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
+    rcases h00 with ⟨rfl, rfl⟩
+    rw [ContinuousWithinAt, DyuA1Fun]
+    simp only [DyuA1, lt_irrefl, ite_false]
+    rw [tendsto_zero_iff_abs_tendsto_zero]
+    let C : ℝ := DyuA1GrowthConst p
+    have hbound :
+        ∀ᶠ z : ℝ × ℝ in nhdsWithin (0, 0) (closureA1Set p),
+          |DyuA1Fun p z| ≤ C * Real.rpow z.1 (p - 1) := by
+      refine Filter.mem_of_superset self_mem_nhdsWithin ?_
+      intro z hz'
+      simpa [closureA1Set, DyuA1Fun, C] using
+        abs_DyuA1_le_growth p (x := z.1) (y := z.2) hz'
+    have hrpow :
+        Filter.Tendsto (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1))
+          (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
+      have hcont :
+          ContinuousAt (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1)) (0, 0) :=
+        continuous_fst.continuousAt.rpow_const (Or.inr (by linarith : 0 ≤ p - 1))
+      have hzero : Real.rpow (0 : ℝ) (p - 1) = 0 := Real.zero_rpow (by linarith)
+      have ht : Filter.Tendsto (fun z : ℝ × ℝ => Real.rpow z.1 (p - 1))
+          (nhds (0, 0)) (nhds 0) := by
+        convert hcont.tendsto using 1
+        simpa using hzero.symm
+      exact ht.mono_left nhdsWithin_le_nhds
+    have hmajor :
+        Filter.Tendsto (fun z : ℝ × ℝ => C * Real.rpow z.1 (p - 1))
+          (nhdsWithin (0, 0) (closureA1Set p)) (nhds 0) := by
+      simpa using tendsto_const_nhds.mul hrpow
+    exact squeeze_zero' (Filter.Eventually.of_forall fun _ => abs_nonneg _) hbound hmajor
+
+lemma DxvLeTwo_eq_formula_on_closureA2_leTwo
+    (p : ℝ) (hp1 : 1 < p) (z : ℝ × ℝ) (hz : z ∈ closureA2Set p) :
+    DxvLeTwoFun p z = DxvLeTwoFormula p z := by
+  rcases z with ⟨x, y⟩
+  rcases hz with ⟨hx, hlow, hup⟩
+  by_cases hx0 : 0 < x
+  · simp [DxvLeTwoFun, DxvLeTwoFormula, DxvLeTwo, hx0]
+  · have h00 := closureA2_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
+    rcases h00 with ⟨rfl, rfl⟩
+    have hp1_ne : p - 1 ≠ 0 := by linarith
+    have hzero : Real.rpow (0 : ℝ) (p - 1) = 0 := Real.zero_rpow hp1_ne
+    simp [DxvLeTwoFun, DxvLeTwoFormula, DxvLeTwo, Real.zero_rpow hp1_ne]
+
+lemma DyvLeTwo_eq_formula_on_closureA2_leTwo
+    (p : ℝ) (hp1 : 1 < p) (z : ℝ × ℝ) (hz : z ∈ closureA2Set p) :
+    DyvLeTwoFun p z = DyvLeTwoFormula p z := by
+  rcases z with ⟨x, y⟩
+  rcases hz with ⟨hx, hlow, hup⟩
+  by_cases hx0 : 0 < x
+  · simp [DyvLeTwoFun, DyvLeTwoFormula, DyvLeTwo, hx0]
+  · have h00 := closureA2_x0_y0 p x y ⟨hx, hlow, hup⟩ hx0
+    rcases h00 with ⟨rfl, rfl⟩
+    have hp1_ne : p - 1 ≠ 0 := by linarith
+    have hzero : Real.rpow (0 : ℝ) (p - 1) = 0 := Real.zero_rpow hp1_ne
+    simp [DyvLeTwoFun, DyvLeTwoFormula, DyvLeTwo, Real.zero_rpow hp1_ne]
+
+lemma continuousOn_DxvLeTwo_closureA2_leTwo
+    (p : ℝ) (hp1 : 1 < p) :
+    ContinuousOn (DxvLeTwoFun p) (closureA2Set p) := by
+  have hp1_nonneg : 0 ≤ p - 1 := by linarith
+  have hcont : Continuous (DxvLeTwoFormula p) := by
+    have hsum :
+        Continuous (fun z : ℝ × ℝ => Real.rpow (|((z.1 + z.2) / 2)|) (p - 1)) := by
+      exact Continuous.rpow_const (((continuous_fst.add continuous_snd).div_const 2).abs)
+        (fun _ => Or.inr hp1_nonneg)
+    have hdiff :
+        Continuous (fun z : ℝ × ℝ => Real.rpow (|((z.1 - z.2) / 2)|) (p - 1)) := by
+      exact Continuous.rpow_const (((continuous_fst.sub continuous_snd).div_const 2).abs)
+        (fun _ => Or.inr hp1_nonneg)
+    have htmp :
+        Continuous (fun z : ℝ × ℝ =>
+          Real.rpow (|((z.1 + z.2) / 2)|) (p - 1) * (p / 2)
+            - coeffLeTwo p * Real.rpow (|((z.1 - z.2) / 2)|) (p - 1) * (p / 2)) :=
+      (hsum.mul (continuous_const : Continuous (fun _ : ℝ × ℝ => (p / 2 : ℝ)))).sub
+        (((continuous_const : Continuous (fun _ : ℝ × ℝ => coeffLeTwo p)).mul hdiff).mul
+          (continuous_const : Continuous (fun _ : ℝ × ℝ => (p / 2 : ℝ))))
+    simpa [DxvLeTwoFormula] using htmp
+  apply ContinuousOn.congr hcont.continuousOn
+  intro z hz
+  exact DxvLeTwo_eq_formula_on_closureA2_leTwo p hp1 z hz
+
+lemma continuousOn_DyvLeTwo_closureA2_leTwo
+    (p : ℝ) (hp1 : 1 < p) :
+    ContinuousOn (DyvLeTwoFun p) (closureA2Set p) := by
+  have hp1_nonneg : 0 ≤ p - 1 := by linarith
+  have hcont : Continuous (DyvLeTwoFormula p) := by
+    have hsum :
+        Continuous (fun z : ℝ × ℝ => Real.rpow (|((z.1 + z.2) / 2)|) (p - 1)) := by
+      exact Continuous.rpow_const (((continuous_fst.add continuous_snd).div_const 2).abs)
+        (fun _ => Or.inr hp1_nonneg)
+    have hdiff :
+        Continuous (fun z : ℝ × ℝ => Real.rpow (|((z.1 - z.2) / 2)|) (p - 1)) := by
+      exact Continuous.rpow_const (((continuous_fst.sub continuous_snd).div_const 2).abs)
+        (fun _ => Or.inr hp1_nonneg)
+    have htmp :
+        Continuous (fun z : ℝ × ℝ =>
+          Real.rpow (|((z.1 + z.2) / 2)|) (p - 1) * (p / 2)
+            + coeffLeTwo p * Real.rpow (|((z.1 - z.2) / 2)|) (p - 1) * (p / 2)) :=
+      (hsum.mul (continuous_const : Continuous (fun _ : ℝ × ℝ => (p / 2 : ℝ)))).add
+        (((continuous_const : Continuous (fun _ : ℝ × ℝ => coeffLeTwo p)).mul hdiff).mul
+          (continuous_const : Continuous (fun _ : ℝ × ℝ => (p / 2 : ℝ))))
+    simpa [DyvLeTwoFormula] using htmp
+  apply ContinuousOn.congr hcont.continuousOn
+  intro z hz
+  exact DyvLeTwo_eq_formula_on_closureA2_leTwo p hp1 z hz
+
+lemma continuousOn_auxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ContinuousOn (fun z : ℝ × ℝ => auxFunction1 p z.1 z.2)
+      {z | QuarterPlane z.1 z.2} := by
+  let S : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
+  let S1 : Set (ℝ × ℝ) := {z | closureA1 p z.1 z.2}
+  let S2 : Set (ℝ × ℝ) := {z | closureA2 p z.1 z.2}
+  have hcover : S ⊆ S1 ∪ S2 := by
+    intro ⟨x, y⟩ hz
+    simp only [QuarterPlane, closureA1, closureA2, S, S1, S2,
+      Set.mem_union, Set.mem_setOf_eq] at *
+    rcases hz with ⟨hx, hyx, hneg⟩
+    by_cases h : a p * x ≤ y
+    · exact Or.inr ⟨hx, h, hyx⟩
+    · exact Or.inl ⟨hx, hneg, le_of_lt (not_le.mp h)⟩
+  have hc1 : ContinuousOn (fun z : ℝ × ℝ => auxFunction1 p z.1 z.2) (S ∩ S1) := by
+    apply ContinuousOn.congr ((continuousOn_uA1_leTwo p hp1).mono
+      (fun z hz => hz.2.1))
+    intro z hz
+    exact auxFunction1_eq_uA1 p z.1 z.2 hz.2
+  have hc2 : ContinuousOn (fun z : ℝ × ℝ => auxFunction1 p z.1 z.2) (S ∩ S2) := by
+    apply ContinuousOn.congr ((continuous_vLeTwo_leTwo p hp1).continuousOn.mono
+      Set.inter_subset_left)
+    intro z hz
+    exact auxFunction1_eq_vLeTwo_leTwo p hp1 hp2 z.1 z.2 hz.2
+  have hcl1 : IsClosed (S ∩ S1) := by
+    apply IsClosed.inter _ (isClosed_closureA1_set_leTwo p)
+    simp only [QuarterPlane, S, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_fst).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst.neg continuous_snd))
+  have hcl2 : IsClosed (S ∩ S2) := by
+    apply IsClosed.inter _ (isClosed_closureA2_set_leTwo p)
+    simp only [QuarterPlane, S, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_fst).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst.neg continuous_snd))
+  have hcover' : S ⊆ S ∩ S1 ∪ S ∩ S2 := fun z hz =>
+    (hcover hz).imp (And.intro hz) (And.intro hz)
+  apply ContinuousOn.mono _ hcover'
+  exact hc1.union_of_isClosed hc2 hcl1 hcl2
+
+lemma continuousOn_DxauxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ContinuousOn (fun z : ℝ × ℝ => DxauxFunction1 p z.1 z.2)
+      {z | QuarterPlane z.1 z.2} := by
+  let S : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
+  let S1 : Set (ℝ × ℝ) := {z | closureA1 p z.1 z.2}
+  let S2 : Set (ℝ × ℝ) := {z | closureA2 p z.1 z.2}
+  have hcover : S ⊆ S1 ∪ S2 := by
+    intro ⟨x, y⟩ hz
+    simp only [QuarterPlane, closureA1, closureA2, S, S1, S2,
+      Set.mem_union, Set.mem_setOf_eq] at *
+    rcases hz with ⟨hx, hyx, hneg⟩
+    by_cases h : a p * x ≤ y
+    · exact Or.inr ⟨hx, h, hyx⟩
+    · exact Or.inl ⟨hx, hneg, le_of_lt (not_le.mp h)⟩
+  have hc1 : ContinuousOn (fun z : ℝ × ℝ => DxauxFunction1 p z.1 z.2) (S ∩ S1) := by
+    apply ContinuousOn.congr ((continuousOn_DxuA1_closureA1_leTwo p hp1 hp2).mono
+      (fun _ h => h.2))
+    intro z hz
+    exact auxFunction1_Dx_eq_DxuA1 p z.1 z.2 hz.2
+  have hc2 : ContinuousOn (fun z : ℝ × ℝ => DxauxFunction1 p z.1 z.2) (S ∩ S2) := by
+    apply ContinuousOn.congr ((continuousOn_DxvLeTwo_closureA2_leTwo p hp1).mono
+      (fun _ h => h.2))
+    intro z hz
+    exact auxFunction1_Dx_eq_DxvLeTwo_leTwo p hp1 hp2 z.1 z.2 hz.2
+  have hcl1 : IsClosed (S ∩ S1) := by
+    apply IsClosed.inter _ (isClosed_closureA1_set_leTwo p)
+    simp only [QuarterPlane, S, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_fst).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst.neg continuous_snd))
+  have hcl2 : IsClosed (S ∩ S2) := by
+    apply IsClosed.inter _ (isClosed_closureA2_set_leTwo p)
+    simp only [QuarterPlane, S, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_fst).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst.neg continuous_snd))
+  have hcover' : S ⊆ S ∩ S1 ∪ S ∩ S2 := fun z hz =>
+    (hcover hz).imp (And.intro hz) (And.intro hz)
+  apply ContinuousOn.mono _ hcover'
+  exact hc1.union_of_isClosed hc2 hcl1 hcl2
+
+lemma continuousOn_DyauxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ContinuousOn (fun z : ℝ × ℝ => DyauxFunction1 p z.1 z.2)
+      {z | QuarterPlane z.1 z.2} := by
+  let S : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
+  let S1 : Set (ℝ × ℝ) := {z | closureA1 p z.1 z.2}
+  let S2 : Set (ℝ × ℝ) := {z | closureA2 p z.1 z.2}
+  have hcover : S ⊆ S1 ∪ S2 := by
+    intro ⟨x, y⟩ hz
+    simp only [QuarterPlane, closureA1, closureA2, S, S1, S2,
+      Set.mem_union, Set.mem_setOf_eq] at *
+    rcases hz with ⟨hx, hyx, hneg⟩
+    by_cases h : a p * x ≤ y
+    · exact Or.inr ⟨hx, h, hyx⟩
+    · exact Or.inl ⟨hx, hneg, le_of_lt (not_le.mp h)⟩
+  have hc1 : ContinuousOn (fun z : ℝ × ℝ => DyauxFunction1 p z.1 z.2) (S ∩ S1) := by
+    apply ContinuousOn.congr ((continuousOn_DyuA1_closureA1_leTwo p hp1).mono
+      (fun _ h => h.2))
+    intro z hz
+    exact auxFunction1_Dy_eq_DyuA1 p z.1 z.2 hz.2
+  have hc2 : ContinuousOn (fun z : ℝ × ℝ => DyauxFunction1 p z.1 z.2) (S ∩ S2) := by
+    apply ContinuousOn.congr ((continuousOn_DyvLeTwo_closureA2_leTwo p hp1).mono
+      (fun _ h => h.2))
+    intro z hz
+    exact auxFunction1_Dy_eq_DyvLeTwo_leTwo p hp1 hp2 z.1 z.2 hz.2
+  have hcl1 : IsClosed (S ∩ S1) := by
+    apply IsClosed.inter _ (isClosed_closureA1_set_leTwo p)
+    simp only [QuarterPlane, S, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_fst).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst.neg continuous_snd))
+  have hcl2 : IsClosed (S ∩ S2) := by
+    apply IsClosed.inter _ (isClosed_closureA2_set_leTwo p)
+    simp only [QuarterPlane, S, Set.setOf_and]
+    exact (isClosed_le continuous_const continuous_fst).inter
+      ((isClosed_le continuous_snd continuous_fst).inter
+        (isClosed_le continuous_fst.neg continuous_snd))
+  have hcover' : S ⊆ S ∩ S1 ∪ S ∩ S2 := fun z hz =>
+    (hcover hz).imp (And.intro hz) (And.intro hz)
+  apply ContinuousOn.mono _ hcover'
+  exact hc1.union_of_isClosed hc2 hcl1 hcl2
+
+lemma isClosed_Q1_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane z.1 z.2} := by
+  simp only [QuarterPlane, Set.setOf_and]
+  exact (isClosed_le continuous_const continuous_fst).inter
+    ((isClosed_le continuous_snd continuous_fst).inter
+      (isClosed_le continuous_fst.neg continuous_snd))
+
+lemma isClosed_Q2_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane2 z.1 z.2} := by
+  simp only [QuarterPlane2, Set.setOf_and]
+  exact (isClosed_le continuous_fst continuous_const).inter
+    ((isClosed_le continuous_snd continuous_fst.neg).inter
+      (isClosed_le continuous_fst continuous_snd))
+
+lemma isClosed_Q3_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane3 z.1 z.2} := by
+  simp only [QuarterPlane3, Set.setOf_and]
+  exact (isClosed_le continuous_const continuous_snd).inter
+    ((isClosed_le continuous_snd.neg continuous_fst).inter
+      (isClosed_le continuous_fst continuous_snd))
+
+lemma isClosed_Q4_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane4 z.1 z.2} := by
+  simp only [QuarterPlane4, Set.setOf_and]
+  exact (isClosed_le continuous_snd continuous_const).inter
+    ((isClosed_le continuous_snd continuous_fst).inter
+      (isClosed_le continuous_fst continuous_snd.neg))
+
+lemma univ_subset_quarters_leTwo :
+    Set.univ ⊆
+      {z : ℝ × ℝ | QuarterPlane z.1 z.2} ∪
+      {z : ℝ × ℝ | QuarterPlane2 z.1 z.2} ∪
+      {z : ℝ × ℝ | QuarterPlane3 z.1 z.2} ∪
+      {z : ℝ × ℝ | QuarterPlane4 z.1 z.2} := by
+  intro z _
+  rcases z with ⟨x, y⟩
+  rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
+  · exact Or.inl (Or.inl (Or.inl hQ1))
+  rcases hrest with hQ2 | hrest
+  · exact Or.inl (Or.inl (Or.inr hQ2))
+  rcases hrest with hQ3 | hQ4
+  · exact Or.inl (Or.inr hQ3)
+  · exact Or.inr hQ4
+
+lemma continuousuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ContinuousOn (fun z : ℝ × ℝ => uCandidate p z.1 z.2) Set.univ := by
+  let Q1 : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
+  let Q2 : Set (ℝ × ℝ) := {z | QuarterPlane2 z.1 z.2}
+  let Q3 : Set (ℝ × ℝ) := {z | QuarterPlane3 z.1 z.2}
+  let Q4 : Set (ℝ × ℝ) := {z | QuarterPlane4 z.1 z.2}
+  have hcont1 : ContinuousOn (fun z : ℝ × ℝ => auxFunction1 p z.1 z.2) Q1 := by
+    simpa [Q1] using continuousOn_auxFunction1_leTwo p hp1 hp2
+  have hcont2 : ContinuousOn (fun z : ℝ × ℝ => auxFunction1 p (-z.1) (-z.2)) Q2 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (-z.1, -z.2)) Q2 Q1 := by
+      intro z hz
+      rcases hz with ⟨hx, hy, hxy⟩
+      exact ⟨by linarith, by linarith, by linarith⟩
+    have hneg : Continuous (fun z : ℝ × ℝ => (-z.1, -z.2)) := by continuity
+    simpa [Q1, Q2] using
+      (continuousOn_auxFunction1_leTwo p hp1 hp2).comp hneg.continuousOn hmap
+  have hcont3 : ContinuousOn (fun z : ℝ × ℝ => auxFunction1 p z.2 z.1) Q3 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (z.2, z.1)) Q3 Q1 := by
+      intro z hz
+      rcases hz with ⟨hy, hnyx, hxy⟩
+      exact ⟨hy, hxy, hnyx⟩
+    have hswap : Continuous (fun z : ℝ × ℝ => (z.2, z.1)) := by continuity
+    simpa [Q1, Q3] using
+      (continuousOn_auxFunction1_leTwo p hp1 hp2).comp hswap.continuousOn hmap
+  have hcont4 : ContinuousOn (fun z : ℝ × ℝ => auxFunction1 p (-z.2) (-z.1)) Q4 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (-z.2, -z.1)) Q4 Q1 := by
+      intro z hz
+      rcases hz with ⟨hy, hyx, hxn⟩
+      exact ⟨by linarith, by linarith, by linarith⟩
+    have hns : Continuous (fun z : ℝ × ℝ => (-z.2, -z.1)) := by continuity
+    simpa [Q1, Q4] using
+      (continuousOn_auxFunction1_leTwo p hp1 hp2).comp hns.continuousOn hmap
+  have hc1 : ContinuousOn (fun z : ℝ × ℝ => uCandidate p z.1 z.2) Q1 := by
+    apply ContinuousOn.congr hcont1
+    intro z hz
+    exact uCandidate_eq_Q1_leTwo p hz
+  have hc2 : ContinuousOn (fun z : ℝ × ℝ => uCandidate p z.1 z.2) Q2 := by
+    apply ContinuousOn.congr hcont2
+    intro z hz
+    exact uCandidate_eq_Q2_leTwo p hz
+  have hc3 : ContinuousOn (fun z : ℝ × ℝ => uCandidate p z.1 z.2) Q3 := by
+    apply ContinuousOn.congr hcont3
+    intro z hz
+    exact uCandidate_eq_Q3_leTwo p hz
+  have hc4 : ContinuousOn (fun z : ℝ × ℝ => uCandidate p z.1 z.2) Q4 := by
+    apply ContinuousOn.congr hcont4
+    intro z hz
+    exact uCandidate_eq_Q4_leTwo p hz
+  have hcl1 : IsClosed Q1 := by simpa [Q1] using isClosed_Q1_leTwo
+  have hcl2 : IsClosed Q2 := by simpa [Q2] using isClosed_Q2_leTwo
+  have hcl3 : IsClosed Q3 := by simpa [Q3] using isClosed_Q3_leTwo
+  have hcl4 : IsClosed Q4 := by simpa [Q4] using isClosed_Q4_leTwo
+  have hc12 := hc1.union_of_isClosed hc2 hcl1 hcl2
+  have hcl12 : IsClosed (Q1 ∪ Q2) := hcl1.union hcl2
+  have hc123 := hc12.union_of_isClosed hc3 hcl12 hcl3
+  have hcl123 : IsClosed (Q1 ∪ Q2 ∪ Q3) := hcl12.union hcl3
+  have hc1234 := hc123.union_of_isClosed hc4 hcl123 hcl4
+  apply ContinuousOn.mono hc1234
+  simpa [Q1, Q2, Q3, Q4] using univ_subset_quarters_leTwo
+
+lemma continuousDxuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Set.univ := by
+  let Q1 : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
+  let Q2 : Set (ℝ × ℝ) := {z | QuarterPlane2 z.1 z.2}
+  let Q3 : Set (ℝ × ℝ) := {z | QuarterPlane3 z.1 z.2}
+  let Q4 : Set (ℝ × ℝ) := {z | QuarterPlane4 z.1 z.2}
+  have hcont1 : ContinuousOn (fun z : ℝ × ℝ => DxauxFunction1 p z.1 z.2) Q1 := by
+    simpa [Q1] using continuousOn_DxauxFunction1_leTwo p hp1 hp2
+  have hcont2 : ContinuousOn (fun z : ℝ × ℝ => -DxauxFunction1 p (-z.1) (-z.2)) Q2 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (-z.1, -z.2)) Q2 Q1 := by
+      intro z hz
+      rcases hz with ⟨hx, hy, hxy⟩
+      exact ⟨by linarith, by linarith, by linarith⟩
+    have hneg : Continuous (fun z : ℝ × ℝ => (-z.1, -z.2)) := by continuity
+    simpa [Q1, Q2] using
+      ((continuousOn_DxauxFunction1_leTwo p hp1 hp2).comp hneg.continuousOn hmap).neg
+  have hcont3 : ContinuousOn (fun z : ℝ × ℝ => DyauxFunction1 p z.2 z.1) Q3 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (z.2, z.1)) Q3 Q1 := by
+      intro z hz
+      rcases hz with ⟨hy, hnyx, hxy⟩
+      exact ⟨hy, hxy, hnyx⟩
+    have hswap : Continuous (fun z : ℝ × ℝ => (z.2, z.1)) := by continuity
+    simpa [Q1, Q3] using
+      (continuousOn_DyauxFunction1_leTwo p hp1 hp2).comp hswap.continuousOn hmap
+  have hcont4 : ContinuousOn (fun z : ℝ × ℝ => -DyauxFunction1 p (-z.2) (-z.1)) Q4 := by
+    have hmap : Set.MapsTo (fun z : ℝ × ℝ => (-z.2, -z.1)) Q4 Q1 := by
+      intro z hz
+      rcases hz with ⟨hy, hyx, hxn⟩
+      exact ⟨by linarith, by linarith, by linarith⟩
+    have hns : Continuous (fun z : ℝ × ℝ => (-z.2, -z.1)) := by continuity
+    simpa [Q1, Q4] using
+      ((continuousOn_DyauxFunction1_leTwo p hp1 hp2).comp hns.continuousOn hmap).neg
+  have hc1 : ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Q1 := by
+    apply ContinuousOn.congr hcont1
+    intro z hz
+    exact DxuCandidate_eq_Q1_leTwo p hz
+  have hc2 : ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Q2 := by
+    apply ContinuousOn.congr hcont2
+    intro z hz
+    exact DxuCandidate_eq_Q2_leTwo p hz
+  have hc3 : ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Q3 := by
+    apply ContinuousOn.congr hcont3
+    intro z hz
+    exact DxuCandidate_eq_Q3_leTwo p hp1 hp2 hz
+  have hc4 : ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Q4 := by
+    apply ContinuousOn.congr hcont4
+    intro z hz
+    exact DxuCandidate_eq_Q4_leTwo p hp1 hp2 hz
+  have hcl1 : IsClosed Q1 := by simpa [Q1] using isClosed_Q1_leTwo
+  have hcl2 : IsClosed Q2 := by simpa [Q2] using isClosed_Q2_leTwo
+  have hcl3 : IsClosed Q3 := by simpa [Q3] using isClosed_Q3_leTwo
+  have hcl4 : IsClosed Q4 := by simpa [Q4] using isClosed_Q4_leTwo
+  have hc12 := hc1.union_of_isClosed hc2 hcl1 hcl2
+  have hcl12 : IsClosed (Q1 ∪ Q2) := hcl1.union hcl2
+  have hc123 := hc12.union_of_isClosed hc3 hcl12 hcl3
+  have hcl123 : IsClosed (Q1 ∪ Q2 ∪ Q3) := hcl12.union hcl3
+  have hc1234 := hc123.union_of_isClosed hc4 hcl123 hcl4
+  apply ContinuousOn.mono hc1234
+  simpa [Q1, Q2, Q3, Q4] using univ_subset_quarters_leTwo
+
+lemma continuousDyuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+    ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Set.univ := by
+  have hdx := continuousDxuCandidate_leTwo p hp1 hp2
+  have hswap : Continuous (fun z : ℝ × ℝ => (z.2, z.1)) := by continuity
+  have hcomp :
+      ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.2 z.1) Set.univ := by
+    exact hdx.comp hswap.continuousOn (by intro z hz; trivial)
+  apply ContinuousOn.congr hcomp
+  intro z hz
+  exact DyuCandidate_eq_DxuCandidate_swap_leTwo p hp1 hp2 z.1 z.2
+
 
 end Majorant_p_l_2
 
@@ -9378,12 +9915,9 @@ theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
   use Majorant_p_l_2.DyuCandidate p
   use C
   refine ⟨hC_nonneg, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · -- The global continuity lemma for the glued candidate is separate from the growth estimates.
-    sorry
-  · -- The global continuity lemma for the glued `x`-partial is separate from the growth estimates.
-    sorry
-  · -- The global continuity lemma for the glued `y`-partial is separate from the growth estimates.
-    sorry
+  · exact Majorant_p_l_2.continuousuCandidate_leTwo p hp.1 hp.2
+  · exact Majorant_p_l_2.continuousDxuCandidate_leTwo p hp.1 hp.2
+  · exact Majorant_p_l_2.continuousDyuCandidate_leTwo p hp.1 hp.2
   · intro x y
     have hsum_nonneg : 0 ≤ Real.rpow |x| p + Real.rpow |y| p :=
       add_nonneg (Real.rpow_nonneg (abs_nonneg x) _)
