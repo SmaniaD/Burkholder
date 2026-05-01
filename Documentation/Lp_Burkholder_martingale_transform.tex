@@ -1,0 +1,262 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+
+\newtheorem{theorem}{Theorem}
+
+\title{The Burkholder Martingale Transform Inequality in Lean}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+
+This note describes the formal Lean theorem
+\[
+  \texttt{Lp\_Burkholder\_inequality\_martingaleTransform}
+\]
+proved in \texttt{MartingaleTransforms.lean}.  The result is the real-valued
+martingale transform inequality
+\[
+  \norm{(w \star_m f)_n}_{L^p(\mu)}
+    \le (p^\ast - 1)\,\norm{f_n}_{L^p(\mu)}
+\]
+for every time \(n\), where \(1 < p < \infty\), \(f\) is a martingale, and
+\(w\) is a predictable multiplier bounded by \(1\) in absolute value.
+
+In Lean the theorem is stated with the extended nonnegative exponent
+\(p : \mathbb{R}_{\ge 0,\infty}\).  The hypotheses include \(1 < p\),
+\(p \ne \infty\), and the proof uses \(p.toReal\) for the real exponent in
+the Burkholder functions.
+
+\section{Basic Definitions}
+
+\subsection{Martingale differences}
+
+For a discrete real-valued process \(f : \N \to \Omega \to \R\), the
+martingale difference sequence is defined by
+\[
+  d_0 f = f_0,\qquad
+  d_{n+1} f = f_{n+1} - f_n.
+\]
+In Lean this is
+\[
+\texttt{martingaleDiff f 0 = f 0},
+\qquad
+\texttt{martingaleDiff f (n+1) = f (n+1) - f n}.
+\]
+
+\subsection{Martingale transforms}
+
+Given a multiplier process \(v : \N \to \Omega \to \R\), the discrete
+martingale transform of \(f\) by \(v\) is
+\[
+  (v \star_m f)_n
+    = \sum_{i=0}^n v_i\, d_i f.
+\]
+The Lean definition is
+\[
+\texttt{martingaleTransform v f :=
+  fun n => (Finset.range (n + 1)).sum fun i => v i * martingaleDiff f i}.
+\]
+The notation used in the file is
+\[
+  v \star_m f.
+\]
+The increment identity proved in Lean is
+\[
+  (v \star_m f)_{n+1} - (v \star_m f)_n
+    = v_{n+1}(f_{n+1}-f_n).
+\]
+
+\subsection{Predictability}
+
+The multiplier \(w\) is assumed to be strongly predictable with respect to a
+filtration \(\F\):
+\[
+  \texttt{IsStronglyPredictable }\F\,w.
+\]
+This is the formal version of the usual condition that \(w_{n+1}\) is
+\(\F_n\)-measurable.  Predictability is what allows the proof to pull the
+multiplier out of conditional expectations when showing that the linear terms
+have expectation zero.
+
+\subsection{The auxiliary transforms \(X\) and \(Y\)}
+
+The proof uses two transforms associated to \(w\):
+\[
+  w^+_n = w_n + 1,\qquad w^-_n = w_n - 1.
+\]
+In Lean these are \texttt{plusOne w} and \texttt{minusOne w}.  The notation
+\[
+  X_n[w,f] = ((w+1)\star_m f)_n,\qquad
+  Y_n[w,f] = ((w-1)\star_m f)_n
+\]
+is introduced by scoped notation.  These satisfy the algebraic identities
+\[
+  \frac{X_n+Y_n}{2} = (w\star_m f)_n,
+  \qquad
+  \frac{X_n-Y_n}{2} = f_n.
+\]
+The final theorem uses these identities together with the definition of the
+Burkholder function \(v\).
+
+\section{The Main Martingale Transform Theorem}
+
+The Lean theorem has the following mathematical content.
+
+\begin{theorem}[Burkholder martingale transform inequality]
+Let \((\Omega,\mathcal{A},\mu)\) be a finite measure space and let
+\((\F_n)_{n\in\N}\) be a filtration.  Let \(1 < p < \infty\).  Suppose
+\(f = (f_n)\) is a real-valued martingale, \(f_n \in L^p(\mu)\) for every
+\(n\), and \(w = (w_n)\) is strongly predictable with
+\[
+  |w_n(\omega)| \le 1
+\]
+for every \(n\), almost everywhere.  Then for every \(n\),
+\[
+  \norm{(w\star_m f)_n}_{L^p(\mu)}
+    \le \bigl(p^\ast-1\bigr)\norm{f_n}_{L^p(\mu)},
+\]
+where
+\[
+  q = \frac{p}{p-1},
+  \qquad
+  p^\ast = \max\{p,q\}.
+\]
+\end{theorem}
+
+In Lean, the constant is written as
+\[
+  \texttt{ENNReal.ofReal (Burkholder.pStar p.toReal - 1)}.
+\]
+
+\section{The Burkholder Function \(v\)}
+
+The proof is organized around the Burkholder expression
+\[
+  v(p,x,y)
+    =
+      \left|\frac{x+y}{2}\right|^p
+      -
+      |p^\ast-1|^p
+      \left|\frac{x-y}{2}\right|^p.
+\]
+This is the Lean definition \texttt{Majorants.v}.  Substituting
+\[
+  x = X_n[w,f], \qquad y = Y_n[w,f]
+\]
+and using the identities above gives
+\[
+  v(p,X_n,Y_n)
+    =
+      |(w\star_m f)_n|^p
+      -
+      |p^\ast-1|^p |f_n|^p.
+\]
+Thus the inequality
+\[
+  \int v(p,X_n,Y_n)\,d\mu \le 0
+\]
+is exactly the \(p\)-power form of the martingale transform estimate.
+The last step of the Lean proof unfolds the definition of \(v\), converts the
+integral inequality into an inequality of real \(L^p\)-norms, and then converts
+back to \texttt{eLpNorm}.
+
+\section{The Majorant Theorem \texttt{exists\_majorant\_p\_g\_1}}
+
+The analytic heart of the formalization is
+\[
+  \texttt{exists\_majorant\_p\_g\_1}.
+\]
+For every real \(p>1\), it produces functions
+\[
+  u,\quad u_x,\quad u_y : \R \to \R \to \R
+\]
+and a constant \(C\ge 0\) such that:
+
+\begin{itemize}
+  \item \(u,u_x,u_y\) are continuous on all of \(\R^2\);
+  \item \(u\) has \(p\)-growth:
+    \[
+      |u(x,y)| \le C(|x|^p+|y|^p);
+    \]
+  \item the selected derivatives have \((p-1)\)-growth:
+    \[
+      |u_x(x,y)|,\ |u_y(x,y)|
+        \le C(|x|^{p-1}+|y|^{p-1});
+    \]
+  \item \(u\) satisfies the tangent/concavity inequality in martingale-transform
+    directions:
+    \[
+      hk\le 0
+      \Longrightarrow
+      u(x+h,y+k)
+        \le u(x,y)+u_x(x,y)h+u_y(x,y)k;
+    \]
+  \item \(u\) majorizes \(v\):
+    \[
+      v(p,x,y)\le u(x,y);
+    \]
+  \item \(u\) is nonpositive on the region \(xy\le 0\):
+    \[
+      xy\le 0 \Longrightarrow u(x,y)\le 0.
+    \]
+\end{itemize}
+
+\subsection{Importancia do majorante \(u\)}
+
+O papel do majorante \(u\) e transformar uma desigualdade de norma em uma
+desigualdade de supermartingales.  A funcao \(v\) contem diretamente a
+desigualdade desejada, mas ela nao possui, por si so, a propriedade de
+concavidade adequada para aplicar a estrutura de martingales.  O majorante
+\(u\) resolve isso:
+
+\begin{enumerate}
+  \item Como \(v\le u\), basta provar que a esperanca de \(u(X_n,Y_n)\) e
+    nao positiva.
+  \item A desigualdade tangente de \(u\) mostra que
+    \[
+      u(X_{n+1},Y_{n+1})
+        \le u(X_n,Y_n)
+          + u_x(X_n,Y_n)(X_{n+1}-X_n)
+          + u_y(X_n,Y_n)(Y_{n+1}-Y_n).
+    \]
+  \item A condicao \(|w|\le 1\) implica
+    \[
+      (X_{n+1}-X_n)(Y_{n+1}-Y_n)\le 0,
+    \]
+    exatamente a hipotese necessaria para a desigualdade tangente.
+  \item Pela previsibilidade de \(w\) e pela propriedade de martingale de
+    \(f\), os termos lineares tem integral zero.
+  \item Portanto,
+    \[
+      \int u(X_{n+1},Y_{n+1})\,d\mu
+        \le
+      \int u(X_n,Y_n)\,d\mu.
+    \]
+  \item No tempo inicial, \(X_0Y_0\le 0\), entao \(u(X_0,Y_0)\le 0\).
+    Logo \(\int u(X_n,Y_n)\,d\mu\le 0\) para todo \(n\).
+\end{enumerate}
+
+Combining this with \(v\le u\) gives
+\[
+  \int v(p,X_n,Y_n)\,d\mu \le 0,
+\]
+and the definition of \(v\) then yields the desired martingale transform
+inequality.
+
+\end{document}
