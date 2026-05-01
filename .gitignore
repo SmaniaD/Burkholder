@@ -8,3 +8,4 @@ build/
 *.fls
 *.log
 *.out
+*.gz
