@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[11pt]{amsart}
 
 \usepackage[a4paper,margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
@@ -217,39 +217,39 @@ and a constant \(C\ge 0\) such that:
     \]
 \end{itemize}
 
-\subsection{Importancia do majorante \(u\)}
+\subsection{Why the majorant \(u\) is important}
 
-O papel do majorante \(u\) e transformar uma desigualdade de norma em uma
-desigualdade de supermartingales.  A funcao \(v\) contem diretamente a
-desigualdade desejada, mas ela nao possui, por si so, a propriedade de
-concavidade adequada para aplicar a estrutura de martingales.  O majorante
-\(u\) resolve isso:
+The role of the majorant \(u\) is to turn a norm inequality into a
+supermartingale-type inequality.  The function \(v\) directly contains the
+desired estimate, but by itself it does not have the concavity property needed
+to use the martingale structure.  The majorant \(u\) supplies this missing
+property:
 
 \begin{enumerate}
-  \item Como \(v\le u\), basta provar que a esperanca de \(u(X_n,Y_n)\) e
-    nao positiva.
-  \item A desigualdade tangente de \(u\) mostra que
+  \item Since \(v\le u\), it is enough to prove that the expectation of
+    \(u(X_n,Y_n)\) is nonpositive.
+  \item The tangent inequality for \(u\) shows that
     \[
       u(X_{n+1},Y_{n+1})
         \le u(X_n,Y_n)
           + u_x(X_n,Y_n)(X_{n+1}-X_n)
           + u_y(X_n,Y_n)(Y_{n+1}-Y_n).
     \]
-  \item A condicao \(|w|\le 1\) implica
+  \item The condition \(|w|\le 1\) implies
     \[
       (X_{n+1}-X_n)(Y_{n+1}-Y_n)\le 0,
     \]
-    exatamente a hipotese necessaria para a desigualdade tangente.
-  \item Pela previsibilidade de \(w\) e pela propriedade de martingale de
-    \(f\), os termos lineares tem integral zero.
-  \item Portanto,
+    which is exactly the hypothesis needed for the tangent inequality.
+  \item By predictability of \(w\) and the martingale property of \(f\), the
+    linear terms have integral zero.
+  \item Therefore,
     \[
       \int u(X_{n+1},Y_{n+1})\,d\mu
         \le
       \int u(X_n,Y_n)\,d\mu.
     \]
-  \item No tempo inicial, \(X_0Y_0\le 0\), entao \(u(X_0,Y_0)\le 0\).
-    Logo \(\int u(X_n,Y_n)\,d\mu\le 0\) para todo \(n\).
+  \item At the initial time, \(X_0Y_0\le 0\), so \(u(X_0,Y_0)\le 0\).
+    Hence \(\int u(X_n,Y_n)\,d\mu\le 0\) for every \(n\).
 \end{enumerate}
 
 Combining this with \(v\le u\) gives
