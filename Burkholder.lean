@@ -6,4 +6,3 @@ import Burkholder.Basic
 import Burkholder.Majorants
 import Burkholder.UnconditionalSchauderBasisNontrivialField
 import MartingaleTransforms
-f
