@@ -16,11 +16,14 @@
 \newtheorem{theorem}{Theorem}
 
 \title{The Burkholder Martingale Transform Inequality in Lean}
-\author{}
+\author{Daniel Smania}
+\address{ICMC-USP, S\~ao Carlos-SP,  Brazil}
+\email{daniel.smania@gmail.com}
+\urladdr{https://smaniad.github.io/HomePage/}
 \date{}
 
 \begin{document}
-
+ 
 \maketitle
 
 \section{Overview}
@@ -33,7 +36,7 @@ martingale transforms} in the Lean proof assistant, as stated in \noindent and i
 \end{figure}
 
 That is the {\bf Burkholder inequality for the real-valued
-martingale transforms  } 
+martingale transforms (Burkholder 1985 \cite{zbMATH03903326}) } 
 
 \begin{theorem}[Burkholder martingale transform inequality]
 \label{thm:Lp_Burkholder_inequality_martingaleTransform}
@@ -85,7 +88,7 @@ has a majorant $u$ satisfying the theorem in Figure 2 and as stated in  \texttt{
  \caption{}
 \end{figure}
 
-\begin{theorem}
+\begin{theorem}[(Burkholder 1985 \cite{zbMATH03903326})]
 Let \(p\in\mathbb{R}\) with \(p>1\).  Then there exist   \[
   u,\ \frac{\partial u}{\partial x},\ \frac{\partial u}{\partial y}
     :  \mathbb{R}\to\mathbb{R}
@@ -139,9 +142,21 @@ and
 \end{itemize} 
 \end{theorem}
 
-The proof of Theorem 2 is particularly painful to formalize in Lean. The function $u$ is given explicitly in \cite{zbMATH03903326}, but it is defined piecewise on several sectors of $\mathbb{R}^2$. Although the argument used to prove Theorem 2 in \cite{zbMATH03903326} takes only about half a page, is fairly simple, and could be followed by an undergraduate student with a solid background in point-set topology and analysis, a fully  formalization would probably require several weeks of work (as Codex itself suggested to me),  and perhaps even months. 
+\section{An informal report on how the formalization was done} 
 
-In our case, the formalization became feasible within a manageable amount of time, namely a few days, by using AI tools such as Copilot and Codex in {\it agent mode.} In practice, we barely had to type any Lean code ourselves; instead, we mostly directed the agent when needed. Unfortunately, even with the paid version of Codex — through ChatGPT Plus, together with the Codex extension for Visual Studio Code — we frequently ran out of credits every day, and had to spend time purchasing additional credits and restarting sessions in different computing environments.
+The proof of Theorem 2 is particularly painful to formalize in Lean. The function $u$ is given explicitly in \cite{zbMATH03903326}, but it is defined piecewise on several sectors of $\mathbb{R}^2$. Although the argument proving Theorem 2 in \cite{zbMATH03903326} occupies only about half a page, is fairly simple, and could be followed by an undergraduate student with a solid background in point-set topology and analysis, a fully manual formalization would probably require several weeks of work, as Codex itself suggested to me, and perhaps even months.
+
+In our case, the formalization became feasible within a manageable amount of time, namely a few days, by using AI tools such as Copilot and Codex in {\it agent mode}. In practice, we barely had to type any Lean code ourselves; instead, we mostly guided the agent when necessary.
+
+We began by attaching a LaTeX file to Codex containing the main steps of the proof, following \cite{zbMATH03903326}, and asking it to encode the argument in Lean. This worked reasonably well for the main definitions. We then suggested, in colloquial language, possible strategies for the proof, using classical gluing lemmas from topology and concavity criteria from analysis. Occasionally, we still had to type small pieces of code or provide more precise guidance, especially when the proof required Mathlib-specific formulations.
+
+Agent mode was particularly useful for debugging problems caused by changes in notation or API differences between versions of Mathlib. The cycle of correction, compilation, and further correction became much faster in agent mode, avoiding the repeated copy-paste-compile workflow that was typical of pre-agent AI tools.
+
+Another interesting feature is that ChatGPT has recently started to suggest additional information after answering a question, apparently in an attempt to keep the user engaged. This can be rather annoying in ordinary ChatGPT sessions. However, when coding in Lean with Codex, it is often quite useful, since the model frequently suggests the next natural steps in the formalization.
+
+A particularly annoying feature of Codex is that, after we suggest an approach to a proof, it often replies with something like ``that is certainly the natural approach''. As a result, it is difficult to know whether Codex really knew how to proceed, or whether it is simply agreeing too readily. At times, it sounds like an overly confident student who does not want to acknowledge that it needs help.
+
+Unfortunately, even with the paid version of Codex---through ChatGPT Plus, together with the Codex extension for Visual Studio Code---we frequently ran out of credits every day. We therefore had to spend additional time purchasing extra credits and restarting sessions in different computing environments.
 
 The result was more than 20,000 lines of Lean code. We believe that this code is unlikely to be optimal; nevertheless, it is remarkable that we barely had to write any proof by hand. Most of the work consisted in guiding the agent using colloquial language and image snapshots from \cite{zbMATH03903326}. This is quite astonishing when compared with the capabilities of pre-agent AI tools only a few months ago.
 
