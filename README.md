@@ -99,6 +99,7 @@ Burkholder, D. L. *An elementary proof of an inequality of R. E. A. C. Paley*. B
 
 Banuelos, Rodrigo, and Burgess Davis. *Donald Burkholder's Work in Martingales and Analysis*. In *Selected Works of Donald L. Burkholder*, 1--22. Springer New York, 2011. DOI: <https://doi.org/10.1007/978-1-4419-7245-3_1>.
 
+## Author
 
 Daniel Smania  
 ICMC-USP, Sao Carlos-SP, Brazil  
