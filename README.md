@@ -97,6 +97,8 @@ The result was more than 20,000 lines of Lean code. We believe that this code is
 
 Burkholder, D. L. *An elementary proof of an inequality of R. E. A. C. Paley*. Bulletin of the London Mathematical Society 17, 474--478, 1985. DOI: <https://doi.org/10.1112/blms/17.5.474>.
 
+Banuelos, Rodrigo, and Burgess Davis. *Donald Burkholder's Work in Martingales and Analysis*. In *Selected Works of Donald L. Burkholder*, 1--22. Springer New York, 2011. DOI: <https://doi.org/10.1007/978-1-4419-7245-3_1>.
+
 
 Daniel Smania  
 ICMC-USP, Sao Carlos-SP, Brazil  
