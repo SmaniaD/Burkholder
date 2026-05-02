@@ -13,49 +13,49 @@ This repository proves the *Burkholder inequality for the real-valued martingale
 
 That is the **Burkholder inequality for the real-valued martingale transforms** (Burkholder 1985).
 
-**Theorem.** Let \(p\in (1,\infty)\). Let \((\Omega,\mathcal{A})\) be a measurable space, and let \(\mu\) be a finite measure on \(\Omega\). Let \(\mathcal{F}=(\mathcal{F}_n)_{n\in \mathbb{N}}\) be a filtration indexed by \(\mathbb{N}\), and let
+**Theorem.** Let <img src="Documentation/readme_equations/eq-15.png" alt="inline equation 1">. Let <img src="Documentation/readme_equations/eq-16.png" alt="inline equation 2"> be a measurable space, and let <img src="Documentation/readme_equations/eq-17.png" alt="inline equation 3"> be a finite measure on <img src="Documentation/readme_equations/eq-18.png" alt="inline equation 4">. Let <img src="Documentation/readme_equations/eq-19.png" alt="inline equation 5"> be a filtration indexed by <img src="Documentation/readme_equations/eq-20.png" alt="inline equation 6">, and let
 
 ![Equation 1](Documentation/readme_equations/eq-01.png)
 
-be measurable functions such that \(f=(f_n)_{n\in\mathbb{N}}\) is a discrete martingale with respect to \(\mathcal{F}\). Moreover
+be measurable functions such that <img src="Documentation/readme_equations/eq-21.png" alt="inline equation 7"> is a discrete martingale with respect to <img src="Documentation/readme_equations/eq-22.png" alt="inline equation 8">. Moreover
 
 ![Equation 2](Documentation/readme_equations/eq-02.png)
 
-Suppose that \(w=(w_n)_{n\in\mathbb{N}}\) is a predictable sequence with respect to \(\mathcal{F}\) with
+Suppose that <img src="Documentation/readme_equations/eq-23.png" alt="inline equation 9"> is a predictable sequence with respect to <img src="Documentation/readme_equations/eq-24.png" alt="inline equation 10"> with
 
 ![Equation 3](Documentation/readme_equations/eq-03.png)
 
-Then, for every \(n\in\mathbb{N}\),
+Then, for every <img src="Documentation/readme_equations/eq-25.png" alt="inline equation 11">,
 
 ![Equation 4](Documentation/readme_equations/eq-04.png)
 
-where \(w\star_m f\) is the martingale transform of \(f\) with respect to \(w\) and \(p^\ast=\max \{ p, (p-1)/p\}\).
+where <img src="Documentation/readme_equations/eq-26.png" alt="inline equation 12"> is the martingale transform of <img src="Documentation/readme_equations/eq-27.png" alt="inline equation 13"> with respect to <img src="Documentation/readme_equations/eq-28.png" alt="inline equation 14"> and <img src="Documentation/readme_equations/eq-29.png" alt="inline equation 15">.
 
 See Banuelos and Davis 2011 for more information on this interesting result.
 
-## The Burkholder Function \(v\)
+## The Burkholder Function <img src="Documentation/readme_equations/eq-30.png" alt="inline equation 16">
 
 The proof follows Burkholder 1985. The main step there and the analytic heart of the formalization is to prove that the function
 
 ![Equation 5](Documentation/readme_equations/eq-05.png)
 
-has a majorant \(u\) satisfying the theorem in Figure 2 and as stated in `Majorant.lean`. That is,
+has a majorant <img src="Documentation/readme_equations/eq-31.png" alt="inline equation 17"> satisfying the theorem in Figure 2 and as stated in `Majorant.lean`. That is,
 
 ![Majorant theorem](Documentation/majorant.png)
 
-**Theorem** (Burkholder 1985). Let \(p\in\mathbb{R}\) with \(p>1\). Then there exist
+**Theorem** (Burkholder 1985). Let <img src="Documentation/readme_equations/eq-32.png" alt="inline equation 18"> with <img src="Documentation/readme_equations/eq-33.png" alt="inline equation 19">. Then there exist
 
 ![Equation 6](Documentation/readme_equations/eq-06.png)
 
-and a constant \(C\geq 0\) such that:
+and a constant <img src="Documentation/readme_equations/eq-34.png" alt="inline equation 20"> such that:
 
 A. The functions
 
 ![Equation 7](Documentation/readme_equations/eq-07.png)
 
-are continuous on \(\mathbb{R}^2\).
+are continuous on <img src="Documentation/readme_equations/eq-35.png" alt="inline equation 21">.
 
-B. For all \(x,y,h,k\in\mathbb{R}\),
+B. For all <img src="Documentation/readme_equations/eq-36.png" alt="inline equation 22">,
 
 ![Equation 8](Documentation/readme_equations/eq-08.png)
 
@@ -81,7 +81,7 @@ F. We have
 
 ## An Informal Report On How The Formalization Was Done
 
-The proof of Theorem 2 is particularly painful to formalize in Lean. The function \(u\) is given explicitly in Burkholder 1985, but it is defined piecewise on several sectors of \(\mathbb{R}^2\). Although the argument proving Theorem 2 in Burkholder 1985 occupies only about half a page, is fairly simple, and could be followed by an undergraduate student with a solid background in point-set topology and analysis, a fully manual formalization would probably require several weeks of work, as Codex itself suggested to me, and perhaps even months.
+The proof of Theorem 2 is particularly painful to formalize in Lean. The function <img src="Documentation/readme_equations/eq-37.png" alt="inline equation 23"> is given explicitly in Burkholder 1985, but it is defined piecewise on several sectors of <img src="Documentation/readme_equations/eq-38.png" alt="inline equation 24">. Although the argument proving Theorem 2 in Burkholder 1985 occupies only about half a page, is fairly simple, and could be followed by an undergraduate student with a solid background in point-set topology and analysis, a fully manual formalization would probably require several weeks of work, as Codex itself suggested to me, and perhaps even months.
 
 In our case, the formalization became feasible within a manageable amount of time, namely a few days, by using AI tools such as Copilot and Codex in *agent mode*. In practice, we barely had to type any Lean code ourselves; instead, we mostly guided the agent when necessary.
 
