@@ -5,6 +5,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
+\usepackage{graphicx}
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
@@ -24,239 +25,128 @@
 
 \section{Overview}
 
-This note describes the formal Lean theorem
-\[
-  \texttt{Lp\_Burkholder\_inequality\_martingaleTransform}
-\]
-proved in \texttt{MartingaleTransforms.lean}.  The result is the real-valued
-martingale transform inequality
-\[
-  \norm{(w \star_m f)_n}_{L^p(\mu)}
-    \le (p^\ast - 1)\,\norm{f_n}_{L^p(\mu)}
-\]
-for every time \(n\), where \(1 < p < \infty\), \(f\) is a martingale, and
-\(w\) is a predictable multiplier bounded by \(1\) in absolute value.
+This repository proves the {\it Burkholder inequality for the real-valued
+martingale transforms} in the Lean proof assistant, as stated in \noindent and in  \texttt{MartingaleTransforms.lean} and Figure 1.
+\begin{figure}[h]
+  \includegraphics[width=0.8\textwidth]{maintheorem.png}
+  \caption{}
+\end{figure}
 
-In Lean the theorem is stated with the extended nonnegative exponent
-\(p : \mathbb{R}_{\ge 0,\infty}\).  The hypotheses include \(1 < p\),
-\(p \ne \infty\), and the proof uses \(p.toReal\) for the real exponent in
-the Burkholder functions.
-
-\section{Basic Definitions}
-
-\subsection{Martingale differences}
-
-For a discrete real-valued process \(f : \N \to \Omega \to \R\), the
-martingale difference sequence is defined by
-\[
-  d_0 f = f_0,\qquad
-  d_{n+1} f = f_{n+1} - f_n.
-\]
-In Lean this is
-\[
-\texttt{martingaleDiff f 0 = f 0},
-\qquad
-\texttt{martingaleDiff f (n+1) = f (n+1) - f n}.
-\]
-
-\subsection{Martingale transforms}
-
-Given a multiplier process \(v : \N \to \Omega \to \R\), the discrete
-martingale transform of \(f\) by \(v\) is
-\[
-  (v \star_m f)_n
-    = \sum_{i=0}^n v_i\, d_i f.
-\]
-The Lean definition is
-\[
-\texttt{martingaleTransform v f :=
-  fun n => (Finset.range (n + 1)).sum fun i => v i * martingaleDiff f i}.
-\]
-The notation used in the file is
-\[
-  v \star_m f.
-\]
-The increment identity proved in Lean is
-\[
-  (v \star_m f)_{n+1} - (v \star_m f)_n
-    = v_{n+1}(f_{n+1}-f_n).
-\]
-
-\subsection{Predictability}
-
-The multiplier \(w\) is assumed to be strongly predictable with respect to a
-filtration \(\F\):
-\[
-  \texttt{IsStronglyPredictable }\F\,w.
-\]
-This is the formal version of the usual condition that \(w_{n+1}\) is
-\(\F_n\)-measurable.  Predictability is what allows the proof to pull the
-multiplier out of conditional expectations when showing that the linear terms
-have expectation zero.
-
-\subsection{The auxiliary transforms \(X\) and \(Y\)}
-
-The proof uses two transforms associated to \(w\):
-\[
-  w^+_n = w_n + 1,\qquad w^-_n = w_n - 1.
-\]
-In Lean these are \texttt{plusOne w} and \texttt{minusOne w}.  The notation
-\[
-  X_n[w,f] = ((w+1)\star_m f)_n,\qquad
-  Y_n[w,f] = ((w-1)\star_m f)_n
-\]
-is introduced by scoped notation.  These satisfy the algebraic identities
-\[
-  \frac{X_n+Y_n}{2} = (w\star_m f)_n,
-  \qquad
-  \frac{X_n-Y_n}{2} = f_n.
-\]
-The final theorem uses these identities together with the definition of the
-Burkholder function \(v\).
-
-\section{The Main Martingale Transform Theorem}
-
-The Lean theorem has the following mathematical content.
+That is the {\bf Burkholder inequality for the real-valued
+martingale transforms  } 
 
 \begin{theorem}[Burkholder martingale transform inequality]
-Let \((\Omega,\mathcal{A},\mu)\) be a finite measure space and let
-\((\F_n)_{n\in\N}\) be a filtration.  Let \(1 < p < \infty\).  Suppose
-\(f = (f_n)\) is a real-valued martingale, \(f_n \in L^p(\mu)\) for every
-\(n\), and \(w = (w_n)\) is strongly predictable with
+\label{thm:Lp_Burkholder_inequality_martingaleTransform}
+Let $p\in (1,\infty)$. Let \((\Omega,\mathcal{A})\) be a
+measurable space, and let \(\mu\) be a finite measure on \(\Omega\).  Let
+$\F=(\F_n)_{n\in \mathbb{N}}$ be a filtration indexed by \(\N\), and let
 \[
+  w_n,f_n :  \Omega \to \R.
+\]
+be measurable functions  such that $f =(f_n)_{n\in \mathbb{N}}$ is a discrete martingale with respect to  $\F$. Moreover
+$$
+  f_n \in L^p(\mu)
+  \qquad \text{for every } n\in\N.
+$$
+ Suppose that   $w=(w_n)_{n\in \mathbb{N}}$  predictable sequence with respect to $\F$ with 
+$$
   |w_n(\omega)| \le 1
-\]
-for every \(n\), almost everywhere.  Then for every \(n\),
-\[
+  \qquad \text{for every } n\in\N
+  \text{ and for } \mu\text{-a.e. } \omega.
+$$
+Then, for every $n\in\N$,
+$$
   \norm{(w\star_m f)_n}_{L^p(\mu)}
-    \le \bigl(p^\ast-1\bigr)\norm{f_n}_{L^p(\mu)},
-\]
-where
-\[
-  q = \frac{p}{p-1},
-  \qquad
-  p^\ast = \max\{p,q\}.
-\]
+    \le
+  \bigl(p^\ast-1\bigr)\norm{f_n}_{L^p(\mu)},
+$$
+where $w\star_m f$ is the martingale transform of $f$ with respect to $w$ and  $p^\ast =\max \{ p, (p-1)/p\}.$
 \end{theorem}
 
-In Lean, the constant is written as
-\[
-  \texttt{ENNReal.ofReal (Burkholder.pStar p.toReal - 1)}.
-\]
+See  Ba{\~n}uelos and  Davis 2011 \cite{BaBu} for more information on this interesting result.
+
 
 \section{The Burkholder Function \(v\)}
 
-The proof is organized around the Burkholder expression
-\[
+The proof follows Burkholder 1985 \cite{zbMATH03903326}. The main step there and the  analytic heart of the formalization is to prove
+that the function 
+$$
   v(p,x,y)
     =
       \left|\frac{x+y}{2}\right|^p
       -
       |p^\ast-1|^p
       \left|\frac{x-y}{2}\right|^p.
-\]
-This is the Lean definition \texttt{Majorants.v}.  Substituting
-\[
-  x = X_n[w,f], \qquad y = Y_n[w,f]
-\]
-and using the identities above gives
-\[
-  v(p,X_n,Y_n)
-    =
-      |(w\star_m f)_n|^p
-      -
-      |p^\ast-1|^p |f_n|^p.
-\]
-Thus the inequality
-\[
-  \int v(p,X_n,Y_n)\,d\mu \le 0
-\]
-is exactly the \(p\)-power form of the martingale transform estimate.
-The last step of the Lean proof unfolds the definition of \(v\), converts the
-integral inequality into an inequality of real \(L^p\)-norms, and then converts
-back to \texttt{eLpNorm}.
+$$
+has a majorant $u$ satisfying the theorem in Figure 2 and as stated in  \texttt{Majorant.lean}.  That is, 
 
-\section{The Majorant Theorem \texttt{exists\_majorant\_p\_g\_1}}
+\begin{figure}[t]
+ \includegraphics[width=0.8\textwidth]{majorant.png}
+ \caption{}
+\end{figure}
 
-The analytic heart of the formalization is
-\[
-  \texttt{exists\_majorant\_p\_g\_1}.
+\begin{theorem}
+Let \(p\in\mathbb{R}\) with \(p>1\).  Then there exist   \[
+  u,\ \frac{\partial u}{\partial x},\ \frac{\partial u}{\partial y}
+    :  \mathbb{R}\to\mathbb{R}
 \]
-For every real \(p>1\), it produces functions
-\[
-  u,\quad u_x,\quad u_y : \R \to \R \to \R
-\]
-and a constant \(C\ge 0\) such that:
-
+and a constant $C\geq 0$ such that 
 \begin{itemize}
-  \item \(u,u_x,u_y\) are continuous on all of \(\R^2\);
-  \item \(u\) has \(p\)-growth:
-    \[
-      |u(x,y)| \le C(|x|^p+|y|^p);
-    \]
-  \item the selected derivatives have \((p-1)\)-growth:
-    \[
-      |u_x(x,y)|,\ |u_y(x,y)|
-        \le C(|x|^{p-1}+|y|^{p-1});
-    \]
-  \item \(u\) satisfies the tangent/concavity inequality in martingale-transform
-    directions:
-    \[
-      hk\le 0
-      \Longrightarrow
-      u(x+h,y+k)
-        \le u(x,y)+u_x(x,y)h+u_y(x,y)k;
-    \]
-  \item \(u\) majorizes \(v\):
-    \[
-      v(p,x,y)\le u(x,y);
-    \]
-  \item \(u\) is nonpositive on the region \(xy\le 0\):
-    \[
-      xy\le 0 \Longrightarrow u(x,y)\le 0.
-    \]
-\end{itemize}
-
-\subsection{Why the majorant \(u\) is important}
-
-The role of the majorant \(u\) is to turn a norm inequality into a
-supermartingale-type inequality.  The function \(v\) directly contains the
-desired estimate, but by itself it does not have the concavity property needed
-to use the martingale structure.  The majorant \(u\) supplies this missing
-property:
-
-\begin{enumerate}
-  \item Since \(v\le u\), it is enough to prove that the expectation of
-    \(u(X_n,Y_n)\) is nonpositive.
-  \item The tangent inequality for \(u\) shows that
-    \[
-      u(X_{n+1},Y_{n+1})
-        \le u(X_n,Y_n)
-          + u_x(X_n,Y_n)(X_{n+1}-X_n)
-          + u_y(X_n,Y_n)(Y_{n+1}-Y_n).
-    \]
-  \item The condition \(|w|\le 1\) implies
-    \[
-      (X_{n+1}-X_n)(Y_{n+1}-Y_n)\le 0,
-    \]
-    which is exactly the hypothesis needed for the tangent inequality.
-  \item By predictability of \(w\) and the martingale property of \(f\), the
-    linear terms have integral zero.
-  \item Therefore,
-    \[
-      \int u(X_{n+1},Y_{n+1})\,d\mu
-        \le
-      \int u(X_n,Y_n)\,d\mu.
-    \]
-  \item At the initial time, \(X_0Y_0\le 0\), so \(u(X_0,Y_0)\le 0\).
-    Hence \(\int u(X_n,Y_n)\,d\mu\le 0\) for every \(n\).
-\end{enumerate}
-
-Combining this with \(v\le u\) gives
+\item[A.]  The functions
 \[
-  \int v(p,X_n,Y_n)\,d\mu \le 0,
+  (x,y)\mapsto u(x,y),\qquad
+  (x,y)\mapsto \frac{\partial u}{\partial x}(x,y),\qquad
+  (x,y)\mapsto \frac{\partial u}{\partial y}(x,y)
 \]
-and the definition of \(v\) then yields the desired martingale transform
-inequality.
+are continuous on \(\mathbb{R}^2\), 
+\item[B.]  For all \(x,y,h,k\in\mathbb{R}\),
+\[
+  |u(x,y)| \le C\bigl(|x|^p+|y|^p\bigr),
+\]
+\[
+  \left|\frac{\partial u}{\partial x}(x,y)\right|
+    \le C\bigl(|x|^{p-1}+|y|^{p-1}\bigr),
+\]
+\[
+  \left|\frac{\partial u}{\partial y}(x,y)\right|
+    \le C\bigl(|x|^{p-1}+|y|^{p-1}\bigr),
+\]
+\item[C.] We have
+\[
+  hk\le 0
+  \Longrightarrow
+  u(x+h,y+k)
+    \le
+  u(x,y)
+    + \frac{\partial u}{\partial x}(x,y)h
+    + \frac{\partial u}{\partial y}(x,y)k,
+\]
+\item[D.]  We have 
+\[
+  v(p,x,y)\le u(x,y),
+\]
+\item[E.]  We have
+\[
+  xy\le 0 \Longrightarrow u(x,y)\le 0,
+\]
+and
+\item[F.] We have
+\[
+  p\ne 2,\ xy=0,\ (x,y)\ne(0,0)
+  \Longrightarrow
+  u(x,y)<0.
+\]
+\end{itemize} 
+\end{theorem}
+
+The proof of Theorem 2 is particularly painful to formalize in Lean. The function $u$ is given explicitly in \cite{zbMATH03903326}, but it is defined piecewise on several sectors of $\mathbb{R}^2$. Although the argument used to prove Theorem 2 in \cite{zbMATH03903326} takes only about half a page, is fairly simple, and could be followed by an undergraduate student with a solid background in point-set topology and analysis, a fully  formalization would probably require several weeks of work (as Codex itself suggested to me),  and perhaps even months. 
+
+In our case, the formalization became feasible within a manageable amount of time, namely a few days, by using AI tools such as Copilot and Codex in {\it agent mode.} In practice, we barely had to type any Lean code ourselves; instead, we mostly directed the agent when needed. Unfortunately, even with the paid version of Codex — through ChatGPT Plus, together with the Codex extension for Visual Studio Code — we frequently ran out of credits every day, and had to spend time purchasing additional credits and restarting sessions in different computing environments.
+
+The result was more than 20,000 lines of Lean code. We believe that this code is unlikely to be optimal; nevertheless, it is remarkable that we barely had to write any proof by hand. Most of the work consisted in guiding the agent using colloquial language and image snapshots from \cite{zbMATH03903326}. This is quite astonishing when compared with the capabilities of pre-agent AI tools only a few months ago.
+
+\nocite{zbMATH03903326}
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end{document}
