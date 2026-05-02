@@ -15,32 +15,19 @@ That is the **Burkholder inequality for the real-valued martingale transforms** 
 
 **Theorem.** Let \(p\in (1,\infty)\). Let \((\Omega,\mathcal{A})\) be a measurable space, and let \(\mu\) be a finite measure on \(\Omega\). Let \(\mathcal{F}=(\mathcal{F}_n)_{n\in \mathbb{N}}\) be a filtration indexed by \(\mathbb{N}\), and let
 
-\[
-  w_n,f_n : \Omega \to \mathbb{R}.
-\]
+![Equation 1](Documentation/readme_equations/eq-01.png)
 
 be measurable functions such that \(f=(f_n)_{n\in\mathbb{N}}\) is a discrete martingale with respect to \(\mathcal{F}\). Moreover
 
-\[
-  f_n \in L^p(\mu)
-  \qquad \text{for every } n\in\mathbb{N}.
-\]
+![Equation 2](Documentation/readme_equations/eq-02.png)
 
 Suppose that \(w=(w_n)_{n\in\mathbb{N}}\) is a predictable sequence with respect to \(\mathcal{F}\) with
 
-\[
-  |w_n(\omega)| \le 1
-  \qquad \text{for every } n\in\mathbb{N}
-  \text{ and for } \mu\text{-a.e. } \omega.
-\]
+![Equation 3](Documentation/readme_equations/eq-03.png)
 
 Then, for every \(n\in\mathbb{N}\),
 
-\[
-  \|(w\star_m f)_n\|_{L^p(\mu)}
-    \le
-  (p^\ast-1)\|f_n\|_{L^p(\mu)},
-\]
+![Equation 4](Documentation/readme_equations/eq-04.png)
 
 where \(w\star_m f\) is the martingale transform of \(f\) with respect to \(w\) and \(p^\ast=\max \{ p, (p-1)/p\}\).
 
@@ -50,14 +37,7 @@ See Banuelos and Davis 2011 for more information on this interesting result.
 
 The proof follows Burkholder 1985. The main step there and the analytic heart of the formalization is to prove that the function
 
-\[
-  v(p,x,y)
-    =
-      \left|\frac{x+y}{2}\right|^p
-      -
-      |p^\ast-1|^p
-      \left|\frac{x-y}{2}\right|^p.
-\]
+![Equation 5](Documentation/readme_equations/eq-05.png)
 
 has a majorant \(u\) satisfying the theorem in Figure 2 and as stated in `Majorant.lean`. That is,
 
@@ -65,70 +45,39 @@ has a majorant \(u\) satisfying the theorem in Figure 2 and as stated in `Majora
 
 **Theorem** (Burkholder 1985). Let \(p\in\mathbb{R}\) with \(p>1\). Then there exist
 
-\[
-  u,\ \frac{\partial u}{\partial x},\ \frac{\partial u}{\partial y}
-    : \mathbb{R}\to\mathbb{R}
-\]
+![Equation 6](Documentation/readme_equations/eq-06.png)
 
 and a constant \(C\geq 0\) such that:
 
 A. The functions
 
-\[
-  (x,y)\mapsto u(x,y),\qquad
-  (x,y)\mapsto \frac{\partial u}{\partial x}(x,y),\qquad
-  (x,y)\mapsto \frac{\partial u}{\partial y}(x,y)
-\]
+![Equation 7](Documentation/readme_equations/eq-07.png)
 
 are continuous on \(\mathbb{R}^2\).
 
 B. For all \(x,y,h,k\in\mathbb{R}\),
 
-\[
-  |u(x,y)| \le C\bigl(|x|^p+|y|^p\bigr),
-\]
+![Equation 8](Documentation/readme_equations/eq-08.png)
 
-\[
-  \left|\frac{\partial u}{\partial x}(x,y)\right|
-    \le C\bigl(|x|^{p-1}+|y|^{p-1}\bigr),
-\]
+![Equation 9](Documentation/readme_equations/eq-09.png)
 
-\[
-  \left|\frac{\partial u}{\partial y}(x,y)\right|
-    \le C\bigl(|x|^{p-1}+|y|^{p-1}\bigr).
-\]
+![Equation 10](Documentation/readme_equations/eq-10.png)
 
 C. We have
 
-\[
-  hk\le 0
-  \Longrightarrow
-  u(x+h,y+k)
-    \le
-  u(x,y)
-    + \frac{\partial u}{\partial x}(x,y)h
-    + \frac{\partial u}{\partial y}(x,y)k.
-\]
+![Equation 11](Documentation/readme_equations/eq-11.png)
 
 D. We have
 
-\[
-  v(p,x,y)\le u(x,y).
-\]
+![Equation 12](Documentation/readme_equations/eq-12.png)
 
 E. We have
 
-\[
-  xy\le 0 \Longrightarrow u(x,y)\le 0.
-\]
+![Equation 13](Documentation/readme_equations/eq-13.png)
 
 F. We have
 
-\[
-  p\ne 2,\ xy=0,\ (x,y)\ne(0,0)
-  \Longrightarrow
-  u(x,y)<0.
-\]
+![Equation 14](Documentation/readme_equations/eq-14.png)
 
 ## An Informal Report On How The Formalization Was Done
 
