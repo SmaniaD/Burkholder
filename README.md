@@ -1,5 +1,7 @@
 # The Burkholder Martingale Transform Inequality in Lean
 
+[PDF documentation](Documentation/Burkholder_documentation.pdf)
+
 
 ## Overview
 
