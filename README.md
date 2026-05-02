@@ -1,9 +1,5 @@
 # The Burkholder Martingale Transform Inequality in Lean
 
-Daniel Smania  
-ICMC-USP, Sao Carlos-SP, Brazil  
-<daniel.smania@gmail.com>  
-<https://smaniad.github.io/HomePage/>
 
 ## Overview
 
@@ -100,3 +96,9 @@ The result was more than 20,000 lines of Lean code. We believe that this code is
 ## References
 
 Burkholder, D. L. *An elementary proof of an inequality of R. E. A. C. Paley*. Bulletin of the London Mathematical Society 17, 474--478, 1985. DOI: <https://doi.org/10.1112/blms/17.5.474>.
+
+
+Daniel Smania  
+ICMC-USP, Sao Carlos-SP, Brazil  
+<daniel.smania@gmail.com>  
+<https://smaniad.github.io/HomePage/>
