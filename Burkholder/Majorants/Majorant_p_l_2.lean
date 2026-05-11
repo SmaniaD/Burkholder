@@ -40,8 +40,8 @@ The proof architecture is organized as follows.
    segments at sector boundaries and glue the local tangent estimates while
    comparing derivatives at the break points.
 
-Most of the long lemmas near the end are not new analytic facts; they are
-bookkeeping lemmas that move a segment through the sector decomposition of
+Most of the long private lemmas near the end are not new analytic facts; they are
+bookkeeping private lemmas that move a segment through the sector decomposition of
 `uCandidate`.
 -/
 
@@ -51,7 +51,7 @@ bookkeeping lemmas that move a segment through the sector decomposition of
 
 
 
-theorem pStar_eq_q_of_one_lt_of_lt_two (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma pStar_eq_q_of_one_lt_of_lt_two (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     pStar p = q p := by
   unfold pStar
   apply max_eq_right
@@ -63,7 +63,7 @@ theorem pStar_eq_q_of_one_lt_of_lt_two (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
   rw [le_div_iff₀ hden_pos]
   nlinarith
 
-theorem pStar_eq_self_of_two_le (p : ℝ) (hp : 2 ≤ p) : pStar p = p := by
+ private pStar_eq_self_of_two_le (p : ℝ) (hp : 2 ≤ p) : pStar p = p := by
   unfold pStar
   apply max_eq_left
   unfold q
@@ -80,10 +80,10 @@ theorem pStar_eq_self_of_two_le (p : ℝ) (hp : 2 ≤ p) : pStar p = p := by
 
 
 /-- The same expression specialized to the `1< p < 2` regime. -/
-def coeffLeTwo (p : ℝ) : ℝ :=
+private def coeffLeTwo (p : ℝ) : ℝ :=
   Real.rpow ((p - 1)⁻¹) p
 
-def vLeTwo (p x y : ℝ) : ℝ :=
+private def vLeTwo (p x y : ℝ) : ℝ :=
   Real.rpow (|((x + y) / 2)|) p
     - coeffLeTwo p * Real.rpow (|((x - y) / 2)|) p
 
@@ -91,25 +91,25 @@ def vLeTwo (p x y : ℝ) : ℝ :=
 
 
 
-def A2 (p x y : ℝ) : Prop :=
+private def A2 (p x y : ℝ) : Prop :=
   0 < x ∧ (a p) * x < y ∧ y < x
 
 /-- Closed version of the upper sector. -/
-def closureA2 (p x y : ℝ) : Prop :=
+private def closureA2 (p x y : ℝ) : Prop :=
   0 ≤ x ∧ (a p) * x ≤ y ∧ y ≤ x
 
 /-- Lower first-quadrant sector. In the regime `1 < p < 2`,
 the affine formula `uA1` is used on this sector. -/
-def A1 (p x y : ℝ) : Prop :=
+private def A1 (p x y : ℝ) : Prop :=
   0 < x ∧ -x < y ∧ y < (a p) * x
 
 /-- Closed version of the lower sector. -/
-def closureA1 (p x y : ℝ) : Prop :=
+private def closureA1 (p x y : ℝ) : Prop :=
   0 ≤ x ∧ -x ≤ y ∧ y ≤ (a p) * x
 
 
 /-- Local majorant formula on `A1`; outside `x > 0` it is set to zero. -/
-def uA1 (p x y : ℝ) : ℝ :=
+private def uA1 (p x y : ℝ) : ℝ :=
   if x > 0 then
      alpha p * Real.rpow x (p-1) * (x - (pStar p) * (x - y) /2)
      else 0
@@ -117,7 +117,7 @@ def uA1 (p x y : ℝ) : ℝ :=
 
 
 
-def DxuA1  (p x y : ℝ) : ℝ :=
+private def DxuA1  (p x y : ℝ) : ℝ :=
   if x > 0 then
     alpha p * (p / 2) * Real.rpow x (p - 2) *
       (((p - 2) / (p - 1)) * x + y)
@@ -125,59 +125,59 @@ def DxuA1  (p x y : ℝ) : ℝ :=
 
 
 
-def DyuA1 (p x _y : ℝ) : ℝ :=
+private def DyuA1 (p x _y : ℝ) : ℝ :=
   if x > 0 then
      alpha p * Real.rpow x (p - 1) * (pStar p / 2)
      else 0
 
 
 
-def DxvLeTwo (p x y : ℝ) : ℝ :=
+private def DxvLeTwo (p x y : ℝ) : ℝ :=
   if x > 0 then
      Real.rpow (|((x + y) / 2)|) (p - 1) * (p / 2)
      - coeffLeTwo p * Real.rpow (|((x - y) / 2)|) (p - 1) * (p / 2)
   else 0
 
-def DyvLeTwo (p x y : ℝ) : ℝ :=
+private def DyvLeTwo (p x y : ℝ) : ℝ :=
   if x > 0 then
      Real.rpow (|((x + y) / 2)|) (p - 1) * (p / 2)
      + coeffLeTwo p * Real.rpow (|((x - y) / 2)|) (p - 1) * (p / 2)
   else 0
 
 /-- Closed `A1` as a subset of `ℝ²`. -/
-def closureA1Set (p : ℝ) : Set (ℝ × ℝ) :=
+private def closureA1Set (p : ℝ) : Set (ℝ × ℝ) :=
   {z | closureA1 p z.1 z.2}
 
 /-- Closed `A2` as a subset of `ℝ²`. -/
-def closureA2Set (p : ℝ) : Set (ℝ × ℝ) :=
+private def closureA2Set (p : ℝ) : Set (ℝ × ℝ) :=
   {z | closureA2 p z.1 z.2}
 
-def DxuA1Fun (p : ℝ) : ℝ × ℝ → ℝ :=
+private def DxuA1Fun (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z => DxuA1 p z.1 z.2
 
-def DyuA1Fun (p : ℝ) : ℝ × ℝ → ℝ :=
+private def DyuA1Fun (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z => DyuA1 p z.1 z.2
 
-def DxuA1Formula (p : ℝ) : ℝ × ℝ → ℝ :=
+private def DxuA1Formula (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z =>
     alpha p * (p / 2) * Real.rpow z.1 (p - 2) *
       (((p - 2) / (p - 1)) * z.1 + z.2)
 
-def DyuA1Formula (p : ℝ) : ℝ × ℝ → ℝ :=
+private def DyuA1Formula (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z => alpha p * Real.rpow z.1 (p - 1) * (pStar p / 2)
 
-def DxvLeTwoFun (p : ℝ) : ℝ × ℝ → ℝ :=
+private def DxvLeTwoFun (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z => DxvLeTwo p z.1 z.2
 
-def DyvLeTwoFun (p : ℝ) : ℝ × ℝ → ℝ :=
+private def DyvLeTwoFun (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z => DyvLeTwo p z.1 z.2
 
-def DxvLeTwoFormula (p : ℝ) : ℝ × ℝ → ℝ :=
+private def DxvLeTwoFormula (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z =>
     Real.rpow (|((z.1 + z.2) / 2)|) (p - 1) * (p / 2) -
       coeffLeTwo p * Real.rpow (|((z.1 - z.2) / 2)|) (p - 1) * (p / 2)
 
-def DyvLeTwoFormula (p : ℝ) : ℝ × ℝ → ℝ :=
+private def DyvLeTwoFormula (p : ℝ) : ℝ × ℝ → ℝ :=
   fun z =>
     Real.rpow (|((z.1 + z.2) / 2)|) (p - 1) * (p / 2) +
       coeffLeTwo p * Real.rpow (|((z.1 - z.2) / 2)|) (p - 1) * (p / 2)
@@ -188,7 +188,7 @@ open Topology
 
 
 
-def auxFunction1 (p x y : ℝ) : ℝ :=
+private def auxFunction1 (p x y : ℝ) : ℝ :=
     by
     classical
     exact
@@ -198,7 +198,7 @@ def auxFunction1 (p x y : ℝ) : ℝ :=
           vLeTwo p x y
         else 0
 
-def DxauxFunction1 (p x y : ℝ) : ℝ :=
+private def DxauxFunction1 (p x y : ℝ) : ℝ :=
     by
     classical
     exact
@@ -208,7 +208,7 @@ def DxauxFunction1 (p x y : ℝ) : ℝ :=
         DxvLeTwo p x y
       else 0
 
-def DyauxFunction1 (p x y : ℝ) : ℝ :=
+private def DyauxFunction1 (p x y : ℝ) : ℝ :=
     by
     classical
     exact
@@ -223,29 +223,29 @@ def DyauxFunction1 (p x y : ℝ) : ℝ :=
 /-
 `auxFunction1` lives in the first quadrant cone.  The global candidate is built
 by reflecting this auxiliary function into the other three cones.  The order of
-the `if` branches is important on shared boundaries; later boundary lemmas prove
+the `if` branches is important on shared boundaries; later boundary private lemmas prove
 that the chosen formulas agree where they need to.
 -/
 
-def QuarterPlane (x y : ℝ) : Prop := 0 ≤ x ∧ y ≤ x ∧ -x ≤ y
+private def QuarterPlane (x y : ℝ) : Prop := 0 ≤ x ∧ y ≤ x ∧ -x ≤ y
 
-def QuarterPlaneOpen (x y : ℝ) : Prop := 0 < x ∧ y < x ∧ -x < y
+private def QuarterPlaneOpen (x y : ℝ) : Prop := 0 < x ∧ y < x ∧ -x < y
 
-def QuarterPlane2 (x y : ℝ) : Prop := x ≤ 0 ∧ y ≤ -x ∧ x ≤ y
+private def QuarterPlane2 (x y : ℝ) : Prop := x ≤ 0 ∧ y ≤ -x ∧ x ≤ y
 
-def QuarterPlane2Open (x y : ℝ) : Prop := x < 0 ∧ y < -x ∧ x < y
+private def QuarterPlane2Open (x y : ℝ) : Prop := x < 0 ∧ y < -x ∧ x < y
 
-def QuarterPlane3 (x y : ℝ) : Prop := y ≥  0 ∧ -y ≤ x ∧ x ≤ y
+private def QuarterPlane3 (x y : ℝ) : Prop := y ≥  0 ∧ -y ≤ x ∧ x ≤ y
 
-def QuarterPlane3Open (x y : ℝ) : Prop := 0 < y ∧ -y < x ∧ x < y
+private def QuarterPlane3Open (x y : ℝ) : Prop := 0 < y ∧ -y < x ∧ x < y
 
-def QuarterPlane4 (x y : ℝ) : Prop := y ≤ 0 ∧ y ≤ x ∧ x ≤ -y
+private def QuarterPlane4 (x y : ℝ) : Prop := y ≤ 0 ∧ y ≤ x ∧ x ≤ -y
 
-def QuarterPlane4Open (x y : ℝ) : Prop := y < 0 ∧ y < x ∧ x < -y
+private def QuarterPlane4Open (x y : ℝ) : Prop := y < 0 ∧ y < x ∧ x < -y
 
 
 
-def uCandidate (p x y : ℝ) : ℝ :=
+private def uCandidate (p x y : ℝ) : ℝ :=
   by
     classical
     exact
@@ -259,7 +259,7 @@ def uCandidate (p x y : ℝ) : ℝ :=
         auxFunction1  p (-y) (-x)
       else 0
 
-def DxuCandidate (p x y : ℝ) : ℝ :=
+private def DxuCandidate (p x y : ℝ) : ℝ :=
   by
     classical
     exact
@@ -273,7 +273,7 @@ def DxuCandidate (p x y : ℝ) : ℝ :=
         -DyauxFunction1 p (-y) (-x)
       else 0
 
-def DyuCandidate (p x y : ℝ) : ℝ :=
+private def DyuCandidate (p x y : ℝ) : ℝ :=
   by
     classical
     exact
@@ -299,7 +299,7 @@ This final theorem packages the candidate with the axis-supported tangent
 inequality, pointwise majorization, and negativity on the opposing-sign region.
 -/
 
-lemma v_eq_vLeTwo_of_one_lt_of_lt_two
+private lemma v_eq_vLeTwo_of_one_lt_of_lt_two
     (p x y : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     v p x y = vLeTwo p x y := by
   have hp_ne_one : p ≠ 1 := by linarith
@@ -317,7 +317,7 @@ lemma v_eq_vLeTwo_of_one_lt_of_lt_two
     exact abs_of_pos (inv_pos.mpr hpden_pos)
   simp [v, vLeTwo, coeffLeTwo, hcoeff_abs]
 
-lemma one_le_coeffLeTwo_of_one_lt_of_lt_two
+private lemma one_le_coeffLeTwo_of_one_lt_of_lt_two
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     1 ≤ coeffLeTwo p := by
   have hp_nonneg : 0 ≤ p := by linarith
@@ -329,13 +329,13 @@ lemma one_le_coeffLeTwo_of_one_lt_of_lt_two
   simpa [coeffLeTwo, Real.one_rpow] using
     Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1) hbase hp_nonneg
 
-lemma coeffLeTwo_nonneg_of_one_lt_of_lt_two
+private lemma coeffLeTwo_nonneg_of_one_lt_of_lt_two
     (p : ℝ) (_hp1 : 1 < p) (_hp2 : p < 2) :
     0 ≤ coeffLeTwo p := by
   unfold coeffLeTwo
   exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith : 0 ≤ p - 1)) p
 
-lemma pStar_pos_of_one_lt_of_lt_two
+private lemma pStar_pos_of_one_lt_of_lt_two
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     0 < pStar p := by
   have hpStar : pStar p = q p :=
@@ -347,7 +347,7 @@ lemma pStar_pos_of_one_lt_of_lt_two
   simp [q, hp_ne_one]
   exact div_pos hp_pos hpden_pos
 
-lemma a_nonneg_of_one_lt_of_lt_two
+private lemma a_nonneg_of_one_lt_of_lt_two
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     0 ≤ a p := by
   have hpStar : pStar p = q p :=
@@ -359,7 +359,7 @@ lemma a_nonneg_of_one_lt_of_lt_two
   field_simp [hpden_pos.ne']
   linarith
 
-lemma one_le_half_pStar_of_one_lt_of_lt_two
+private lemma one_le_half_pStar_of_one_lt_of_lt_two
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     1 ≤ pStar p / 2 := by
   have hpStar : pStar p = q p :=
@@ -373,7 +373,7 @@ lemma one_le_half_pStar_of_one_lt_of_lt_two
   ring_nf
   linarith
 
-lemma alpha_nonneg_of_one_lt_of_lt_two
+private lemma alpha_nonneg_of_one_lt_of_lt_two
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     0 ≤ alpha p := by
   have hpStar_eq : pStar p = q p :=
@@ -393,7 +393,7 @@ lemma alpha_nonneg_of_one_lt_of_lt_two
   unfold alpha
   exact mul_nonneg hp_pos.le (Real.rpow_nonneg (div_nonneg hps_pos.le hpsm_pos.le) _)
 
-lemma vLeTwo_le_zero_of_mul_nonpos_leTwo
+private lemma vLeTwo_le_zero_of_mul_nonpos_leTwo
     (p x y : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (hxy : x * y ≤ 0) :
     vLeTwo p x y ≤ 0 := by
   have hp_nonneg : 0 ≤ p := by linarith
@@ -413,7 +413,7 @@ lemma vLeTwo_le_zero_of_mul_nonpos_leTwo
     simpa [one_mul] using mul_le_mul_of_nonneg_right hcoef hdiff_nonneg
   exact sub_nonpos.mpr (hpow.trans hmul)
 
-lemma uA1_le_zero_of_y_nonpos_leTwo
+private lemma uA1_le_zero_of_y_nonpos_leTwo
     (p x y : ℝ) (hp1 : 1 < p) (hp2 : p < 2)
     (hx : 0 ≤ x) (hy : y ≤ 0) :
     uA1 p x y ≤ 0 := by
@@ -442,7 +442,7 @@ lemma uA1_le_zero_of_y_nonpos_leTwo
     simp [uA1, hxpos]
     exact mul_nonpos_of_nonneg_of_nonpos hprod_nonneg hbracket
 
-lemma mem_some_QuarterPlane_leTwo (x y : ℝ) :
+private lemma mem_some_QuarterPlane_leTwo (x y : ℝ) :
     QuarterPlane x y ∨ QuarterPlane2 x y ∨ QuarterPlane3 x y ∨ QuarterPlane4 x y := by
   by_cases hxy : |x| ≤ |y|
   · by_cases hy : 0 ≤ y
@@ -465,12 +465,12 @@ lemma mem_some_QuarterPlane_leTwo (x y : ℝ) :
       have h1' : x ≤ y := by simpa using h1
       exact Or.inr (Or.inl ⟨le_of_lt hx', h2, h1'⟩)
 
-lemma uCandidate_eq_Q1_leTwo
+private lemma uCandidate_eq_Q1_leTwo
     (p : ℝ) {x y : ℝ} (hQ : QuarterPlane x y) :
     uCandidate p x y = auxFunction1 p x y := by
   simp [uCandidate, hQ]
 
-lemma uCandidate_eq_Q2_leTwo
+private lemma uCandidate_eq_Q2_leTwo
     (p : ℝ) {x y : ℝ} (hQ : QuarterPlane2 x y) :
     uCandidate p x y = auxFunction1 p (-x) (-y) := by
   by_cases hQ1 : QuarterPlane x y
@@ -486,7 +486,7 @@ lemma uCandidate_eq_Q2_leTwo
     simp [uCandidate, auxFunction1, QuarterPlane, closureA1, uA1]
   · simp [uCandidate, hQ1, hQ]
 
-lemma uCandidate_eq_Q3_leTwo
+private lemma uCandidate_eq_Q3_leTwo
     (p : ℝ) {x y : ℝ} (hQ : QuarterPlane3 x y) :
     uCandidate p x y = auxFunction1 p y x := by
   by_cases hQ1 : QuarterPlane x y
@@ -507,7 +507,7 @@ lemma uCandidate_eq_Q3_leTwo
         _ = auxFunction1 p y x := by rw [hx]; simp
     · simp [uCandidate, hQ1, hQ2, hQ]
 
-lemma uCandidate_eq_Q4_leTwo
+private lemma uCandidate_eq_Q4_leTwo
     (p : ℝ) {x y : ℝ} (hQ : QuarterPlane4 x y) :
     uCandidate p x y = auxFunction1 p (-y) (-x) := by
   by_cases hQ1 : QuarterPlane x y
@@ -540,7 +540,7 @@ lemma uCandidate_eq_Q4_leTwo
           _ = auxFunction1 p (-y) (-x) := by rw [hx, hy]; simp
       · simp [uCandidate, hQ1, hQ2, hQ3, hQ]
 
-lemma uCandidate_swap_leTwo
+private lemma uCandidate_swap_leTwo
     (p : ℝ) (x y : ℝ) :
     uCandidate p x y = uCandidate p y x := by
   rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
@@ -555,7 +555,7 @@ lemma uCandidate_swap_leTwo
   · have hswap : QuarterPlane2 y x := ⟨hQ4.1, hQ4.2.2, hQ4.2.1⟩
     rw [uCandidate_eq_Q4_leTwo p hQ4, uCandidate_eq_Q2_leTwo p hswap]
 
-lemma axis_tangent_inequality_of_coordinate_tangents_leTwo
+private lemma axis_tangent_inequality_of_coordinate_tangents_leTwo
     (u ux uy : ℝ → ℝ → ℝ)
     (hx_tangent : ∀ x y h, u (x + h) y ≤ u x y + ux x y * h)
     (hy_tangent : ∀ x y k, u x (y + k) ≤ u x y + uy x y * k)
@@ -567,17 +567,17 @@ lemma axis_tangent_inequality_of_coordinate_tangents_leTwo
   · subst k
     simpa [add_assoc] using hx_tangent x y h
 
-lemma DxuCandidate_eq_Q1_leTwo
+private lemma DxuCandidate_eq_Q1_leTwo
     (p : ℝ) {x y : ℝ} (hQ : QuarterPlane x y) :
     DxuCandidate p x y = DxauxFunction1 p x y := by
   simp [DxuCandidate, hQ]
 
-lemma DyuCandidate_eq_Q1_leTwo
+private lemma DyuCandidate_eq_Q1_leTwo
     (p : ℝ) {x y : ℝ} (hQ : QuarterPlane x y) :
     DyuCandidate p x y = DyauxFunction1 p x y := by
   simp [DyuCandidate, hQ]
 
-lemma DxuCandidate_eq_Q2_leTwo
+private lemma DxuCandidate_eq_Q2_leTwo
     (p : ℝ) {x y : ℝ} (hQ : QuarterPlane2 x y) :
     DxuCandidate p x y = -DxauxFunction1 p (-x) (-y) := by
   by_cases hQ1 : QuarterPlane x y
@@ -593,7 +593,7 @@ lemma DxuCandidate_eq_Q2_leTwo
     simp [DxuCandidate, DxauxFunction1, QuarterPlane, closureA1, DxuA1]
   · simp [DxuCandidate, hQ1, hQ]
 
-lemma DyuCandidate_eq_Q2_leTwo
+private lemma DyuCandidate_eq_Q2_leTwo
     (p : ℝ) {x y : ℝ} (hQ : QuarterPlane2 x y) :
     DyuCandidate p x y = -DyauxFunction1 p (-x) (-y) := by
   by_cases hQ1 : QuarterPlane x y
@@ -609,7 +609,7 @@ lemma DyuCandidate_eq_Q2_leTwo
     simp [DyuCandidate, DyauxFunction1, QuarterPlane, closureA1, DyuA1]
   · simp [DyuCandidate, hQ1, hQ]
 
-lemma auxFunction1_le_zero_of_QuarterPlane_mul_nonpos_leTwo
+private lemma auxFunction1_le_zero_of_QuarterPlane_mul_nonpos_leTwo
     (p x y : ℝ) (hp1 : 1 < p) (hp2 : p < 2)
     (hQ : QuarterPlane x y) (hxy : x * y ≤ 0) :
     auxFunction1 p x y ≤ 0 := by
@@ -627,7 +627,7 @@ lemma auxFunction1_le_zero_of_QuarterPlane_mul_nonpos_leTwo
   simp [hA1]
   exact uA1_le_zero_of_y_nonpos_leTwo p x y hp1 hp2 hQ.1 hy_nonpos
 
-lemma uCandidate_le_zero_of_mul_nonpos_leTwo
+private lemma uCandidate_le_zero_of_mul_nonpos_leTwo
     (p x y : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (hxy : x * y ≤ 0) :
     uCandidate p x y ≤ 0 := by
   rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
@@ -650,12 +650,12 @@ lemma uCandidate_le_zero_of_mul_nonpos_leTwo
     rw [uCandidate_eq_Q4_leTwo p hQ4]
     exact auxFunction1_le_zero_of_QuarterPlane_mul_nonpos_leTwo p (-y) (-x) hp1 hp2 hQ hxy'
 
-lemma uCandidate_le_zero_of_xy_zero_leTwo
+private lemma uCandidate_le_zero_of_xy_zero_leTwo
     (p x y : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (hxy : x * y = 0) :
     uCandidate p x y ≤ 0 :=
   uCandidate_le_zero_of_mul_nonpos_leTwo p x y hp1 hp2 (le_of_eq hxy)
 
-lemma a_eq_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma a_eq_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     a p = (2 - p) / p := by
   have hpStar : pStar p = q p :=
     pStar_eq_q_of_one_lt_of_lt_two p hp1 hp2
@@ -667,7 +667,7 @@ lemma a_eq_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
   field_simp [hp_pos.ne', hpden_pos.ne']
   ring
 
-lemma alpha_eq_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma alpha_eq_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     alpha p = p * p ^ (1 - p) := by
   have hpStar : pStar p = q p :=
     pStar_eq_q_of_one_lt_of_lt_two p hp1 hp2
@@ -681,7 +681,7 @@ lemma alpha_eq_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ring
   simp [hbase]
 
-lemma a_lt_one_of_one_lt_of_lt_two
+private lemma a_lt_one_of_one_lt_of_lt_two
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     a p < 1 := by
   rw [a_eq_leTwo p hp1 hp2]
@@ -689,7 +689,7 @@ lemma a_lt_one_of_one_lt_of_lt_two
   rw [div_lt_iff₀ hp_pos]
   linarith
 
-lemma DxauxFunction1_eq_DyauxFunction1_on_diag_leTwo
+private lemma DxauxFunction1_eq_DyauxFunction1_on_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x : ℝ)
     (hx : 0 ≤ x) :
     DxauxFunction1 p x x = DyauxFunction1 p x x := by
@@ -709,7 +709,7 @@ lemma DxauxFunction1_eq_DyauxFunction1_on_diag_leTwo
   · subst x
     simp [DxauxFunction1, DyauxFunction1, closureA1, DxuA1, DyuA1]
 
-lemma DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag_leTwo
+private lemma DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x : ℝ)
     (hx : 0 ≤ x) :
     DxauxFunction1 p x (-x) = -DyauxFunction1 p x (-x) := by
@@ -735,7 +735,7 @@ lemma DxauxFunction1_eq_neg_DyauxFunction1_on_antidiag_leTwo
   · subst x
     simp [DxauxFunction1, DyauxFunction1, closureA1, DxuA1, DyuA1]
 
-lemma DxuCandidate_eq_Q3_leTwo
+private lemma DxuCandidate_eq_Q3_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (hQ : QuarterPlane3 x y) :
     DxuCandidate p x y = DyauxFunction1 p y x := by
   by_cases hQ1 : QuarterPlane x y
@@ -764,7 +764,7 @@ lemma DxuCandidate_eq_Q3_leTwo
         _ = DyauxFunction1 p y (-y) := h'
     · simp [DxuCandidate, hQ1, hQ2, hQ]
 
-lemma DxuCandidate_eq_Q4_leTwo
+private lemma DxuCandidate_eq_Q4_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (hQ : QuarterPlane4 x y) :
     DxuCandidate p x y = -DyauxFunction1 p (-y) (-x) := by
   by_cases hQ1 : QuarterPlane x y
@@ -804,7 +804,7 @@ lemma DxuCandidate_eq_Q4_leTwo
         simpa [DyauxFunction1, closureA1, DyuA1] using hbranch
       · simp [DxuCandidate, hQ1, hQ2, hQ3, hQ]
 
-lemma DyuCandidate_eq_Q3_leTwo
+private lemma DyuCandidate_eq_Q3_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (hQ : QuarterPlane3 x y) :
     DyuCandidate p x y = DxauxFunction1 p y x := by
   by_cases hQ1 : QuarterPlane x y
@@ -831,7 +831,7 @@ lemma DyuCandidate_eq_Q3_leTwo
         _ = DxauxFunction1 p y (-y) := hrel.symm
     · simp [DyuCandidate, hQ1, hQ2, hQ]
 
-lemma DyuCandidate_eq_Q4_leTwo
+private lemma DyuCandidate_eq_Q4_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (hQ : QuarterPlane4 x y) :
     DyuCandidate p x y = -DxauxFunction1 p (-y) (-x) := by
   by_cases hQ1 : QuarterPlane x y
@@ -874,7 +874,7 @@ lemma DyuCandidate_eq_Q4_leTwo
         simpa [DxauxFunction1, closureA1, DxuA1] using hbranch
       · simp [DyuCandidate, hQ1, hQ2, hQ3, hQ]
 
-lemma DyuCandidate_eq_DxuCandidate_swap_leTwo
+private lemma DyuCandidate_eq_DxuCandidate_swap_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
     DyuCandidate p x y = DxuCandidate p y x := by
   rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
@@ -893,7 +893,7 @@ lemma DyuCandidate_eq_DxuCandidate_swap_leTwo
     rw [DyuCandidate_eq_Q4_leTwo p hp1 hp2 hQ4,
       DxuCandidate_eq_Q2_leTwo p hswap]
 
-lemma uA1_eq_zero_on_boundary_leTwo
+private lemma uA1_eq_zero_on_boundary_leTwo
     (p x : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (hx : 0 < x) :
     uA1 p x ((a p) * x) = 0 := by
   have hpStar : pStar p = q p :=
@@ -910,7 +910,7 @@ lemma uA1_eq_zero_on_boundary_leTwo
     ring
   rw [hfactor, mul_zero]
 
-lemma vLeTwo_eq_zero_on_boundary_leTwo
+private lemma vLeTwo_eq_zero_on_boundary_leTwo
     (p x : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (hx : 0 < x) :
     vLeTwo p x ((a p) * x) = 0 := by
   have hp_pos : 0 < p := by linarith
@@ -953,7 +953,7 @@ lemma vLeTwo_eq_zero_on_boundary_leTwo
   rw [hcoef]
   ring
 
-lemma uA1_eq_vLeTwo_on_inter_leTwo
+private lemma uA1_eq_vLeTwo_on_inter_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ)
     (h1 : closureA1 p x y) (h2 : closureA2 p x y) :
     uA1 p x y = vLeTwo p x y := by
@@ -970,7 +970,7 @@ lemma uA1_eq_vLeTwo_on_inter_leTwo
     subst y
     simp [uA1, vLeTwo, Real.zero_rpow (by linarith : p ≠ 0)]
 
-lemma auxFunction1_eq_vLeTwo_leTwo
+private lemma auxFunction1_eq_vLeTwo_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ)
     (h2 : closureA2 p x y) :
     auxFunction1 p x y = vLeTwo p x y := by
@@ -980,7 +980,7 @@ lemma auxFunction1_eq_vLeTwo_leTwo
     exact uA1_eq_vLeTwo_on_inter_leTwo p hp1 hp2 x y h1 h2
   · simp only [h1, ite_false, h2, ite_true]
 
-lemma DxuA1_eq_DxvLeTwo_on_A1A2_boundary_leTwo
+private lemma DxuA1_eq_DxvLeTwo_on_A1A2_boundary_leTwo
     (p x : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (hx : 0 < x) :
     DxuA1 p x ((a p) * x) = DxvLeTwo p x ((a p) * x) := by
   have hp_pos : 0 < p := by linarith
@@ -1080,7 +1080,7 @@ lemma DxuA1_eq_DxvLeTwo_on_A1A2_boundary_leTwo
   rw [hp_pow_cancel']
   ring
 
-lemma DyuA1_eq_DyvLeTwo_on_A1A2_boundary_leTwo
+private lemma DyuA1_eq_DyvLeTwo_on_A1A2_boundary_leTwo
     (p x : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (hx : 0 < x) :
     DyuA1 p x ((a p) * x) = DyvLeTwo p x ((a p) * x) := by
   have hp_pos : 0 < p := by linarith
@@ -1159,7 +1159,7 @@ lemma DyuA1_eq_DyvLeTwo_on_A1A2_boundary_leTwo
   rw [hp_pow_cancel']
   ring
 
-lemma DxuA1_eq_DxvLeTwo_on_inter_leTwo
+private lemma DxuA1_eq_DxvLeTwo_on_inter_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ)
     (h1 : closureA1 p x y) (h2 : closureA2 p x y) :
     DxuA1 p x y = DxvLeTwo p x y := by
@@ -1175,7 +1175,7 @@ lemma DxuA1_eq_DxvLeTwo_on_inter_leTwo
     subst y
     simp [DxuA1, DxvLeTwo]
 
-lemma DyuA1_eq_DyvLeTwo_on_inter_leTwo
+private lemma DyuA1_eq_DyvLeTwo_on_inter_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ)
     (h1 : closureA1 p x y) (h2 : closureA2 p x y) :
     DyuA1 p x y = DyvLeTwo p x y := by
@@ -1191,7 +1191,7 @@ lemma DyuA1_eq_DyvLeTwo_on_inter_leTwo
     subst y
     simp [DyuA1, DyvLeTwo]
 
-lemma auxFunction1_Dx_eq_DxvLeTwo_leTwo
+private lemma auxFunction1_Dx_eq_DxvLeTwo_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) (h2 : closureA2 p x y) :
     DxauxFunction1 p x y = DxvLeTwo p x y := by
   simp only [DxauxFunction1]
@@ -1200,7 +1200,7 @@ lemma auxFunction1_Dx_eq_DxvLeTwo_leTwo
     exact DxuA1_eq_DxvLeTwo_on_inter_leTwo p hp1 hp2 x y h1 h2
   · simp only [h1, ite_false, h2, ite_true]
 
-lemma auxFunction1_Dy_eq_DyvLeTwo_leTwo
+private lemma auxFunction1_Dy_eq_DyvLeTwo_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) (h2 : closureA2 p x y) :
     DyauxFunction1 p x y = DyvLeTwo p x y := by
   simp only [DyauxFunction1]
@@ -1209,7 +1209,7 @@ lemma auxFunction1_Dy_eq_DyvLeTwo_leTwo
     exact DyuA1_eq_DyvLeTwo_on_inter_leTwo p hp1 hp2 x y h1 h2
   · simp only [h1, ite_false, h2, ite_true]
 
-lemma horizontal_boundary_closureA1_closureA2_leTwo
+private lemma horizontal_boundary_closureA1_closureA2_leTwo
     (p y : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (hy : 0 < y) :
     closureA1 p (y / a p) y ∧ closureA2 p (y / a p) y := by
   have ha_pos : 0 < a p := by
@@ -1231,19 +1231,19 @@ lemma horizontal_boundary_closureA1_closureA2_leTwo
   · exact ⟨hx_pos.le, le_of_lt hneg, hboundary.ge⟩
   · exact ⟨hx_pos.le, hboundary.le, hyx.le⟩
 
-lemma vLeTwo_neg_neg_leTwo (p x y : ℝ) :
+private lemma vLeTwo_neg_neg_leTwo (p x y : ℝ) :
     vLeTwo p (-x) (-y) = vLeTwo p x y := by
   have hsum : ((-x + -y) / 2 : ℝ) = -((x + y) / 2) := by ring
   have hdiff : ((-x + y) / 2 : ℝ) = -((x - y) / 2) := by ring
   simp [vLeTwo, hsum, hdiff]
 
-lemma vLeTwo_swap_leTwo (p x y : ℝ) :
+private lemma vLeTwo_swap_leTwo (p x y : ℝ) :
     vLeTwo p y x = vLeTwo p x y := by
   have hsum : ((y + x) / 2 : ℝ) = (x + y) / 2 := by ring
   have hdiff : ((y - x) / 2 : ℝ) = -((x - y) / 2) := by ring
   simp [vLeTwo, hsum, hdiff]
 
-lemma vLeTwo_le_auxFunction1_on_QuarterPlane_of_A1_leTwo
+private lemma vLeTwo_le_auxFunction1_on_QuarterPlane_of_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2)
     (hA1 : ∀ ⦃x y : ℝ⦄, closureA1 p x y → vLeTwo p x y ≤ uA1 p x y)
     {x y : ℝ} (hQ : QuarterPlane x y) :
@@ -1258,7 +1258,7 @@ lemma vLeTwo_le_auxFunction1_on_QuarterPlane_of_A1_leTwo
       exact ⟨hx, hy_ge_ax, hyx⟩
     exact le_of_eq (auxFunction1_eq_vLeTwo_leTwo p hp1 hp2 x y h2).symm
 
-lemma vLeTwo_le_uCandidate_of_A1_leTwo
+private lemma vLeTwo_le_uCandidate_of_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2)
     (hA1 : ∀ ⦃x y : ℝ⦄, closureA1 p x y → vLeTwo p x y ≤ uA1 p x y)
     (x y : ℝ) :
@@ -1283,7 +1283,7 @@ lemma vLeTwo_le_uCandidate_of_A1_leTwo
     exact vLeTwo_le_auxFunction1_on_QuarterPlane_of_A1_leTwo p hp1 hp2 hA1 hQ
 
 set_option maxHeartbeats 800000 in
-lemma scalar_deriv_sum_lower_leTwo
+private lemma scalar_deriv_sum_lower_leTwo
     (p t : ℝ) (hp1 : 1 < p) (hp2 : p < 2)
     (ht_lower : (p - 1) / p ≤ t) (ht_upper : t ≤ 1) :
     alpha p * pStar p / p ≤
@@ -1484,7 +1484,7 @@ lemma scalar_deriv_sum_lower_leTwo
     _ ≤ (1 - t) ^ (p - 1) + coeffLeTwo p * t ^ (p - 1) := by
           exact add_le_add hfirst hmul_second
 
-lemma burkholder_scalar_gap_antitone_leTwo
+private lemma burkholder_scalar_gap_antitone_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     AntitoneOn
       (fun t : ℝ =>
@@ -1573,7 +1573,7 @@ lemma burkholder_scalar_gap_antitone_leTwo
     antitoneOn_of_hasDerivWithinAt_nonpos
       (convex_Icc ((p - 1) / p) 1) hcont hderiv hderiv_nonpos
 
-lemma burkholder_scalar_A1_leTwo
+private lemma burkholder_scalar_A1_leTwo
     (p t : ℝ) (hp1 : 1 < p) (hp2 : p < 2)
     (ht_lower : (p - 1) / p ≤ t) (ht_upper : t ≤ 1) :
     (1 - t) ^ p - coeffLeTwo p * t ^ p ≤
@@ -1629,7 +1629,7 @@ lemma burkholder_scalar_A1_leTwo
   dsimp [H] at hH_nonpos
   linarith
 
-lemma vLeTwo_le_uA1_on_closureA1_leTwo
+private lemma vLeTwo_le_uA1_on_closureA1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hA1 : closureA1 p x y) :
     vLeTwo p x y ≤ uA1 p x y := by
@@ -1726,13 +1726,13 @@ lemma vLeTwo_le_uA1_on_closureA1_leTwo
           mul_le_mul_of_nonneg_left hscalar hxpow_nonneg
       _ = uA1 p x y := hu_norm.symm
 
-lemma vLeTwo_le_uCandidate_leTwo
+private lemma vLeTwo_le_uCandidate_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
     vLeTwo p x y ≤ uCandidate p x y :=
   vLeTwo_le_uCandidate_of_A1_leTwo p hp1 hp2
     (fun {x y} hA1 => vLeTwo_le_uA1_on_closureA1_leTwo p hp1 hp2 hA1) x y
 
-lemma uCandidate_neg_neg_of_y_neg_leTwo
+private lemma uCandidate_neg_neg_of_y_neg_leTwo
     (p : ℝ) {x y : ℝ} (hy_neg : y < 0) :
     uCandidate p x y = uCandidate p (-x) (-y) := by
   by_cases hx_left : x ≤ y
@@ -1774,7 +1774,7 @@ lemma uCandidate_neg_neg_of_y_neg_leTwo
         linarith [hq.1]
       simp [uCandidate, hQ, hnotQ_ref, hQ2_ref]
 
-lemma DxuCandidate_neg_neg_of_y_neg_leTwo
+private lemma DxuCandidate_neg_neg_of_y_neg_leTwo
     (p : ℝ) {x y : ℝ} (hy_neg : y < 0) :
     DxuCandidate p x y = -DxuCandidate p (-x) (-y) := by
   by_cases hx_left : x ≤ y
@@ -1816,7 +1816,7 @@ lemma DxuCandidate_neg_neg_of_y_neg_leTwo
         linarith [hq.1]
       simp [DxuCandidate, hQ, hnotQ_ref, hQ2_ref]
 
-lemma uCandidate_tangent_x_increment_of_y_neg_leTwo_of_pos
+private lemma uCandidate_tangent_x_increment_of_y_neg_leTwo_of_pos
     (p : ℝ)
     (hpos_tangent :
       ∀ {x y h : ℝ}, 0 < y →
@@ -1838,7 +1838,7 @@ lemma uCandidate_tangent_x_increment_of_y_neg_leTwo_of_pos
       rw [← hstart, hdx]
       ring
 
-lemma concaveOn_Icc_tangent_inequality_of_hasDerivAt_leTwo
+private lemma concaveOn_Icc_tangent_inequality_of_hasDerivAt_leTwo
     {f : ℝ → ℝ} {a b x z f' : ℝ}
     (hf : ConcaveOn ℝ (Set.Icc a b) f)
     (hx : x ∈ Set.Icc a b) (hz : z ∈ Set.Icc a b)
@@ -1864,7 +1864,7 @@ lemma concaveOn_Icc_tangent_inequality_of_hasDerivAt_leTwo
     field_simp [hden_pos.ne'] at hmul
     linarith
 
-lemma tangent_inequality_on_Icc_of_hasDerivWithinAt2_nonpos_leTwo
+private lemma tangent_inequality_on_Icc_of_hasDerivWithinAt2_nonpos_leTwo
     {f f₁ f₂ : ℝ → ℝ} {a b x z f' : ℝ}
     (hcont : ContinuousOn f (Set.Icc a b))
     (hf₁ : ∀ t ∈ interior (Set.Icc a b),
@@ -1880,7 +1880,7 @@ lemma tangent_inequality_on_Icc_of_hasDerivWithinAt2_nonpos_leTwo
       (convex_Icc a b) hcont hf₁ hf₂ hf₂_nonpos)
     hx hz hderiv
 
-lemma hasDerivAt_uA1_x_of_pos_leTwo
+private lemma hasDerivAt_uA1_x_of_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) (hx : 0 < x) :
     HasDerivAt (fun t => uA1 p t y) (DxuA1 p x y) x := by
   have hpStar : pStar p = q p := pStar_eq_q_of_one_lt_of_lt_two p hp1 hp2
@@ -1941,7 +1941,7 @@ lemma hasDerivAt_uA1_x_of_pos_leTwo
   refine (hg.congr_of_eventuallyEq hEq).congr_deriv ?_
   simp [DxuA1, hx]
 
-lemma deriv_DxuA1Fun_x_nonpos_leTwo
+private lemma deriv_DxuA1Fun_x_nonpos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ)
     (hx : 0 < x) (hxy : 0 ≤ x + y) :
     deriv (fun t => DxuA1Fun p (t, y)) x ≤ 0 := by
@@ -2006,7 +2006,7 @@ lemma deriv_DxuA1Fun_x_nonpos_leTwo
       (alpha p * (p / 2) * x ^ (p - 3)) * ((p - 2) * (x + y)) by ring]
   exact hmain
 
-lemma differentiableAt_DxuA1Fun_x_of_pos_leTwo
+private lemma differentiableAt_DxuA1Fun_x_of_pos_leTwo
     (p x y : ℝ) (hx : 0 < x) :
     DifferentiableAt ℝ (fun t => DxuA1Fun p (t, y)) x := by
   have hEq :
@@ -2030,7 +2030,7 @@ lemma differentiableAt_DxuA1Fun_x_of_pos_leTwo
     exact ((hpow.const_mul (alpha p * (p / 2))).mul hlin)
   exact hformula.congr_of_eventuallyEq hEq
 
-lemma uA1_tangent_x_on_Icc_leTwo
+private lemma uA1_tangent_x_on_Icc_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {lo hi x z y : ℝ}
     (hIcc_pos : ∀ t ∈ Set.Icc lo hi, 0 < t)
     (hIcc_sum : ∀ t ∈ interior (Set.Icc lo hi), 0 ≤ t + y)
@@ -2076,7 +2076,7 @@ lemma uA1_tangent_x_on_Icc_leTwo
   · exact hz
   · exact hasDerivAt_uA1_x_of_pos_leTwo p hp1 hp2 x y (hIcc_pos x hx)
 
-lemma vLeTwo_A2_second_bracket_nonpos_leTwo
+private lemma vLeTwo_A2_second_bracket_nonpos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2)
     (x y : ℝ) (hA2 : A2 p x y) :
     ((x + y) / 2) ^ (p - 2) -
@@ -2136,7 +2136,7 @@ lemma vLeTwo_A2_second_bracket_nonpos_leTwo
     nlinarith [mul_le_mul_of_nonneg_left hcoeff_pow hB_nonneg]
   linarith
 
-lemma deriv_DxvLeTwo_x_nonpos_leTwo
+private lemma deriv_DxvLeTwo_x_nonpos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ)
     (hA2 : A2 p x y) :
     deriv (fun t => DxvLeTwo p t y) x ≤ 0 := by
@@ -2221,7 +2221,7 @@ lemma deriv_DxvLeTwo_x_nonpos_leTwo
   have hbr := vLeTwo_A2_second_bracket_nonpos_leTwo p hp1 hp2 x y ⟨hx, hay, hyx⟩
   exact mul_nonpos_of_nonneg_of_nonpos hcoef hbr
 
-lemma hasDerivAt_vLeTwo_x_of_pos_leTwo (p : ℝ) (x y : ℝ)
+private lemma hasDerivAt_vLeTwo_x_of_pos_leTwo (p : ℝ) (x y : ℝ)
     (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
     HasDerivAt (fun t => vLeTwo p t y) (DxvLeTwo p x y) x := by
   let g : ℝ → ℝ := fun t =>
@@ -2277,7 +2277,7 @@ lemma hasDerivAt_vLeTwo_x_of_pos_leTwo (p : ℝ) (x y : ℝ)
   refine (hd.congr_of_eventuallyEq hEq).congr_deriv ?_
   simp [DxvLeTwo, hx, abs_of_pos hsum, abs_of_pos hdiff]
 
-lemma continuous_vLeTwo_leTwo (p : ℝ) (hp1 : 1 < p) :
+private lemma continuous_vLeTwo_leTwo (p : ℝ) (hp1 : 1 < p) :
     Continuous (fun z : ℝ × ℝ => vLeTwo p z.1 z.2) := by
   have hp_nonneg : (0 : ℝ) ≤ p := by linarith
   simp only [vLeTwo]
@@ -2288,7 +2288,7 @@ lemma continuous_vLeTwo_leTwo (p : ℝ) (hp1 : 1 < p) :
     apply Continuous.rpow_const _ (fun _ => Or.inr hp_nonneg)
     exact ((continuous_fst.sub continuous_snd).div_const 2).abs
 
-lemma differentiableAt_DxvLeTwo_x_of_pos_leTwo (p x y : ℝ)
+private lemma differentiableAt_DxvLeTwo_x_of_pos_leTwo (p x y : ℝ)
     (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
     DifferentiableAt ℝ (fun t => DxvLeTwo p t y) x := by
   have hx : 0 < x := by linarith
@@ -2327,7 +2327,7 @@ lemma differentiableAt_DxvLeTwo_x_of_pos_leTwo (p x y : ℝ)
       ((hdiff_diff.const_mul (coeffLeTwo p)).mul_const (p / 2))
   exact hformula.congr_of_eventuallyEq hEq
 
-lemma vLeTwo_tangent_x_on_Icc_of_A2_leTwo
+private lemma vLeTwo_tangent_x_on_Icc_of_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {lo hi x z y : ℝ}
     (hA2_int : ∀ t ∈ interior (Set.Icc lo hi), A2 p t y)
     (hx : x ∈ Set.Icc lo hi) (hz : z ∈ Set.Icc lo hi)
@@ -2369,7 +2369,7 @@ lemma vLeTwo_tangent_x_on_Icc_of_A2_leTwo
   · exact hz
   · exact hderiv
 
-lemma DxauxFunction1_A2_boundary_le_leTwo
+private lemma DxauxFunction1_A2_boundary_le_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hyx : y < x) (hax : a p * x < y) :
     DxauxFunction1 p (y / a p) y ≤ DxauxFunction1 p x y := by
@@ -2438,7 +2438,7 @@ lemma DxauxFunction1_A2_boundary_le_leTwo
   simpa [c, auxFunction1_Dx_eq_DxvLeTwo_leTwo p hp1 hp2 x y hcl_x,
     auxFunction1_Dx_eq_DxvLeTwo_leTwo p hp1 hp2 (y / a p) y hboundary.2] using hle
 
-lemma DxauxFunction1_A1_le_boundary_leTwo
+private lemma DxauxFunction1_A1_le_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hyx : y < x) (hay : y < a p * x) :
     DxauxFunction1 p x y ≤ DxauxFunction1 p (y / a p) y := by
@@ -2493,7 +2493,7 @@ lemma DxauxFunction1_A1_le_boundary_leTwo
     hanti hc_mem hx_mem hcx.le
   simpa [c, DxauxFunction1, hcl_x, hboundary.1, DxuA1Fun] using hle
 
-lemma hasDerivAt_vLeTwo_y_of_pos_leTwo (p : ℝ) (x y : ℝ)
+private lemma hasDerivAt_vLeTwo_y_of_pos_leTwo (p : ℝ) (x y : ℝ)
     (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
     HasDerivAt (fun s => vLeTwo p x s) (DyvLeTwo p x y) y := by
   let g : ℝ → ℝ := fun s =>
@@ -2549,7 +2549,7 @@ lemma hasDerivAt_vLeTwo_y_of_pos_leTwo (p : ℝ) (x y : ℝ)
   refine (hd.congr_of_eventuallyEq hEq).congr_deriv ?_
   simp [DyvLeTwo, hx, abs_of_pos hsum, abs_of_pos hdiff]
 
-lemma differentiableAt_DyvLeTwo_y_of_pos_leTwo (p x y : ℝ)
+private lemma differentiableAt_DyvLeTwo_y_of_pos_leTwo (p x y : ℝ)
     (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
     DifferentiableAt ℝ (fun s => DyvLeTwo p x s) y := by
   have hx : 0 < x := by linarith
@@ -2587,7 +2587,7 @@ lemma differentiableAt_DyvLeTwo_y_of_pos_leTwo (p x y : ℝ)
       ((hdiff_diff.const_mul (coeffLeTwo p)).mul_const (p / 2))
   exact hformula.congr_of_eventuallyEq hEq
 
-lemma deriv_DyvLeTwo_y_nonpos_leTwo
+private lemma deriv_DyvLeTwo_y_nonpos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ)
     (hA2 : A2 p x y) :
     deriv (fun s => DyvLeTwo p x s) y ≤ 0 := by
@@ -2671,7 +2671,7 @@ lemma deriv_DyvLeTwo_y_nonpos_leTwo
   have hbr := vLeTwo_A2_second_bracket_nonpos_leTwo p hp1 hp2 x y ⟨hx, hay, hyx⟩
   exact mul_nonpos_of_nonneg_of_nonpos hcoef hbr
 
-lemma vLeTwo_tangent_y_on_Icc_of_A2_leTwo
+private lemma vLeTwo_tangent_y_on_Icc_of_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {lo hi y z x : ℝ}
     (hA2_int : ∀ t ∈ interior (Set.Icc lo hi), A2 p x t)
     (hy : y ∈ Set.Icc lo hi) (hz : z ∈ Set.Icc lo hi)
@@ -2711,13 +2711,13 @@ lemma vLeTwo_tangent_y_on_Icc_of_A2_leTwo
   · exact hz
   · exact hderiv
 
-lemma uA1_affine_y_tangent_leTwo
+private lemma uA1_affine_y_tangent_leTwo
     (p x y z : ℝ) (hx : 0 < x) :
     uA1 p x z = uA1 p x y + DyuA1 p x y * (z - y) := by
   simp [uA1, DyuA1, hx]
   ring
 
-lemma uCandidate_tangent_x_on_Q3_A1_segment_leTwo
+private lemma uCandidate_tangent_x_on_Q3_A1_segment_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y)
     (hz_lower : -y < z) (hz_upper : z < a p * y) :
@@ -2752,7 +2752,7 @@ lemma uCandidate_tangent_x_on_Q3_A1_segment_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (z - x) := by
         rw [hux, hdx]
 
-lemma uCandidate_tangent_x_on_Q3_A2_segment_leTwo
+private lemma uCandidate_tangent_x_on_Q3_A2_segment_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y)
     (hz_lower : a p * y < z) (hz_upper : z < y) :
@@ -2806,7 +2806,7 @@ lemma uCandidate_tangent_x_on_Q3_A2_segment_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (z - x) := by
       rw [hux, hdx]
 
-lemma tangent_glue_two_forward_leTwo_local
+private lemma tangent_glue_two_forward_leTwo_local
     (f d : ℝ → ℝ) {x m z : ℝ}
     (_hxm : x ≤ m) (hmz : m ≤ z)
     (hxm_tangent : f m ≤ f x + d x * (m - x))
@@ -2822,7 +2822,7 @@ lemma tangent_glue_two_forward_leTwo_local
     _ ≤ (f x + d x * (m - x)) + d x * (z - m) := by linarith
     _ = f x + d x * (z - x) := by ring
 
-lemma tangent_glue_two_backward_leTwo_local
+private lemma tangent_glue_two_backward_leTwo_local
     (f d : ℝ → ℝ) {x m z : ℝ}
     (hzm : z ≤ m) (_hmx : m ≤ x)
     (hxm_tangent : f m ≤ f x + d x * (m - x))
@@ -2838,7 +2838,7 @@ lemma tangent_glue_two_backward_leTwo_local
     _ ≤ (f x + d x * (m - x)) + d x * (z - m) := by linarith
     _ = f x + d x * (z - x) := by ring
 
-lemma uCandidate_tangent_x_Q3_A1_to_A2_boundary_leTwo
+private lemma uCandidate_tangent_x_Q3_A1_to_A2_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y) :
     uCandidate p (a p * y) y ≤
@@ -2876,7 +2876,7 @@ lemma uCandidate_tangent_x_Q3_A1_to_A2_boundary_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (a p * y - x) := by
       rw [hux, hdx]
 
-lemma uCandidate_tangent_x_Q3_A2_boundary_to_A2_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_boundary_to_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : a p * y < z) (hz_upper : z < y) :
     uCandidate p z y ≤
@@ -2932,7 +2932,7 @@ lemma uCandidate_tangent_x_Q3_A2_boundary_to_A2_leTwo
         DxuCandidate p (a p * y) y * (z - a p * y) := by
       rw [huc, hdc]
 
-lemma uCandidate_tangent_x_cross_Q3_A1_to_A2_leTwo
+private lemma uCandidate_tangent_x_cross_Q3_A1_to_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y)
     (hz_lower : a p * y < z) (hz_upper : z < y) :
@@ -2973,7 +2973,7 @@ lemma uCandidate_tangent_x_cross_Q3_A1_to_A2_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (le_of_lt hx_upper) (le_of_lt hz_lower) hxc hcz hd
 
-lemma uCandidate_tangent_x_on_Q1_A2_segment_leTwo
+private lemma uCandidate_tangent_x_on_Q1_A2_segment_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p)
     (hz_lower : y < z) (hz_upper : z < y / a p) :
@@ -3041,7 +3041,7 @@ lemma uCandidate_tangent_x_on_Q1_A2_segment_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (z - x) := by
       rw [hux, hdx]
 
-lemma DyvLeTwo_diag_le_DyvLeTwo_Q3_A2_leTwo
+private lemma DyvLeTwo_diag_le_DyvLeTwo_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y) :
     DyvLeTwo p y y ≤ DyvLeTwo p y x := by
@@ -3096,7 +3096,7 @@ lemma DyvLeTwo_diag_le_DyvLeTwo_Q3_A2_leTwo
         ⟨hy_pos, lt_trans hx_lower htI.1, htI.2⟩
   exact hanti ⟨le_rfl, hx_upper.le⟩ ⟨hx_upper.le, le_rfl⟩ hx_upper.le
 
-lemma DyvLeTwo_diag_le_DyvLeTwo_Q3_A2_closed_leTwo
+private lemma DyvLeTwo_diag_le_DyvLeTwo_Q3_A2_closed_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y ≤ x) (hx_upper : x < y) :
     DyvLeTwo p y y ≤ DyvLeTwo p y x := by
@@ -3149,7 +3149,7 @@ lemma DyvLeTwo_diag_le_DyvLeTwo_Q3_A2_closed_leTwo
         ⟨hy_pos, lt_of_le_of_lt hx_lower htI.1, htI.2⟩
   exact hanti ⟨le_rfl, hx_upper.le⟩ ⟨hx_upper.le, le_rfl⟩ hx_upper.le
 
-lemma uCandidate_tangent_x_Q3_A2_to_diag_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y) :
     uCandidate p y y ≤
@@ -3198,7 +3198,7 @@ lemma uCandidate_tangent_x_Q3_A2_to_diag_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (y - x) := by
       rw [hux, hdx]
 
-lemma uCandidate_tangent_x_Q3_A2_boundary_to_diag_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_boundary_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p y y ≤
@@ -3255,7 +3255,7 @@ lemma uCandidate_tangent_x_Q3_A2_boundary_to_diag_leTwo
         DxuCandidate p (a p * y) y * (y - a p * y) := by
       rw [huc, hdc]
 
-lemma hasDerivAt_vLeTwo_x_on_diag_pos_leTwo (p : ℝ) (hp1 : 1 < p)
+private lemma hasDerivAt_vLeTwo_x_on_diag_pos_leTwo (p : ℝ) (hp1 : 1 < p)
     (y : ℝ) (hy : 0 < y) :
     HasDerivAt (fun t => vLeTwo p t y) (DxvLeTwo p y y) y := by
   let g : ℝ → ℝ := fun t =>
@@ -3306,7 +3306,7 @@ lemma hasDerivAt_vLeTwo_x_on_diag_pos_leTwo (p : ℝ) (hp1 : 1 < p)
   rw [hpow]
   ring
 
-lemma uCandidate_tangent_x_diag_to_Q1_A2_leTwo
+private lemma uCandidate_tangent_x_diag_to_Q1_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : y < z) (hz_upper : z < y / a p) :
     uCandidate p z y ≤
@@ -3368,7 +3368,7 @@ lemma uCandidate_tangent_x_diag_to_Q1_A2_leTwo
     _ = uCandidate p y y + DxuCandidate p y y * (z - y) := by
       rw [huy, hdy]
 
-lemma uCandidate_tangent_x_cross_Q3_A2_to_Q1_A2_leTwo
+private lemma uCandidate_tangent_x_cross_Q3_A2_to_Q1_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y)
     (hz_lower : y < z) (hz_upper : z < y / a p) :
@@ -3413,7 +3413,7 @@ lemma uCandidate_tangent_x_cross_Q3_A2_to_Q1_A2_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (le_of_lt hx_upper) (le_of_lt hz_lower) h_xy h_yz hd
 
-lemma uCandidate_tangent_x_on_Q1_A1_segment_leTwo
+private lemma uCandidate_tangent_x_on_Q1_A1_segment_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x)
     (hz_lower : y / a p < z) :
@@ -3482,7 +3482,7 @@ lemma uCandidate_tangent_x_on_Q1_A1_segment_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (z - x) := by
       rw [hux, hdx]
 
-lemma tangent_glue_two_forward_leTwo
+private lemma tangent_glue_two_forward_leTwo
     (f d : ℝ → ℝ) {x m z : ℝ}
     (_hxm : x ≤ m) (hmz : m ≤ z)
     (hxm_tangent : f m ≤ f x + d x * (m - x))
@@ -3498,7 +3498,7 @@ lemma tangent_glue_two_forward_leTwo
     _ ≤ (f x + d x * (m - x)) + d x * (z - m) := by linarith
     _ = f x + d x * (z - x) := by ring
 
-lemma uCandidate_tangent_x_Q1_A2_to_boundary_leTwo
+private lemma uCandidate_tangent_x_Q1_A2_to_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p) :
     uCandidate p (y / a p) y ≤
@@ -3567,7 +3567,7 @@ lemma uCandidate_tangent_x_Q1_A2_to_boundary_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (y / a p - x) := by
       rw [hux, hdx]
 
-lemma uCandidate_tangent_x_Q1_boundary_to_A1_leTwo
+private lemma uCandidate_tangent_x_Q1_boundary_to_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : y / a p < z) :
     uCandidate p z y ≤
@@ -3625,7 +3625,7 @@ lemma uCandidate_tangent_x_Q1_boundary_to_A1_leTwo
         DxuCandidate p (y / a p) y * (z - y / a p) := by
       rw [hub, hdb]
 
-lemma uCandidate_tangent_x_cross_Q1_A2_to_A1_leTwo
+private lemma uCandidate_tangent_x_cross_Q1_A2_to_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p)
     (hz_lower : y / a p < z) :
@@ -3667,7 +3667,7 @@ lemma uCandidate_tangent_x_cross_Q1_A2_to_A1_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (le_of_lt hx_upper) (le_of_lt hz_lower) h_xb h_bz hd
 
-lemma uCandidate_tangent_x_forward_on_Q1_leTwo
+private lemma uCandidate_tangent_x_forward_on_Q1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hyx : y < x) (hxz : x ≤ z) :
     uCandidate p z y ≤
@@ -3702,7 +3702,7 @@ lemma uCandidate_tangent_x_forward_on_Q1_leTwo
           hy_pos (by simpa [b] using hxz_lt)
       · simp
 
-lemma uCandidate_tangent_x_on_Q2_A1_segment_leTwo
+private lemma uCandidate_tangent_x_on_Q2_A1_segment_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) (hz_left : z < -y) :
     uCandidate p z y ≤
@@ -3751,7 +3751,7 @@ lemma uCandidate_tangent_x_on_Q2_A1_segment_leTwo
       rw [hux, hdx]
       ring
 
-lemma uCandidate_tangent_x_Q2_to_antidiag_leTwo
+private lemma uCandidate_tangent_x_Q2_to_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) :
     uCandidate p (-y) y ≤
@@ -3797,7 +3797,7 @@ lemma uCandidate_tangent_x_Q2_to_antidiag_leTwo
       rw [hux, hdx]
       ring
 
-lemma uCandidate_tangent_x_antidiag_to_Q3_A1_leTwo
+private lemma uCandidate_tangent_x_antidiag_to_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : -y < z) (hz_upper : z < a p * y) :
     uCandidate p z y ≤
@@ -3837,7 +3837,7 @@ lemma uCandidate_tangent_x_antidiag_to_Q3_A1_leTwo
     _ = uCandidate p (-y) y + DxuCandidate p (-y) y * (z - (-y)) := by
       rw [hua, hda]
 
-lemma uCandidate_tangent_x_antidiag_to_Q3_A1_boundary_leTwo
+private lemma uCandidate_tangent_x_antidiag_to_Q3_A1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (a p * y) y ≤
@@ -3881,7 +3881,7 @@ lemma uCandidate_tangent_x_antidiag_to_Q3_A1_boundary_leTwo
     _ = uCandidate p (-y) y + DxuCandidate p (-y) y * (a p * y - (-y)) := by
       rw [hua, hda]
 
-lemma DxuCandidate_antidiag_le_Q2_leTwo
+private lemma DxuCandidate_antidiag_le_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) :
     DxuCandidate p (-y) y ≤ DxuCandidate p x y := by
@@ -3941,7 +3941,7 @@ lemma DxuCandidate_antidiag_le_Q2_leTwo
   rw [hda, hdx]
   linarith
 
-lemma uCandidate_tangent_x_cross_Q2_to_Q3_A1_leTwo
+private lemma uCandidate_tangent_x_cross_Q2_to_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y)
     (hz_lower : -y < z) (hz_upper : z < a p * y) :
@@ -3960,7 +3960,7 @@ lemma uCandidate_tangent_x_cross_Q2_to_Q3_A1_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (le_of_lt hx_left) (le_of_lt hz_lower) hxa haz hd
 
-lemma uCandidate_tangent_x_Q2_to_Q3_A1_boundary_leTwo
+private lemma uCandidate_tangent_x_Q2_to_Q3_A1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) :
     uCandidate p (a p * y) y ≤
@@ -3980,7 +3980,7 @@ lemma uCandidate_tangent_x_Q2_to_Q3_A1_boundary_leTwo
       have hnonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
       linarith) hxa hac hd
 
-lemma DxuCandidate_Q3_A1_boundary_le_Q2_leTwo
+private lemma DxuCandidate_Q3_A1_boundary_le_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) :
     DxuCandidate p (a p * y) y ≤ DxuCandidate p x y := by
@@ -4020,7 +4020,7 @@ lemma DxuCandidate_Q3_A1_boundary_le_Q2_leTwo
     (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (y := y)
     hy_pos hx_left
 
-lemma DxuCandidate_Q3_A1_boundary_eq_antidiag_leTwo
+private lemma DxuCandidate_Q3_A1_boundary_eq_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DxuCandidate p (a p * y) y = DxuCandidate p (-y) y := by
@@ -4055,14 +4055,14 @@ lemma DxuCandidate_Q3_A1_boundary_eq_antidiag_leTwo
   rw [hdc, hda]
   simp [DyuA1, hy_pos]
 
-lemma DxuCandidate_Q3_A1_boundary_le_antidiag_leTwo
+private lemma DxuCandidate_Q3_A1_boundary_le_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DxuCandidate p (a p * y) y ≤ DxuCandidate p (-y) y := by
   rw [DxuCandidate_Q3_A1_boundary_eq_antidiag_leTwo
     (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos]
 
-lemma uCandidate_tangent_x_antidiag_to_Q3_A2_leTwo
+private lemma uCandidate_tangent_x_antidiag_to_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : a p * y < z) (hz_upper : z < y) :
     uCandidate p z y ≤
@@ -4081,7 +4081,7 @@ lemma uCandidate_tangent_x_antidiag_to_Q3_A2_leTwo
       have hnonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
       linarith) (le_of_lt hz_lower) hac hcz hd
 
-lemma uCandidate_tangent_x_antidiag_to_diag_leTwo
+private lemma uCandidate_tangent_x_antidiag_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p y y ≤
@@ -4103,7 +4103,7 @@ lemma uCandidate_tangent_x_antidiag_to_diag_leTwo
         simpa using mul_lt_mul_of_pos_right ha_lt hy_pos
       exact le_of_lt hlt) hac hcy hd
 
-lemma uCandidate_tangent_x_cross_Q2_to_Q3_A2_leTwo
+private lemma uCandidate_tangent_x_cross_Q2_to_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y)
     (hz_lower : a p * y < z) (hz_upper : z < y) :
@@ -4125,7 +4125,7 @@ lemma uCandidate_tangent_x_cross_Q2_to_Q3_A2_leTwo
       have hnonneg : 0 ≤ a p * y := mul_nonneg ha_nonneg hy_pos.le
       linarith) (le_of_lt hz_lower) hxc hcz hd
 
-lemma uCandidate_tangent_x_Q2_to_diag_leTwo
+private lemma uCandidate_tangent_x_Q2_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) :
     uCandidate p y y ≤
@@ -4149,7 +4149,7 @@ lemma uCandidate_tangent_x_Q2_to_diag_leTwo
         simpa using mul_lt_mul_of_pos_right ha_lt hy_pos
       exact le_of_lt hlt) hxc hcy hd
 
-lemma DxuCandidate_diag_le_Q2_leTwo
+private lemma DxuCandidate_diag_le_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) :
     DxuCandidate p y y ≤ DxuCandidate p x y := by
@@ -4204,7 +4204,7 @@ lemma DxuCandidate_diag_le_Q2_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (y := y)
       hy_pos hx_left)
 
-lemma uCandidate_tangent_x_cross_Q2_to_Q1_A2_leTwo
+private lemma uCandidate_tangent_x_cross_Q2_to_Q1_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y)
     (hz_lower : y < z) (hz_upper : z < y / a p) :
@@ -4223,7 +4223,7 @@ lemma uCandidate_tangent_x_cross_Q2_to_Q1_A2_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (by linarith) (le_of_lt hz_lower) hxy hyz hd
 
-lemma DxuCandidate_Q1_boundary_le_diag_leTwo
+private lemma DxuCandidate_Q1_boundary_le_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DxuCandidate p (y / a p) y ≤ DxuCandidate p y y := by
@@ -4327,7 +4327,7 @@ lemma DxuCandidate_Q1_boundary_le_diag_leTwo
     _ ≤ DxvLeTwo p y y := hle
     _ = DxuCandidate p y y := hdd.symm
 
-lemma DxuCandidate_Q1_boundary_le_Q2_leTwo
+private lemma DxuCandidate_Q1_boundary_le_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) :
     DxuCandidate p (y / a p) y ≤ DxuCandidate p x y :=
@@ -4338,7 +4338,7 @@ lemma DxuCandidate_Q1_boundary_le_Q2_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (y := y)
       hy_pos hx_left)
 
-lemma uCandidate_tangent_x_diag_to_Q1_boundary_leTwo
+private lemma uCandidate_tangent_x_diag_to_Q1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (y / a p) y ≤
@@ -4399,7 +4399,7 @@ lemma uCandidate_tangent_x_diag_to_Q1_boundary_leTwo
     _ = uCandidate p y y + DxuCandidate p y y * (y / a p - y) := by
       rw [huy, hdy]
 
-lemma uCandidate_tangent_x_Q2_to_Q1_boundary_leTwo
+private lemma uCandidate_tangent_x_Q2_to_Q1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y) :
     uCandidate p (y / a p) y ≤
@@ -4426,7 +4426,7 @@ lemma uCandidate_tangent_x_Q2_to_Q1_boundary_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (by linarith) (le_of_lt hy_lt_b) hxy hyb hd
 
-lemma uCandidate_tangent_x_cross_Q2_to_Q1_A1_leTwo
+private lemma uCandidate_tangent_x_cross_Q2_to_Q1_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_left : x < -y)
     (hz_lower : y / a p < z) :
@@ -4457,7 +4457,7 @@ lemma uCandidate_tangent_x_cross_Q2_to_Q1_A1_leTwo
       linarith)
     (le_of_lt hz_lower) hxb hbz hd
 
-lemma DxuCandidate_Q3_A1_boundary_le_Q3_A1_leTwo
+private lemma DxuCandidate_Q3_A1_boundary_le_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y) :
     DxuCandidate p (a p * y) y ≤ DxuCandidate p x y := by
@@ -4486,7 +4486,7 @@ lemma DxuCandidate_Q3_A1_boundary_le_Q3_A1_leTwo
   rw [hdx, hdc]
   simp [DyuA1, hy_pos]
 
-lemma DxuCandidate_diag_le_Q3_A1_boundary_leTwo
+private lemma DxuCandidate_diag_le_Q3_A1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DxuCandidate p y y ≤ DxuCandidate p (a p * y) y := by
@@ -4531,7 +4531,7 @@ lemma DxuCandidate_diag_le_Q3_A1_boundary_leTwo
     _ = DyuA1 p y (a p * y) := hglue.symm
     _ = DxuCandidate p (a p * y) y := hdc.symm
 
-lemma DxuCandidate_diag_le_antidiag_leTwo
+private lemma DxuCandidate_diag_le_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DxuCandidate p y y ≤ DxuCandidate p (-y) y := by
@@ -4543,7 +4543,7 @@ lemma DxuCandidate_diag_le_antidiag_leTwo
       DxuCandidate_Q3_A1_boundary_eq_antidiag_leTwo
         (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos
 
-lemma DxuCandidate_diag_le_Q3_A1_leTwo
+private lemma DxuCandidate_diag_le_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y) :
     DxuCandidate p y y ≤ DxuCandidate p x y :=
@@ -4554,7 +4554,7 @@ lemma DxuCandidate_diag_le_Q3_A1_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (y := y)
       hy_pos hx_lower hx_upper)
 
-lemma DxuCandidate_Q1_boundary_le_Q3_A1_leTwo
+private lemma DxuCandidate_Q1_boundary_le_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y) :
     DxuCandidate p (y / a p) y ≤ DxuCandidate p x y :=
@@ -4565,7 +4565,7 @@ lemma DxuCandidate_Q1_boundary_le_Q3_A1_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (y := y)
       hy_pos hx_lower hx_upper)
 
-lemma DxuCandidate_Q1_boundary_le_antidiag_leTwo
+private lemma DxuCandidate_Q1_boundary_le_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DxuCandidate p (y / a p) y ≤ DxuCandidate p (-y) y :=
@@ -4575,7 +4575,7 @@ lemma DxuCandidate_Q1_boundary_le_antidiag_leTwo
     (DxuCandidate_diag_le_antidiag_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
 
-lemma DxuCandidate_diag_le_Q3_A2_leTwo
+private lemma DxuCandidate_diag_le_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y) :
     DxuCandidate p y y ≤ DxuCandidate p x y := by
@@ -4608,7 +4608,7 @@ lemma DxuCandidate_diag_le_Q3_A2_leTwo
   rw [hdy, hdx, hdiag]
   exact hmono
 
-lemma DxuCandidate_Q1_boundary_le_Q3_A2_leTwo
+private lemma DxuCandidate_Q1_boundary_le_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y) :
     DxuCandidate p (y / a p) y ≤ DxuCandidate p x y :=
@@ -4619,7 +4619,7 @@ lemma DxuCandidate_Q1_boundary_le_Q3_A2_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (y := y)
       hy_pos hx_lower hx_upper)
 
-lemma uCandidate_tangent_x_antidiag_to_Q1_A2_leTwo
+private lemma uCandidate_tangent_x_antidiag_to_Q1_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : y < z) (hz_upper : z < y / a p) :
     uCandidate p z y ≤
@@ -4635,7 +4635,7 @@ lemma uCandidate_tangent_x_antidiag_to_Q1_A2_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (by linarith) (le_of_lt hz_lower) hxy hyz hd
 
-lemma uCandidate_tangent_x_antidiag_to_Q1_boundary_leTwo
+private lemma uCandidate_tangent_x_antidiag_to_Q1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (y / a p) y ≤
@@ -4661,7 +4661,7 @@ lemma uCandidate_tangent_x_antidiag_to_Q1_boundary_leTwo
         nlinarith
       exact le_of_lt hlt) hxy hyb hd
 
-lemma uCandidate_tangent_x_antidiag_to_Q1_A1_leTwo
+private lemma uCandidate_tangent_x_antidiag_to_Q1_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : y / a p < z) :
     uCandidate p z y ≤
@@ -4689,7 +4689,7 @@ lemma uCandidate_tangent_x_antidiag_to_Q1_A1_leTwo
       linarith)
     (le_of_lt hz_lower) hxb hbz hd
 
-lemma uCandidate_tangent_x_Q3_A1_to_diag_leTwo
+private lemma uCandidate_tangent_x_Q3_A1_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y) :
     uCandidate p y y ≤
@@ -4710,7 +4710,7 @@ lemma uCandidate_tangent_x_Q3_A1_to_diag_leTwo
         simpa using mul_lt_mul_of_pos_right ha_lt hy_pos
       exact le_of_lt hlt) hxc hcy hd
 
-lemma uCandidate_tangent_x_Q3_A1_to_Q1_A2_leTwo
+private lemma uCandidate_tangent_x_Q3_A1_to_Q1_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y)
     (hz_lower : y < z) (hz_upper : z < y / a p) :
@@ -4733,7 +4733,7 @@ lemma uCandidate_tangent_x_Q3_A1_to_Q1_A2_leTwo
         simpa using mul_lt_mul_of_pos_right ha_lt hy_pos
       linarith) (le_of_lt hz_lower) hxy hyz hd
 
-lemma uCandidate_tangent_x_Q3_A1_to_Q1_boundary_leTwo
+private lemma uCandidate_tangent_x_Q3_A1_to_Q1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y) :
     uCandidate p (y / a p) y ≤
@@ -4765,7 +4765,7 @@ lemma uCandidate_tangent_x_Q3_A1_to_Q1_boundary_leTwo
         nlinarith
       exact le_of_lt hlt) hxy hyb hd
 
-lemma uCandidate_tangent_x_Q3_A1_to_Q1_A1_leTwo
+private lemma uCandidate_tangent_x_Q3_A1_to_Q1_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y)
     (hz_lower : y / a p < z) :
@@ -4800,7 +4800,7 @@ lemma uCandidate_tangent_x_Q3_A1_to_Q1_A1_leTwo
       linarith)
     (le_of_lt hz_lower) hxb hbz hd
 
-lemma uCandidate_tangent_x_Q3_A2_to_Q1_boundary_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_to_Q1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y) :
     uCandidate p (y / a p) y ≤
@@ -4828,7 +4828,7 @@ lemma uCandidate_tangent_x_Q3_A2_to_Q1_boundary_leTwo
         nlinarith
       exact le_of_lt hlt) hxy hyb hd
 
-lemma uCandidate_tangent_x_Q3_A2_to_Q1_A1_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_to_Q1_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y)
     (hz_lower : y / a p < z) :
@@ -4859,7 +4859,7 @@ lemma uCandidate_tangent_x_Q3_A2_to_Q1_A1_leTwo
       linarith)
     (le_of_lt hz_lower) hxb hbz hd
 
-lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_A2_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : y < z) (hz_upper : z < y / a p) :
     uCandidate p z y ≤
@@ -4881,7 +4881,7 @@ lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_A2_leTwo
       exact le_of_lt hlt)
     (le_of_lt hz_lower) hcy hyz hd
 
-lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_boundary_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (y / a p) y ≤
@@ -4913,7 +4913,7 @@ lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_boundary_leTwo
         nlinarith
       exact le_of_lt hlt) hcy hyb hd
 
-lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_A1_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : y / a p < z) :
     uCandidate p z y ≤
@@ -4948,7 +4948,7 @@ lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q1_A1_leTwo
       linarith)
     (le_of_lt hz_lower) hcb hbz hd
 
-lemma uCandidate_tangent_x_forward_of_y_pos_leTwo
+private lemma uCandidate_tangent_x_forward_of_y_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hxz : x < z) :
     uCandidate p z y ≤
@@ -5154,7 +5154,7 @@ lemma uCandidate_tangent_x_forward_of_y_pos_leTwo
           exact uCandidate_tangent_x_antidiag_to_Q3_A1_boundary_leTwo
             (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos
 
-lemma uCandidate_tangent_x_forward_of_y_pos_le_leTwo
+private lemma uCandidate_tangent_x_forward_of_y_pos_le_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hxz : x ≤ z) :
     uCandidate p z y ≤
@@ -5165,7 +5165,7 @@ lemma uCandidate_tangent_x_forward_of_y_pos_le_leTwo
       hy_pos hxz_lt
   · simp
 
-lemma uCandidate_tangent_x_Q1_A1_to_boundary_leTwo
+private lemma uCandidate_tangent_x_Q1_A1_to_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x) :
     uCandidate p (y / a p) y ≤
@@ -5221,7 +5221,7 @@ lemma uCandidate_tangent_x_Q1_A1_to_boundary_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (y / a p - x) := by
       rw [hux, hdx]
 
-lemma uCandidate_tangent_x_Q1_A2_to_diag_leTwo
+private lemma uCandidate_tangent_x_Q1_A2_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p) :
     uCandidate p y y ≤
@@ -5280,7 +5280,7 @@ lemma uCandidate_tangent_x_Q1_A2_to_diag_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (y - x) := by
       rw [hux, hdx]
 
-lemma uCandidate_tangent_x_Q1_boundary_to_A2_leTwo
+private lemma uCandidate_tangent_x_Q1_boundary_to_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : y < z) (hz_upper : z < y / a p) :
     uCandidate p z y ≤
@@ -5354,7 +5354,7 @@ lemma uCandidate_tangent_x_Q1_boundary_to_A2_leTwo
         DxuCandidate p (y / a p) y * (z - y / a p) := by
       rw [hub, hdb]
 
-lemma uCandidate_tangent_x_Q1_A1_to_A2_leTwo
+private lemma uCandidate_tangent_x_Q1_A1_to_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x)
     (hz_lower : y < z) (hz_upper : z < y / a p) :
@@ -5417,7 +5417,7 @@ lemma uCandidate_tangent_x_Q1_A1_to_A2_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (le_of_lt hz_upper) (le_of_lt hx_lower) hxb hbz hd
 
-lemma uCandidate_tangent_x_Q1_boundary_to_diag_leTwo
+private lemma uCandidate_tangent_x_Q1_boundary_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p y y ≤
@@ -5481,7 +5481,7 @@ lemma uCandidate_tangent_x_Q1_boundary_to_diag_leTwo
         DxuCandidate p (y / a p) y * (y - y / a p) := by
       rw [hub, hdb]
 
-lemma uCandidate_tangent_x_Q1_A1_to_diag_leTwo
+private lemma uCandidate_tangent_x_Q1_A1_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x) :
     uCandidate p y y ≤
@@ -5547,7 +5547,7 @@ lemma uCandidate_tangent_x_Q1_A1_to_diag_leTwo
       exact le_of_lt hlt)
     (le_of_lt hx_lower) hxb hby hd
 
-lemma uCandidate_tangent_x_diag_to_Q3_A2_leTwo
+private lemma uCandidate_tangent_x_diag_to_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : a p * y < z) (hz_upper : z < y) :
     uCandidate p z y ≤
@@ -5580,9 +5580,9 @@ lemma uCandidate_tangent_x_diag_to_Q3_A2_leTwo
   have hderiv : HasDerivAt (fun t => vLeTwo p y t) (DyvLeTwo p y y) y := by
     have hsum : 0 < (y + y) / 2 := by linarith
     have hdiff_nonneg : 0 ≤ (y - y) / 2 := by norm_num
-    -- use the x-derivative diagonal lemma and symmetry of formulas at the diagonal
+    -- use the x-derivative diagonal private lemma and symmetry of formulas at the diagonal
     have hxder := hasDerivAt_vLeTwo_x_on_diag_pos_leTwo p hp1 y hy_pos
-    -- direct y-derivative at the cusp follows from the abs-rpow derivative as in the x lemma.
+    -- direct y-derivative at the cusp follows from the abs-rpow derivative as in the x private lemma.
     let g : ℝ → ℝ := fun t =>
       |((y + t) / 2)| ^ p - coeffLeTwo p * |((y - t) / 2)| ^ p
     have hEq : (fun t => vLeTwo p y t) = g := by
@@ -5648,7 +5648,7 @@ lemma uCandidate_tangent_x_diag_to_Q3_A2_leTwo
     _ = uCandidate p y y + DxuCandidate p y y * (z - y) := by
       rw [huy, hdy, hdiag]
 
-lemma uCandidate_tangent_x_Q3_A1_to_antidiag_leTwo
+private lemma uCandidate_tangent_x_Q3_A1_to_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y) :
     uCandidate p (-y) y ≤
@@ -5682,7 +5682,7 @@ lemma uCandidate_tangent_x_Q3_A1_to_antidiag_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * ((-y) - x) := by
       rw [hux, hdx]
 
-lemma uCandidate_tangent_x_antidiag_to_Q2_leTwo
+private lemma uCandidate_tangent_x_antidiag_to_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_left : z < -y) :
     uCandidate p z y ≤
@@ -5728,7 +5728,7 @@ lemma uCandidate_tangent_x_antidiag_to_Q2_leTwo
       rw [hua, hda]
       ring
 
-lemma DxuCandidate_Q1_A2_le_diag_leTwo
+private lemma DxuCandidate_Q1_A2_le_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p) :
     DxuCandidate p x y ≤ DxuCandidate p y y := by
@@ -5810,7 +5810,7 @@ lemma DxuCandidate_Q1_A2_le_diag_leTwo
     (le_of_lt hx_lower)
   rwa [hdx, hdy]
 
-lemma DxuCandidate_Q3_A2_le_boundary_leTwo
+private lemma DxuCandidate_Q3_A2_le_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y) :
     DxuCandidate p x y ≤ DxuCandidate p (a p * y) y := by
@@ -5907,7 +5907,7 @@ lemma DxuCandidate_Q3_A2_le_boundary_leTwo
   rw [hdx, hdc, hglue]
   exact hmono
 
-lemma DxuCandidate_Q3_A1_eq_antidiag_leTwo
+private lemma DxuCandidate_Q3_A1_eq_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y) :
     DxuCandidate p x y = DxuCandidate p (-y) y := by
@@ -5938,7 +5938,7 @@ lemma DxuCandidate_Q3_A1_eq_antidiag_leTwo
   rw [hdx, hda]
   simp [DyuA1, hy_pos]
 
-lemma uCandidate_tangent_x_diag_to_Q3_A2_boundary_leTwo
+private lemma uCandidate_tangent_x_diag_to_Q3_A2_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (a p * y) y ≤
@@ -6034,7 +6034,7 @@ lemma uCandidate_tangent_x_diag_to_Q3_A2_boundary_leTwo
     _ = uCandidate p y y + DxuCandidate p y y * (a p * y - y) := by
       rw [huy, hdy, hdiag]
 
-lemma uCandidate_tangent_x_Q1_A2_to_Q3_A2_leTwo
+private lemma uCandidate_tangent_x_Q1_A2_to_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p)
     (hz_lower : a p * y < z) (hz_upper : z < y) :
@@ -6053,7 +6053,7 @@ lemma uCandidate_tangent_x_Q1_A2_to_Q3_A2_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (le_of_lt hz_upper) (le_of_lt hx_lower) hxy hyz hd
 
-lemma uCandidate_tangent_x_Q1_A2_to_Q3_A2_boundary_leTwo
+private lemma uCandidate_tangent_x_Q1_A2_to_Q3_A2_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p) :
     uCandidate p (a p * y) y ≤
@@ -6075,7 +6075,7 @@ lemma uCandidate_tangent_x_Q1_A2_to_Q3_A2_boundary_leTwo
       exact le_of_lt hlt)
     (le_of_lt hx_lower) hxy hyc hd
 
-lemma uCandidate_tangent_x_Q3_A2_to_boundary_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_to_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y) :
     uCandidate p (a p * y) y ≤
@@ -6124,7 +6124,7 @@ lemma uCandidate_tangent_x_Q3_A2_to_boundary_leTwo
     _ = uCandidate p x y + DxuCandidate p x y * (a p * y - x) := by
       rw [hux, hdx]
 
-lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q3_A1_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : -y < z) (hz_upper : z < a p * y) :
     uCandidate p z y ≤
@@ -6160,7 +6160,7 @@ lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q3_A1_leTwo
         DxuCandidate p (a p * y) y * (z - a p * y) := by
       rw [huc, hdc]
 
-lemma uCandidate_tangent_x_Q3_A2_boundary_to_antidiag_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_boundary_to_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (-y) y ≤
@@ -6199,7 +6199,7 @@ lemma uCandidate_tangent_x_Q3_A2_boundary_to_antidiag_leTwo
         DxuCandidate p (a p * y) y * ((-y) - a p * y) := by
       rw [huc, hdc]
 
-lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q2_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_left : z < -y) :
     uCandidate p z y ≤
@@ -6220,7 +6220,7 @@ lemma uCandidate_tangent_x_Q3_A2_boundary_to_Q2_leTwo
       linarith)
     hca haz hd
 
-lemma uCandidate_tangent_x_Q3_A2_to_Q3_A1_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_to_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y)
     (hz_lower : -y < z) (hz_upper : z < a p * y) :
@@ -6239,7 +6239,7 @@ lemma uCandidate_tangent_x_Q3_A2_to_Q3_A1_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (le_of_lt hz_upper) (le_of_lt hx_lower) hxc hcz hd
 
-lemma uCandidate_tangent_x_Q3_A2_to_antidiag_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_to_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y) :
     uCandidate p (-y) y ≤
@@ -6260,7 +6260,7 @@ lemma uCandidate_tangent_x_Q3_A2_to_antidiag_leTwo
       linarith)
     (le_of_lt hx_lower) hxc hca hd
 
-lemma uCandidate_tangent_x_Q3_A2_to_Q2_leTwo
+private lemma uCandidate_tangent_x_Q3_A2_to_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y < x) (hx_upper : x < y)
     (hz_left : z < -y) :
@@ -6283,7 +6283,7 @@ lemma uCandidate_tangent_x_Q3_A2_to_Q2_leTwo
       linarith)
     (le_of_lt hx_lower) hxc hcz hd
 
-lemma uCandidate_tangent_x_Q3_A1_to_Q2_leTwo
+private lemma uCandidate_tangent_x_Q3_A1_to_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y < x) (hx_upper : x < a p * y)
     (hz_left : z < -y) :
@@ -6303,7 +6303,7 @@ lemma uCandidate_tangent_x_Q3_A1_to_Q2_leTwo
     (fun t => uCandidate p t y) (fun t => DxuCandidate p t y)
     (le_of_lt hz_left) (le_of_lt hx_lower) hxa haz hd
 
-lemma uCandidate_tangent_x_diag_to_Q3_A1_leTwo
+private lemma uCandidate_tangent_x_diag_to_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : -y < z) (hz_upper : z < a p * y) :
     uCandidate p z y ≤
@@ -6324,7 +6324,7 @@ lemma uCandidate_tangent_x_diag_to_Q3_A1_leTwo
       exact le_of_lt hlt)
     hyc hcz hd
 
-lemma uCandidate_tangent_x_diag_to_antidiag_leTwo
+private lemma uCandidate_tangent_x_diag_to_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (-y) y ≤
@@ -6348,7 +6348,7 @@ lemma uCandidate_tangent_x_diag_to_antidiag_leTwo
       exact le_of_lt hlt)
     hyc hca hd
 
-lemma uCandidate_tangent_x_diag_to_Q2_leTwo
+private lemma uCandidate_tangent_x_diag_to_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_left : z < -y) :
     uCandidate p z y ≤
@@ -6373,7 +6373,7 @@ lemma uCandidate_tangent_x_diag_to_Q2_leTwo
       exact le_of_lt hlt)
     hyc hcz hd
 
-lemma DxuCandidate_Q1_A2_le_Q3_A1_boundary_leTwo
+private lemma DxuCandidate_Q1_A2_le_Q3_A1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p) :
     DxuCandidate p x y ≤ DxuCandidate p (a p * y) y :=
@@ -6384,7 +6384,7 @@ lemma DxuCandidate_Q1_A2_le_Q3_A1_boundary_leTwo
     (DxuCandidate_diag_le_Q3_A1_boundary_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
 
-lemma DxuCandidate_Q1_A1_le_diag_leTwo
+private lemma DxuCandidate_Q1_A1_le_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x) :
     DxuCandidate p x y ≤ DxuCandidate p y y := by
@@ -6418,7 +6418,7 @@ lemma DxuCandidate_Q1_A1_le_diag_leTwo
     (DxuCandidate_Q1_boundary_le_diag_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
 
-lemma DxuCandidate_Q1_A1_le_Q3_A1_boundary_leTwo
+private lemma DxuCandidate_Q1_A1_le_Q3_A1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x) :
     DxuCandidate p x y ≤ DxuCandidate p (a p * y) y :=
@@ -6429,7 +6429,7 @@ lemma DxuCandidate_Q1_A1_le_Q3_A1_boundary_leTwo
     (DxuCandidate_diag_le_Q3_A1_boundary_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos)
 
-lemma uCandidate_tangent_x_Q1_A2_to_Q3_A1_leTwo
+private lemma uCandidate_tangent_x_Q1_A2_to_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p)
     (hz_lower : -y < z) (hz_upper : z < a p * y) :
@@ -6453,7 +6453,7 @@ lemma uCandidate_tangent_x_Q1_A2_to_Q3_A1_leTwo
       exact le_trans (le_of_lt hlt) (le_of_lt hx_lower))
     hxc hcz hd
 
-lemma uCandidate_tangent_x_Q1_A2_to_antidiag_leTwo
+private lemma uCandidate_tangent_x_Q1_A2_to_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p) :
     uCandidate p (-y) y ≤
@@ -6479,7 +6479,7 @@ lemma uCandidate_tangent_x_Q1_A2_to_antidiag_leTwo
       exact le_trans (le_of_lt hlt) (le_of_lt hx_lower))
     hxc hca hd
 
-lemma uCandidate_tangent_x_Q1_A2_to_Q2_leTwo
+private lemma uCandidate_tangent_x_Q1_A2_to_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y < x) (hx_upper : x < y / a p)
     (hz_left : z < -y) :
@@ -6507,7 +6507,7 @@ lemma uCandidate_tangent_x_Q1_A2_to_Q2_leTwo
       exact le_trans (le_of_lt hlt) (le_of_lt hx_lower))
     hxc hcz hd
 
-lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A2_leTwo
+private lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : a p * y < z) (hz_upper : z < y) :
     uCandidate p z y ≤
@@ -6536,7 +6536,7 @@ lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A2_leTwo
       exact le_of_lt hlt)
     hbd hdz hd
 
-lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A2_boundary_leTwo
+private lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A2_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (a p * y) y ≤
@@ -6569,7 +6569,7 @@ lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A2_boundary_leTwo
       exact le_of_lt hlt)
     hbd hdc hd
 
-lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A1_leTwo
+private lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_lower : -y < z) (hz_upper : z < a p * y) :
     uCandidate p z y ≤
@@ -6604,7 +6604,7 @@ lemma uCandidate_tangent_x_Q1_boundary_to_Q3_A1_leTwo
       exact le_trans (le_of_lt hlt1) (le_of_lt hlt2))
     hbc hcz hd
 
-lemma uCandidate_tangent_x_Q1_boundary_to_Q2_leTwo
+private lemma uCandidate_tangent_x_Q1_boundary_to_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hz_left : z < -y) :
     uCandidate p z y ≤
@@ -6643,7 +6643,7 @@ lemma uCandidate_tangent_x_Q1_boundary_to_Q2_leTwo
       exact le_trans (le_of_lt hlt1) (le_of_lt hlt2))
     hbc hcz hd
 
-lemma uCandidate_tangent_x_Q1_boundary_to_antidiag_leTwo
+private lemma uCandidate_tangent_x_Q1_boundary_to_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (-y) y ≤
@@ -6681,7 +6681,7 @@ lemma uCandidate_tangent_x_Q1_boundary_to_antidiag_leTwo
       exact le_trans (le_of_lt hlt1) (le_of_lt hlt2))
     hbc hca hd
 
-lemma uCandidate_tangent_x_Q1_A1_to_Q3_A2_leTwo
+private lemma uCandidate_tangent_x_Q1_A1_to_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x)
     (hz_lower : a p * y < z) (hz_upper : z < y) :
@@ -6712,7 +6712,7 @@ lemma uCandidate_tangent_x_Q1_A1_to_Q3_A2_leTwo
       exact le_trans (le_of_lt hlt) (le_of_lt hx_lower))
     hxd hdz hd
 
-lemma uCandidate_tangent_x_Q1_A1_to_Q3_A2_boundary_leTwo
+private lemma uCandidate_tangent_x_Q1_A1_to_Q3_A2_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x) :
     uCandidate p (a p * y) y ≤
@@ -6746,7 +6746,7 @@ lemma uCandidate_tangent_x_Q1_A1_to_Q3_A2_boundary_leTwo
       exact le_trans (le_of_lt hlt) (le_of_lt hx_lower))
     hxd hdc hd
 
-lemma uCandidate_tangent_x_Q1_A1_to_Q3_A1_leTwo
+private lemma uCandidate_tangent_x_Q1_A1_to_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x)
     (hz_lower : -y < z) (hz_upper : z < a p * y) :
@@ -6779,7 +6779,7 @@ lemma uCandidate_tangent_x_Q1_A1_to_Q3_A1_leTwo
       exact le_trans (le_of_lt hlt1) (le_trans (le_of_lt hlt2) (le_of_lt hx_lower)))
     hxc hcz hd
 
-lemma uCandidate_tangent_x_Q1_A1_to_Q2_leTwo
+private lemma uCandidate_tangent_x_Q1_A1_to_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x) (hz_left : z < -y) :
     uCandidate p z y ≤
@@ -6815,7 +6815,7 @@ lemma uCandidate_tangent_x_Q1_A1_to_Q2_leTwo
       exact le_trans (le_of_lt hlt1) (le_trans (le_of_lt hlt2) (le_of_lt hx_lower)))
     hxc hcz hd
 
-lemma uCandidate_tangent_x_Q1_A1_to_antidiag_leTwo
+private lemma uCandidate_tangent_x_Q1_A1_to_antidiag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p < x) :
     uCandidate p (-y) y ≤
@@ -6850,7 +6850,7 @@ lemma uCandidate_tangent_x_Q1_A1_to_antidiag_leTwo
       exact le_trans (le_of_lt hlt1) (le_trans (le_of_lt hlt2) (le_of_lt hx_lower)))
     hxc hca hd
 
-lemma uCandidate_tangent_x_backward_of_y_pos_leTwo
+private lemma uCandidate_tangent_x_backward_of_y_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hzx : z < x) :
     uCandidate p z y ≤
@@ -7069,7 +7069,7 @@ lemma uCandidate_tangent_x_backward_of_y_pos_leTwo
           exact uCandidate_tangent_x_Q1_boundary_to_diag_leTwo
             (p := p) (hp1 := hp1) (hp2 := hp2) (y := y) hy_pos
 
-lemma uCandidate_tangent_x_backward_of_y_pos_le_leTwo
+private lemma uCandidate_tangent_x_backward_of_y_pos_le_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hzx : z ≤ x) :
     uCandidate p z y ≤
@@ -7080,7 +7080,7 @@ lemma uCandidate_tangent_x_backward_of_y_pos_le_leTwo
       hy_pos hzx_lt
   · simp
 
-lemma uCandidate_tangent_x_increment_of_y_pos_leTwo
+private lemma uCandidate_tangent_x_increment_of_y_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h : ℝ}
     (hy_pos : 0 < y) :
     uCandidate p (x + h) y ≤
@@ -7097,7 +7097,7 @@ lemma uCandidate_tangent_x_increment_of_y_pos_leTwo
       hy_pos hxz
     simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using hmain
 
-lemma uCandidate_tangent_x_increment_of_y_neg_leTwo
+private lemma uCandidate_tangent_x_increment_of_y_neg_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h : ℝ}
     (hy_neg : y < 0) :
     uCandidate p (x + h) y ≤
@@ -7108,7 +7108,7 @@ lemma uCandidate_tangent_x_increment_of_y_neg_leTwo
         (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (y := y) (h := h) hy_pos)
     hy_neg
 
-lemma rpow_tangent_nonneg_leTwo
+private lemma rpow_tangent_nonneg_leTwo
     (p : ℝ) (hp1 : 1 < p) {x z : ℝ}
     (hx : 0 < x) (hz : 0 ≤ z) :
     x ^ p + (p * x ^ (p - 1)) * (z - x) ≤ z ^ p := by
@@ -7143,7 +7143,7 @@ lemma rpow_tangent_nonneg_leTwo
     field_simp [hden_pos.ne'] at hmul
     linarith
 
-lemma abs_rpow_tangent_leTwo
+private lemma abs_rpow_tangent_leTwo
     (p : ℝ) (hp1 : 1 < p) (x z : ℝ) :
     |x| ^ p +
         (if 0 < x then p * x ^ (p - 1)
@@ -7225,14 +7225,14 @@ lemma abs_rpow_tangent_leTwo
       rw [Real.zero_rpow (by linarith : p ≠ 0)]
       exact Real.rpow_nonneg (abs_nonneg z) p
 
-lemma axisCoeff_nonpos_leTwo
+private lemma axisCoeff_nonpos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     alpha p * (1 - pStar p / 2) ≤ 0 := by
   have ha : 0 ≤ alpha p := alpha_nonneg_of_one_lt_of_lt_two p hp1 hp2
   have hstar : 1 ≤ pStar p / 2 := one_le_half_pStar_of_one_lt_of_lt_two p hp1 hp2
   exact mul_nonpos_of_nonneg_of_nonpos ha (by linarith)
 
-lemma uCandidate_axis_eq_abs_rpow_leTwo
+private lemma uCandidate_axis_eq_abs_rpow_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x : ℝ) :
     uCandidate p x 0 = alpha p * (1 - pStar p / 2) * |x| ^ p := by
   let C : ℝ := alpha p * (1 - pStar p / 2)
@@ -7281,7 +7281,7 @@ lemma uCandidate_axis_eq_abs_rpow_leTwo
         rw [← hshift]
         ring
 
-lemma DxuCandidate_axis_eq_abs_deriv_leTwo
+private lemma DxuCandidate_axis_eq_abs_deriv_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x : ℝ) :
     DxuCandidate p x 0 =
       alpha p * (1 - pStar p / 2) *
@@ -7348,7 +7348,7 @@ lemma DxuCandidate_axis_eq_abs_deriv_leTwo
            else 0) := by
         simp [hxpos]
 
-lemma uCandidate_tangent_x_increment_of_y_zero_leTwo
+private lemma uCandidate_tangent_x_increment_of_y_zero_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x h : ℝ} :
     uCandidate p (x + h) 0 ≤
       uCandidate p x 0 + DxuCandidate p x 0 * h := by
@@ -7374,7 +7374,7 @@ lemma uCandidate_tangent_x_increment_of_y_zero_leTwo
       rw [uCandidate_axis_eq_abs_rpow_leTwo p hp1 hp2 x,
         DxuCandidate_axis_eq_abs_deriv_leTwo p hp1 hp2 x]
 
-lemma uCandidate_axis_tangent_horizontal_leTwo
+private lemma uCandidate_axis_tangent_horizontal_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h k : ℝ}
     (hk0 : k = 0) :
     uCandidate p (x + h) (y + k) ≤
@@ -7392,7 +7392,7 @@ lemma uCandidate_axis_tangent_horizontal_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (y := y) (h := h) hy_pos
     simpa using hx
 
-lemma uCandidate_axis_tangent_vertical_leTwo
+private lemma uCandidate_axis_tangent_vertical_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h k : ℝ}
     (hh0 : h = 0) :
     uCandidate p (x + h) (y + k) ≤
@@ -7416,7 +7416,7 @@ lemma uCandidate_axis_tangent_vertical_leTwo
       rw [hswap_base, hderiv]
       ring
 
-lemma uCandidate_axis_tangent_leTwo
+private lemma uCandidate_axis_tangent_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h k : ℝ}
     (hk : h * k = 0) :
     uCandidate p (x + h) (y + k) ≤
@@ -7425,7 +7425,7 @@ lemma uCandidate_axis_tangent_leTwo
   · exact uCandidate_axis_tangent_vertical_leTwo p hp1 hp2 hh0
   · exact uCandidate_axis_tangent_horizontal_leTwo p hp1 hp2 hk0
 
-lemma uCandidate_le_zero_of_mul_neg_LeTwo
+private lemma uCandidate_le_zero_of_mul_neg_LeTwo
     (p x y : ℝ) (hp : 1 < p ∧ p < 2) (hxy : x * y = 0) (hnzero: (x, y) ≠ (0, 0)):
     uCandidate p x y < 0 := by
   have huA1_axis : ∀ t : ℝ, 0 ≤ t → t ≠ 0 → uA1 p t 0 < 0 := by
@@ -7527,7 +7527,7 @@ lemma uCandidate_le_zero_of_mul_neg_LeTwo
       ext <;> linarith
     simpa using haux_axis (-y) ht htne
 
-lemma hasDerivAt_DyuA1_x_of_pos_leTwo
+private lemma hasDerivAt_DyuA1_x_of_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) (hx : 0 < x) :
     HasDerivAt (fun t => DyuA1 p t y)
       (alpha p * ((p - 1) * x ^ (p - 2)) * (pStar p / 2)) x := by
@@ -7553,7 +7553,7 @@ lemma hasDerivAt_DyuA1_x_of_pos_leTwo
       ((hpow.const_mul (alpha p)).mul_const (pStar p / 2))
   exact hderiv.congr_of_eventuallyEq hEq
 
-lemma deriv_DyuA1_x_nonneg_leTwo
+private lemma deriv_DyuA1_x_nonneg_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) (hx : 0 < x) :
     0 ≤ deriv (fun t => DyuA1 p t y) x := by
   have hderiv := hasDerivAt_DyuA1_x_of_pos_leTwo p hp1 hp2 x y hx
@@ -7570,7 +7570,7 @@ lemma deriv_DyuA1_x_nonneg_leTwo
     exact div_nonneg (div_nonneg (by linarith) hpden_pos.le) (by norm_num)
   positivity
 
-lemma hasDerivAt_DyvLeTwo_x_of_pos_leTwo
+private lemma hasDerivAt_DyvLeTwo_x_of_pos_leTwo
     (p x y : ℝ)
     (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
     HasDerivAt (fun t => DyvLeTwo p t y)
@@ -7643,7 +7643,7 @@ lemma hasDerivAt_DyvLeTwo_x_of_pos_leTwo
     ring
   exact hderiv.congr_of_eventuallyEq hEq
 
-lemma deriv_DyvLeTwo_x_nonneg_leTwo
+private lemma deriv_DyvLeTwo_x_nonneg_leTwo
     (p : ℝ) (hp1 : 1 < p) (x y : ℝ)
     (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
     0 ≤ deriv (fun t => DyvLeTwo p t y) x := by
@@ -7659,7 +7659,7 @@ lemma deriv_DyvLeTwo_x_nonneg_leTwo
     exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
   exact mul_nonneg hpcoef (add_nonneg hsum_pow (mul_nonneg hcoeff hdiff_pow))
 
-lemma DyvLeTwo_mono_x_on_Icc_of_pos_leTwo
+private lemma DyvLeTwo_mono_x_on_Icc_of_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) {lo hi y : ℝ}
     (hlo_sum : 0 < (lo + y) / 2) (hlo_diff : 0 < (lo - y) / 2) :
     MonotoneOn (fun t : ℝ => DyvLeTwo p t y) (Set.Icc lo hi) := by
@@ -7715,7 +7715,7 @@ lemma DyvLeTwo_mono_x_on_Icc_of_pos_leTwo
       exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
     exact mul_nonneg hpcoef (add_nonneg hsum_pow (mul_nonneg hcoeff hdiff_pow))
 
-lemma DyuA1_mono_x_on_Icc_pos_leTwo
+private lemma DyuA1_mono_x_on_Icc_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {lo hi y : ℝ}
     (hlo : 0 < lo) :
     MonotoneOn (fun t : ℝ => DyuA1 p t y) (Set.Icc lo hi) := by
@@ -7757,7 +7757,7 @@ lemma DyuA1_mono_x_on_Icc_pos_leTwo
       exact div_nonneg (div_nonneg (by linarith) hpden_pos.le) (by norm_num)
     positivity
 
-lemma DyuA1_mono_x_of_pos_leTwo
+private lemma DyuA1_mono_x_of_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hx : 0 < x) (hxz : x ≤ z) :
     DyuA1 p x y ≤ DyuA1 p z y := by
@@ -7765,7 +7765,7 @@ lemma DyuA1_mono_x_of_pos_leTwo
     (p := p) (hp1 := hp1) (hp2 := hp2) (lo := x) (hi := z) (y := y) hx
   exact hmono ⟨le_rfl, hxz⟩ ⟨hxz, le_rfl⟩ hxz
 
-lemma DxuA1_mono_y_of_pos_leTwo
+private lemma DxuA1_mono_y_of_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y z : ℝ}
     (hx : 0 < x) (hyz : y ≤ z) :
     DxuA1 p x y ≤ DxuA1 p x z := by
@@ -7781,7 +7781,7 @@ lemma DxuA1_mono_y_of_pos_leTwo
     linarith
   exact mul_le_mul_of_nonneg_left hlin hcoef_nonneg
 
-lemma hasDerivAt_DxvLeTwo_y_of_pos_leTwo
+private lemma hasDerivAt_DxvLeTwo_y_of_pos_leTwo
     (p x y : ℝ)
     (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
     HasDerivAt (fun s => DxvLeTwo p x s)
@@ -7851,7 +7851,7 @@ lemma hasDerivAt_DxvLeTwo_y_of_pos_leTwo
     ring
   exact hderiv.congr_of_eventuallyEq hEq
 
-lemma deriv_DxvLeTwo_y_nonneg_leTwo
+private lemma deriv_DxvLeTwo_y_nonneg_leTwo
     (p : ℝ) (hp1 : 1 < p) (x y : ℝ)
     (hsum : 0 < (x + y) / 2) (hdiff : 0 < (x - y) / 2) :
     0 ≤ deriv (fun s => DxvLeTwo p x s) y := by
@@ -7867,7 +7867,7 @@ lemma deriv_DxvLeTwo_y_nonneg_leTwo
     exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
   exact mul_nonneg hpcoef (add_nonneg hsum_pow (mul_nonneg hcoeff hdiff_pow))
 
-lemma DxvLeTwo_mono_y_on_Icc_of_pos_leTwo
+private lemma DxvLeTwo_mono_y_on_Icc_of_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) {x lo hi : ℝ}
     (hx : 0 < x)
     (hlo_sum : 0 < (x + lo) / 2) (hhi_diff : 0 < (x - hi) / 2) :
@@ -7922,7 +7922,7 @@ lemma DxvLeTwo_mono_y_on_Icc_of_pos_leTwo
       exact Real.rpow_nonneg (inv_nonneg.mpr (by linarith)) _
     exact mul_nonneg hpcoef (add_nonneg hsum_pow (mul_nonneg hcoeff hdiff_pow))
 
-lemma DyuCandidate_mono_x_on_Q1_A1_leTwo
+private lemma DyuCandidate_mono_x_on_Q1_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : y / a p ≤ x) (hxz : x ≤ z) :
     DyuCandidate p x y ≤ DyuCandidate p z y := by
@@ -7967,7 +7967,7 @@ lemma DyuCandidate_mono_x_on_Q1_A1_leTwo
   rw [hdx, hdz]
   exact DyuA1_mono_x_of_pos_leTwo p hp1 hp2 hx_pos hxz
 
-lemma DyuCandidate_mono_x_on_Q3_A1_leTwo
+private lemma DyuCandidate_mono_x_on_Q3_A1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : -y ≤ x) (hz_upper : z ≤ a p * y)
     (hxz : x ≤ z) :
@@ -7993,7 +7993,7 @@ lemma DyuCandidate_mono_x_on_Q3_A1_leTwo
   rw [hdx, hdz]
   exact DxuA1_mono_y_of_pos_leTwo p hp1 hp2 hy_pos hxz
 
-lemma DyuCandidate_mono_x_on_Q2_leTwo
+private lemma DyuCandidate_mono_x_on_Q2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hz_upper : z ≤ -y) (hxz : x ≤ z) :
     DyuCandidate p x y ≤ DyuCandidate p z y := by
@@ -8023,7 +8023,7 @@ lemma DyuCandidate_mono_x_on_Q2_leTwo
   rw [hdx, hdz]
   linarith
 
-lemma DyuCandidate_mono_x_on_Q1_A2_leTwo
+private lemma DyuCandidate_mono_x_on_Q1_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hyx : y < x) (hz_upper : z ≤ y / a p)
     (hxz : x ≤ z) :
@@ -8057,7 +8057,7 @@ lemma DyuCandidate_mono_x_on_Q1_A2_leTwo
   rw [hdx, hdz]
   exact hmono ⟨le_rfl, hxz⟩ ⟨hxz, le_rfl⟩ hxz
 
-lemma DyuCandidate_mono_x_on_Q3_A2_leTwo
+private lemma DyuCandidate_mono_x_on_Q3_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y ≤ x) (hz_upper : z < y)
     (hxz : x ≤ z) :
@@ -8090,7 +8090,7 @@ lemma DyuCandidate_mono_x_on_Q3_A2_leTwo
   rw [hdx, hdz]
   exact hmono ⟨le_rfl, hxz⟩ ⟨hxz, le_rfl⟩ hxz
 
-lemma DyuCandidate_mono_x_Q3_A2_to_diag_leTwo
+private lemma DyuCandidate_mono_x_Q3_A2_to_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ}
     (hy_pos : 0 < y) (hx_lower : a p * y ≤ x) (hx_upper : x < y) :
     DyuCandidate p x y ≤ DyuCandidate p y y := by
@@ -8137,7 +8137,7 @@ lemma DyuCandidate_mono_x_Q3_A2_to_diag_leTwo
     positivity
   nlinarith
 
-lemma DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
+private lemma DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {z y : ℝ}
     (hy_pos : 0 < y) (hyz : y < z) (hz_upper : z ≤ y / a p) :
     DyuCandidate p y y ≤ DyuCandidate p z y := by
@@ -8182,7 +8182,7 @@ lemma DyuCandidate_mono_x_diag_to_Q1_A2_leTwo
     positivity
   nlinarith
 
-lemma DyuCandidate_antidiag_le_Q3_boundary_leTwo
+private lemma DyuCandidate_antidiag_le_Q3_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DyuCandidate p (-y) y ≤ DyuCandidate p (a p * y) y := by
@@ -8194,7 +8194,7 @@ lemma DyuCandidate_antidiag_le_Q3_boundary_leTwo
     (p := p) (hp1 := hp1) (hp2 := hp2) (x := -y) (z := a p * y) (y := y)
     hy_pos le_rfl le_rfl hle
 
-lemma DyuCandidate_Q3_boundary_le_diag_leTwo
+private lemma DyuCandidate_Q3_boundary_le_diag_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DyuCandidate p (a p * y) y ≤ DyuCandidate p y y := by
@@ -8203,7 +8203,7 @@ lemma DyuCandidate_Q3_boundary_le_diag_leTwo
     (p := p) (hp1 := hp1) (hp2 := hp2) (x := a p * y) (y := y)
     hy_pos le_rfl (by simpa using mul_lt_mul_of_pos_right ha_lt hy_pos)
 
-lemma DyuCandidate_diag_le_Q1_boundary_leTwo
+private lemma DyuCandidate_diag_le_Q1_boundary_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {y : ℝ}
     (hy_pos : 0 < y) :
     DyuCandidate p y y ≤ DyuCandidate p (y / a p) y := by
@@ -8221,7 +8221,7 @@ lemma DyuCandidate_diag_le_Q1_boundary_leTwo
     (p := p) (hp1 := hp1) (hp2 := hp2) (z := y / a p) (y := y)
     hy_pos hy_lt_div le_rfl
 
-lemma DyuCandidate_mono_x_of_y_pos_leTwo
+private lemma DyuCandidate_mono_x_of_y_pos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hy_pos : 0 < y) (hxz : x ≤ z) :
     DyuCandidate p x y ≤ DyuCandidate p z y := by
@@ -8386,7 +8386,7 @@ lemma DyuCandidate_mono_x_of_y_pos_leTwo
                 (x := y / a p) (z := z) (y := y)
                 hy_pos le_rfl (le_of_lt hz_gt_q1))
 
-lemma DyuCandidate_neg_neg_leTwo
+private lemma DyuCandidate_neg_neg_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
     DyuCandidate p x y = -DyuCandidate p (-x) (-y) := by
   rcases mem_some_QuarterPlane_leTwo x y with hQ1 | hrest
@@ -8409,7 +8409,7 @@ lemma DyuCandidate_neg_neg_leTwo
     rw [DyuCandidate_eq_Q4_leTwo p hp1 hp2 hQ4,
       DyuCandidate_eq_Q3_leTwo p hp1 hp2 hQ3]
 
-lemma DyuA1_nonneg_of_nonneg_leTwo
+private lemma DyuA1_nonneg_of_nonneg_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (hx : 0 ≤ x) :
     0 ≤ DyuA1 p x y := by
   rcases hx.lt_or_eq with hxpos | rfl
@@ -8426,7 +8426,7 @@ lemma DyuA1_nonneg_of_nonneg_leTwo
     positivity
   · simp [DyuA1]
 
-lemma DyuCandidate_axis_nonneg_leTwo
+private lemma DyuCandidate_axis_nonneg_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x : ℝ} (hx : 0 ≤ x) :
     DyuCandidate p x 0 = DyuA1 p x 0 := by
   have hQ : QuarterPlane x 0 := ⟨hx, by simpa using hx, by linarith⟩
@@ -8436,7 +8436,7 @@ lemma DyuCandidate_axis_nonneg_leTwo
   rw [DyuCandidate_eq_Q1_leTwo p hQ]
   simp [DyauxFunction1, hcl]
 
-lemma DyuCandidate_axis_nonpos_leTwo
+private lemma DyuCandidate_axis_nonpos_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x : ℝ} (hx : x ≤ 0) :
     DyuCandidate p x 0 = -DyuA1 p (-x) 0 := by
   have hQ : QuarterPlane2 x 0 := ⟨hx, by linarith, hx⟩
@@ -8447,7 +8447,7 @@ lemma DyuCandidate_axis_nonpos_leTwo
   rw [DyuCandidate_eq_Q2_leTwo p hQ]
   simp [DyauxFunction1, hcl]
 
-lemma DyuCandidate_mono_x_axis_leTwo
+private lemma DyuCandidate_mono_x_axis_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z : ℝ}
     (hxz : x ≤ z) :
     DyuCandidate p x 0 ≤ DyuCandidate p z 0 := by
@@ -8490,7 +8490,7 @@ lemma DyuCandidate_mono_x_axis_leTwo
             (x := z) (y := 0) hz_pos.le
       exact le_trans hleft hright
 
-lemma DyuCandidate_mono_x_leTwo
+private lemma DyuCandidate_mono_x_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x z y : ℝ}
     (hxz : x ≤ z) :
     DyuCandidate p x y ≤ DyuCandidate p z y := by
@@ -8509,7 +8509,7 @@ lemma DyuCandidate_mono_x_leTwo
   · exact DyuCandidate_mono_x_of_y_pos_leTwo
       (p := p) (hp1 := hp1) (hp2 := hp2) (x := x) (z := z) (y := y) hy_pos hxz
 
-lemma DyuCandidate_mixed_mono_mul_le_leTwo
+private lemma DyuCandidate_mixed_mono_mul_le_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h k : ℝ}
     (hk : h * k ≤ 0) :
     DyuCandidate p (x + h) y * k ≤ DyuCandidate p x y * k := by
@@ -8533,7 +8533,7 @@ lemma DyuCandidate_mixed_mono_mul_le_leTwo
       DyuCandidate_mono_x_leTwo p hp1 hp2 (by linarith)
     exact mul_le_mul_of_nonneg_right hmono hk_pos.le
 
-lemma uCandidate_hk_negative_leTwo
+private lemma uCandidate_hk_negative_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y h k : ℝ}
     (hk : h * k ≤  0) :
     uCandidate p (x + h) (y + k) ≤
@@ -8571,39 +8571,39 @@ lemma uCandidate_hk_negative_leTwo
 
 /-! ## Polynomial growth of the candidate and its first partials -/
 
-def uA1GrowthConst (p : ℝ) : ℝ :=
+private def uA1GrowthConst (p : ℝ) : ℝ :=
   |alpha p| * (1 + |pStar p|)
 
-def vLeTwoGrowthConst (p : ℝ) : ℝ :=
+private def vLeTwoGrowthConst (p : ℝ) : ℝ :=
   1 + |coeffLeTwo p|
 
-def auxGrowthConst (p : ℝ) : ℝ :=
+private def auxGrowthConst (p : ℝ) : ℝ :=
   max (uA1GrowthConst p) (vLeTwoGrowthConst p)
 
-def uCandidateGrowthConst (p : ℝ) : ℝ :=
+private def uCandidateGrowthConst (p : ℝ) : ℝ :=
   max 0 (auxGrowthConst p)
 
-lemma uA1GrowthConst_nonneg (p : ℝ) :
+private lemma uA1GrowthConst_nonneg (p : ℝ) :
     0 ≤ uA1GrowthConst p := by
   unfold uA1GrowthConst
   positivity
 
-lemma vLeTwoGrowthConst_nonneg (p : ℝ) :
+private lemma vLeTwoGrowthConst_nonneg (p : ℝ) :
     0 ≤ vLeTwoGrowthConst p := by
   unfold vLeTwoGrowthConst
   positivity
 
-lemma auxGrowthConst_nonneg (p : ℝ) :
+private lemma auxGrowthConst_nonneg (p : ℝ) :
     0 ≤ auxGrowthConst p := by
   unfold auxGrowthConst
   exact le_trans (uA1GrowthConst_nonneg p) (le_max_left _ _)
 
-lemma uCandidateGrowthConst_nonneg (p : ℝ) :
+private lemma uCandidateGrowthConst_nonneg (p : ℝ) :
     0 ≤ uCandidateGrowthConst p := by
   unfold uCandidateGrowthConst
   exact le_max_left _ _
 
-lemma closureA1_x0_y0
+private lemma closureA1_x0_y0
     (p x y : ℝ) (h : closureA1 p x y) (hxnot : ¬ 0 < x) :
     x = 0 ∧ y = 0 := by
   have hx0 : x = 0 := le_antisymm (le_of_not_gt hxnot) h.1
@@ -8614,7 +8614,7 @@ lemma closureA1_x0_y0
     exact le_antisymm hle hge
   exact ⟨rfl, hy0⟩
 
-lemma closureA2_x0_y0
+private lemma closureA2_x0_y0
     (p x y : ℝ) (h : closureA2 p x y) (hxnot : ¬ 0 < x) :
     x = 0 ∧ y = 0 := by
   have hx0 : x = 0 := le_antisymm (le_of_not_gt hxnot) h.1
@@ -8625,7 +8625,7 @@ lemma closureA2_x0_y0
     exact le_antisymm hle hge
   exact ⟨rfl, hy0⟩
 
-lemma closureA1_abs_y_le_x
+private lemma closureA1_abs_y_le_x
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA1 p x y) :
     |y| ≤ x := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -8637,7 +8637,7 @@ lemma closureA1_abs_y_le_x
       _ = x := one_mul x
   exact abs_le.mpr ⟨hlow, hy_upper⟩
 
-lemma closureA2_abs_y_le_x
+private lemma closureA2_abs_y_le_x
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
     |y| ≤ x := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -8646,19 +8646,19 @@ lemma closureA2_abs_y_le_x
     exact le_trans (neg_nonpos.mpr hx) (le_trans (mul_nonneg ha_nonneg hx) hlow)
   exact abs_le.mpr ⟨hneg, hup⟩
 
-lemma auxFunction1_eq_uA1 (p x y : ℝ) (h1 : closureA1 p x y) :
+private lemma auxFunction1_eq_uA1 (p x y : ℝ) (h1 : closureA1 p x y) :
     auxFunction1 p x y = uA1 p x y := by
   simp [auxFunction1, h1]
 
-lemma auxFunction1_Dx_eq_DxuA1 (p x y : ℝ) (h1 : closureA1 p x y) :
+private lemma auxFunction1_Dx_eq_DxuA1 (p x y : ℝ) (h1 : closureA1 p x y) :
     DxauxFunction1 p x y = DxuA1 p x y := by
   simp [DxauxFunction1, h1]
 
-lemma auxFunction1_Dy_eq_DyuA1 (p x y : ℝ) (h1 : closureA1 p x y) :
+private lemma auxFunction1_Dy_eq_DyuA1 (p x y : ℝ) (h1 : closureA1 p x y) :
     DyauxFunction1 p x y = DyuA1 p x y := by
   simp [DyauxFunction1, h1]
 
-lemma abs_uA1_le_growth
+private lemma abs_uA1_le_growth
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA1 p x y) :
     |uA1 p x y| ≤ uA1GrowthConst p * Real.rpow x p := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -8713,7 +8713,7 @@ lemma abs_uA1_le_growth
       mul_nonneg (uA1GrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
     simpa [uA1] using hnonneg
 
-lemma closureA2_abs_add_div_two_le_x
+private lemma closureA2_abs_add_div_two_le_x
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
     |(x + y) / 2| ≤ x := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -8730,7 +8730,7 @@ lemma closureA2_abs_add_div_two_le_x
     _ ≤ (x + x) / 2 := by gcongr
     _ = x := by ring
 
-lemma closureA2_abs_sub_div_two_le_x
+private lemma closureA2_abs_sub_div_two_le_x
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
     |(x - y) / 2| ≤ x := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -8748,7 +8748,7 @@ lemma closureA2_abs_sub_div_two_le_x
     _ ≤ (x + x) / 2 := by gcongr
     _ = x := by ring
 
-lemma abs_vLeTwo_le_growth_on_closureA2
+private lemma abs_vLeTwo_le_growth_on_closureA2
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
     |vLeTwo p x y| ≤ vLeTwoGrowthConst p * Real.rpow x p := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -8796,7 +8796,7 @@ lemma abs_vLeTwo_le_growth_on_closureA2
           unfold vLeTwoGrowthConst
           ring
 
-lemma abs_auxFunction1_le_growth
+private lemma abs_auxFunction1_le_growth
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} :
     |auxFunction1 p x y| ≤ auxGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by
   by_cases h1 : closureA1 p x y
@@ -8838,7 +8838,7 @@ lemma abs_auxFunction1_le_growth
             (Real.rpow_nonneg (abs_nonneg y) _))
       simpa [auxFunction1, h1, h2] using hnonneg
 
-lemma abs_uCandidate_le_growth
+private lemma abs_uCandidate_le_growth
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
     |uCandidate p x y|
       ≤ uCandidateGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) := by
@@ -8879,7 +8879,7 @@ lemma abs_uCandidate_le_growth
       _ ≤ uCandidateGrowthConst p * (Real.rpow |x| p + Real.rpow |y| p) :=
         mul_le_mul_of_nonneg_right hCaux hsum_nonneg
 
-lemma uCandidate_growth_bound
+private lemma uCandidate_growth_bound
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ∃ C : ℝ, 0 ≤ C ∧
       ∀ x y, |uCandidate p x y| ≤ C * (Real.rpow |x| p + Real.rpow |y| p) := by
@@ -8887,67 +8887,67 @@ lemma uCandidate_growth_bound
   intro x y
   exact abs_uCandidate_le_growth p hp1 hp2 x y
 
-def DxuA1GrowthConst (p : ℝ) : ℝ :=
+private def DxuA1GrowthConst (p : ℝ) : ℝ :=
   |alpha p| * (|p| / 2) * (|(p - 2) / (p - 1)| + 1)
 
-def DyuA1GrowthConst (p : ℝ) : ℝ :=
+private def DyuA1GrowthConst (p : ℝ) : ℝ :=
   |alpha p| * (|pStar p| / 2)
 
-def DvLeTwoGrowthConst (p : ℝ) : ℝ :=
+private def DvLeTwoGrowthConst (p : ℝ) : ℝ :=
   |p| / 2 * (1 + |coeffLeTwo p|)
 
-def auxDerivativeGrowthConst (p : ℝ) : ℝ :=
+private def auxDerivativeGrowthConst (p : ℝ) : ℝ :=
   max (max (DxuA1GrowthConst p) (DyuA1GrowthConst p)) (DvLeTwoGrowthConst p)
 
-def uCandidateDerivativeGrowthConst (p : ℝ) : ℝ :=
+private def uCandidateDerivativeGrowthConst (p : ℝ) : ℝ :=
   max 0 (auxDerivativeGrowthConst p)
 
-lemma DxuA1GrowthConst_nonneg (p : ℝ) :
+private lemma DxuA1GrowthConst_nonneg (p : ℝ) :
     0 ≤ DxuA1GrowthConst p := by
   unfold DxuA1GrowthConst
   positivity
 
-lemma DyuA1GrowthConst_nonneg (p : ℝ) :
+private lemma DyuA1GrowthConst_nonneg (p : ℝ) :
     0 ≤ DyuA1GrowthConst p := by
   unfold DyuA1GrowthConst
   positivity
 
-lemma DvLeTwoGrowthConst_nonneg (p : ℝ) :
+private lemma DvLeTwoGrowthConst_nonneg (p : ℝ) :
     0 ≤ DvLeTwoGrowthConst p := by
   unfold DvLeTwoGrowthConst
   positivity
 
-lemma auxDerivativeGrowthConst_nonneg (p : ℝ) :
+private lemma auxDerivativeGrowthConst_nonneg (p : ℝ) :
     0 ≤ auxDerivativeGrowthConst p := by
   unfold auxDerivativeGrowthConst
   exact le_trans (DxuA1GrowthConst_nonneg p) (le_trans (le_max_left _ _) (le_max_left _ _))
 
-lemma uCandidateDerivativeGrowthConst_nonneg (p : ℝ) :
+private lemma uCandidateDerivativeGrowthConst_nonneg (p : ℝ) :
     0 ≤ uCandidateDerivativeGrowthConst p := by
   unfold uCandidateDerivativeGrowthConst
   exact le_max_left _ _
 
-lemma DxuA1GrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
+private lemma DxuA1GrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
     DxuA1GrowthConst p ≤ auxDerivativeGrowthConst p := by
   unfold auxDerivativeGrowthConst
   exact le_trans (le_max_left _ _) (le_max_left _ _)
 
-lemma DyuA1GrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
+private lemma DyuA1GrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
     DyuA1GrowthConst p ≤ auxDerivativeGrowthConst p := by
   unfold auxDerivativeGrowthConst
   exact le_trans (le_max_right _ _) (le_max_left _ _)
 
-lemma DvLeTwoGrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
+private lemma DvLeTwoGrowthConst_le_auxDerivativeGrowthConst (p : ℝ) :
     DvLeTwoGrowthConst p ≤ auxDerivativeGrowthConst p := by
   unfold auxDerivativeGrowthConst
   exact le_max_right _ _
 
-lemma auxDerivativeGrowthConst_le_uCandidateDerivativeGrowthConst (p : ℝ) :
+private lemma auxDerivativeGrowthConst_le_uCandidateDerivativeGrowthConst (p : ℝ) :
     auxDerivativeGrowthConst p ≤ uCandidateDerivativeGrowthConst p := by
   unfold uCandidateDerivativeGrowthConst
   exact le_max_right _ _
 
-lemma abs_DxuA1_le_growth
+private lemma abs_DxuA1_le_growth
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA1 p x y) :
     |DxuA1 p x y| ≤ DxuA1GrowthConst p * Real.rpow x (p - 1) := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -8995,7 +8995,7 @@ lemma abs_DxuA1_le_growth
       mul_nonneg (DxuA1GrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
     simpa [DxuA1] using hnonneg
 
-lemma abs_DyuA1_le_growth
+private lemma abs_DyuA1_le_growth
     (p : ℝ) {x y : ℝ} (h : closureA1 p x y) :
     |DyuA1 p x y| ≤ DyuA1GrowthConst p * Real.rpow x (p - 1) := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -9017,7 +9017,7 @@ lemma abs_DyuA1_le_growth
       mul_nonneg (DyuA1GrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
     simpa [DyuA1] using hnonneg
 
-lemma abs_DxvLeTwo_le_growth_on_closureA2
+private lemma abs_DxvLeTwo_le_growth_on_closureA2
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
     |DxvLeTwo p x y| ≤ DvLeTwoGrowthConst p * Real.rpow x (p - 1) := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -9092,7 +9092,7 @@ lemma abs_DxvLeTwo_le_growth_on_closureA2
       mul_nonneg (DvLeTwoGrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
     simpa [DxvLeTwo] using hnonneg
 
-lemma abs_DyvLeTwo_le_growth_on_closureA2
+private lemma abs_DyvLeTwo_le_growth_on_closureA2
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} (h : closureA2 p x y) :
     |DyvLeTwo p x y| ≤ DvLeTwoGrowthConst p * Real.rpow x (p - 1) := by
   rcases h with ⟨hx, hlow, hup⟩
@@ -9163,7 +9163,7 @@ lemma abs_DyvLeTwo_le_growth_on_closureA2
       mul_nonneg (DvLeTwoGrowthConst_nonneg p) (Real.rpow_nonneg le_rfl _)
     simpa [DyvLeTwo] using hnonneg
 
-lemma abs_DxauxFunction1_le_growth
+private lemma abs_DxauxFunction1_le_growth
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} :
     |DxauxFunction1 p x y|
       ≤ auxDerivativeGrowthConst p *
@@ -9212,7 +9212,7 @@ lemma abs_DxauxFunction1_le_growth
             (Real.rpow_nonneg (abs_nonneg y) _))
       simpa [DxauxFunction1, h1, h2] using hnonneg
 
-lemma abs_DyauxFunction1_le_growth
+private lemma abs_DyauxFunction1_le_growth
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) {x y : ℝ} :
     |DyauxFunction1 p x y|
       ≤ auxDerivativeGrowthConst p *
@@ -9261,7 +9261,7 @@ lemma abs_DyauxFunction1_le_growth
             (Real.rpow_nonneg (abs_nonneg y) _))
       simpa [DyauxFunction1, h1, h2] using hnonneg
 
-lemma abs_DxuCandidate_le_growth
+private lemma abs_DxuCandidate_le_growth
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
     |DxuCandidate p x y|
       ≤ uCandidateDerivativeGrowthConst p *
@@ -9318,7 +9318,7 @@ lemma abs_DxuCandidate_le_growth
           (Real.rpow |x| (p - 1) + Real.rpow |y| (p - 1)) :=
         mul_le_mul_of_nonneg_right hC hsum_nonneg
 
-lemma abs_DyuCandidate_le_growth
+private lemma abs_DyuCandidate_le_growth
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) (x y : ℝ) :
     |DyuCandidate p x y|
       ≤ uCandidateDerivativeGrowthConst p *
@@ -9327,7 +9327,7 @@ lemma abs_DyuCandidate_le_growth
   rw [DyuCandidate_eq_DxuCandidate_swap_leTwo p hp1 hp2 x y]
   simpa [add_comm] using h
 
-lemma uCandidate_derivative_growth_bound
+private lemma uCandidate_derivative_growth_bound
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ∃ C : ℝ, 0 ≤ C ∧
       (∀ x y,
@@ -9344,7 +9344,7 @@ lemma uCandidate_derivative_growth_bound
 
 /-! ## Continuity of the glued candidate and its first partials -/
 
-lemma uA1_eq_smooth_of_nonneg_leTwo
+private lemma uA1_eq_smooth_of_nonneg_leTwo
     (p : ℝ) (hp1 : 1 < p) (x y : ℝ) (hx : 0 ≤ x) :
     uA1 p x y = alpha p * Real.rpow x (p - 1) *
       (x - pStar p * (x - y) / 2) := by
@@ -9355,7 +9355,7 @@ lemma uA1_eq_smooth_of_nonneg_leTwo
   · subst x
     simp [Real.zero_rpow hexp_ne]
 
-lemma continuousOn_uA1_leTwo (p : ℝ) (hp1 : 1 < p) :
+private lemma continuousOn_uA1_leTwo (p : ℝ) (hp1 : 1 < p) :
     ContinuousOn (fun z : ℝ × ℝ => uA1 p z.1 z.2) {z | 0 ≤ z.1} := by
   have hexp_nonneg : 0 ≤ p - 1 := by linarith
   have heq : ∀ z : ℝ × ℝ, z ∈ {z : ℝ × ℝ | 0 ≤ z.1} →
@@ -9369,7 +9369,7 @@ lemma continuousOn_uA1_leTwo (p : ℝ) (hp1 : 1 < p) :
   · exact continuousOn_fst.sub
       ((continuousOn_const.mul (continuousOn_fst.sub continuousOn_snd)).div_const 2)
 
-lemma isClosed_closureA1_set_leTwo (p : ℝ) :
+private lemma isClosed_closureA1_set_leTwo (p : ℝ) :
     IsClosed {z : ℝ × ℝ | closureA1 p z.1 z.2} := by
   simp only [closureA1]
   apply IsClosed.inter
@@ -9378,7 +9378,7 @@ lemma isClosed_closureA1_set_leTwo (p : ℝ) :
   · exact isClosed_le continuous_fst.neg continuous_snd
   · exact isClosed_le continuous_snd (continuous_const.mul continuous_fst)
 
-lemma isClosed_closureA2_set_leTwo (p : ℝ) :
+private lemma isClosed_closureA2_set_leTwo (p : ℝ) :
     IsClosed {z : ℝ × ℝ | closureA2 p z.1 z.2} := by
   simp only [closureA2]
   apply IsClosed.inter
@@ -9387,7 +9387,7 @@ lemma isClosed_closureA2_set_leTwo (p : ℝ) :
   · exact isClosed_le (continuous_const.mul continuous_fst) continuous_snd
   · exact isClosed_le continuous_snd continuous_fst
 
-lemma continuousOn_DxuA1_closureA1_leTwo
+private lemma continuousOn_DxuA1_closureA1_leTwo
     (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ContinuousOn (DxuA1Fun p) (closureA1Set p) := by
   intro z hz
@@ -9454,7 +9454,7 @@ lemma continuousOn_DxuA1_closureA1_leTwo
       simpa using tendsto_const_nhds.mul hrpow
     exact squeeze_zero' (Filter.Eventually.of_forall fun _ => abs_nonneg _) hbound hmajor
 
-lemma continuousOn_DyuA1_closureA1_leTwo
+private lemma continuousOn_DyuA1_closureA1_leTwo
     (p : ℝ) (hp1 : 1 < p) :
     ContinuousOn (DyuA1Fun p) (closureA1Set p) := by
   intro z hz
@@ -9509,7 +9509,7 @@ lemma continuousOn_DyuA1_closureA1_leTwo
       simpa using tendsto_const_nhds.mul hrpow
     exact squeeze_zero' (Filter.Eventually.of_forall fun _ => abs_nonneg _) hbound hmajor
 
-lemma DxvLeTwo_eq_formula_on_closureA2_leTwo
+private lemma DxvLeTwo_eq_formula_on_closureA2_leTwo
     (p : ℝ) (hp1 : 1 < p) (z : ℝ × ℝ) (hz : z ∈ closureA2Set p) :
     DxvLeTwoFun p z = DxvLeTwoFormula p z := by
   rcases z with ⟨x, y⟩
@@ -9522,7 +9522,7 @@ lemma DxvLeTwo_eq_formula_on_closureA2_leTwo
     have hzero : Real.rpow (0 : ℝ) (p - 1) = 0 := Real.zero_rpow hp1_ne
     simp [DxvLeTwoFun, DxvLeTwoFormula, DxvLeTwo, Real.zero_rpow hp1_ne]
 
-lemma DyvLeTwo_eq_formula_on_closureA2_leTwo
+private lemma DyvLeTwo_eq_formula_on_closureA2_leTwo
     (p : ℝ) (hp1 : 1 < p) (z : ℝ × ℝ) (hz : z ∈ closureA2Set p) :
     DyvLeTwoFun p z = DyvLeTwoFormula p z := by
   rcases z with ⟨x, y⟩
@@ -9535,7 +9535,7 @@ lemma DyvLeTwo_eq_formula_on_closureA2_leTwo
     have hzero : Real.rpow (0 : ℝ) (p - 1) = 0 := Real.zero_rpow hp1_ne
     simp [DyvLeTwoFun, DyvLeTwoFormula, DyvLeTwo, Real.zero_rpow hp1_ne]
 
-lemma continuousOn_DxvLeTwo_closureA2_leTwo
+private lemma continuousOn_DxvLeTwo_closureA2_leTwo
     (p : ℝ) (hp1 : 1 < p) :
     ContinuousOn (DxvLeTwoFun p) (closureA2Set p) := by
   have hp1_nonneg : 0 ≤ p - 1 := by linarith
@@ -9560,7 +9560,7 @@ lemma continuousOn_DxvLeTwo_closureA2_leTwo
   intro z hz
   exact DxvLeTwo_eq_formula_on_closureA2_leTwo p hp1 z hz
 
-lemma continuousOn_DyvLeTwo_closureA2_leTwo
+private lemma continuousOn_DyvLeTwo_closureA2_leTwo
     (p : ℝ) (hp1 : 1 < p) :
     ContinuousOn (DyvLeTwoFun p) (closureA2Set p) := by
   have hp1_nonneg : 0 ≤ p - 1 := by linarith
@@ -9585,7 +9585,7 @@ lemma continuousOn_DyvLeTwo_closureA2_leTwo
   intro z hz
   exact DyvLeTwo_eq_formula_on_closureA2_leTwo p hp1 z hz
 
-lemma continuousOn_auxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma continuousOn_auxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ContinuousOn (fun z : ℝ × ℝ => auxFunction1 p z.1 z.2)
       {z | QuarterPlane z.1 z.2} := by
   let S : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
@@ -9626,7 +9626,7 @@ lemma continuousOn_auxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
   apply ContinuousOn.mono _ hcover'
   exact hc1.union_of_isClosed hc2 hcl1 hcl2
 
-lemma continuousOn_DxauxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma continuousOn_DxauxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ContinuousOn (fun z : ℝ × ℝ => DxauxFunction1 p z.1 z.2)
       {z | QuarterPlane z.1 z.2} := by
   let S : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
@@ -9667,7 +9667,7 @@ lemma continuousOn_DxauxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
   apply ContinuousOn.mono _ hcover'
   exact hc1.union_of_isClosed hc2 hcl1 hcl2
 
-lemma continuousOn_DyauxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma continuousOn_DyauxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ContinuousOn (fun z : ℝ × ℝ => DyauxFunction1 p z.1 z.2)
       {z | QuarterPlane z.1 z.2} := by
   let S : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
@@ -9708,31 +9708,31 @@ lemma continuousOn_DyauxFunction1_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
   apply ContinuousOn.mono _ hcover'
   exact hc1.union_of_isClosed hc2 hcl1 hcl2
 
-lemma isClosed_Q1_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane z.1 z.2} := by
+private lemma isClosed_Q1_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane z.1 z.2} := by
   simp only [QuarterPlane, Set.setOf_and]
   exact (isClosed_le continuous_const continuous_fst).inter
     ((isClosed_le continuous_snd continuous_fst).inter
       (isClosed_le continuous_fst.neg continuous_snd))
 
-lemma isClosed_Q2_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane2 z.1 z.2} := by
+private lemma isClosed_Q2_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane2 z.1 z.2} := by
   simp only [QuarterPlane2, Set.setOf_and]
   exact (isClosed_le continuous_fst continuous_const).inter
     ((isClosed_le continuous_snd continuous_fst.neg).inter
       (isClosed_le continuous_fst continuous_snd))
 
-lemma isClosed_Q3_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane3 z.1 z.2} := by
+private lemma isClosed_Q3_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane3 z.1 z.2} := by
   simp only [QuarterPlane3, Set.setOf_and]
   exact (isClosed_le continuous_const continuous_snd).inter
     ((isClosed_le continuous_snd.neg continuous_fst).inter
       (isClosed_le continuous_fst continuous_snd))
 
-lemma isClosed_Q4_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane4 z.1 z.2} := by
+private lemma isClosed_Q4_leTwo : IsClosed {z : ℝ × ℝ | QuarterPlane4 z.1 z.2} := by
   simp only [QuarterPlane4, Set.setOf_and]
   exact (isClosed_le continuous_snd continuous_const).inter
     ((isClosed_le continuous_snd continuous_fst).inter
       (isClosed_le continuous_fst continuous_snd.neg))
 
-lemma univ_subset_quarters_leTwo :
+private lemma univ_subset_quarters_leTwo :
     Set.univ ⊆
       {z : ℝ × ℝ | QuarterPlane z.1 z.2} ∪
       {z : ℝ × ℝ | QuarterPlane2 z.1 z.2} ∪
@@ -9748,7 +9748,7 @@ lemma univ_subset_quarters_leTwo :
   · exact Or.inl (Or.inr hQ3)
   · exact Or.inr hQ4
 
-lemma continuousuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma continuousuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ContinuousOn (fun z : ℝ × ℝ => uCandidate p z.1 z.2) Set.univ := by
   let Q1 : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
   let Q2 : Set (ℝ × ℝ) := {z | QuarterPlane2 z.1 z.2}
@@ -9808,7 +9808,7 @@ lemma continuousuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
   apply ContinuousOn.mono hc1234
   simpa [Q1, Q2, Q3, Q4] using univ_subset_quarters_leTwo
 
-lemma continuousDxuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma continuousDxuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ContinuousOn (fun z : ℝ × ℝ => DxuCandidate p z.1 z.2) Set.univ := by
   let Q1 : Set (ℝ × ℝ) := {z | QuarterPlane z.1 z.2}
   let Q2 : Set (ℝ × ℝ) := {z | QuarterPlane2 z.1 z.2}
@@ -9868,7 +9868,7 @@ lemma continuousDxuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
   apply ContinuousOn.mono hc1234
   simpa [Q1, Q2, Q3, Q4] using univ_subset_quarters_leTwo
 
-lemma continuousDyuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
+private lemma continuousDyuCandidate_leTwo (p : ℝ) (hp1 : 1 < p) (hp2 : p < 2) :
     ContinuousOn (fun z : ℝ × ℝ => DyuCandidate p z.1 z.2) Set.univ := by
   have hdx := continuousDxuCandidate_leTwo p hp1 hp2
   have hswap : Continuous (fun z : ℝ × ℝ => (z.2, z.1)) := by continuity
@@ -9884,6 +9884,15 @@ end Majorant_p_l_2
 
 
 
+/--
+Existence of a Burkholder majorant in the regime `1 < p < 2`.
+
+This theorem takes the low-exponent candidate and proves it satisfies the same
+full checklist as in the other regimes: continuity, quantitative growth bounds
+for `u` and its first derivatives, the tangent-step inequality, domination of
+`v`, and negativity on the opposite-sign region (with strict axis negativity
+away from the origin).
+-/
 theorem exists_majorant_leTwo (p : ℝ) (hp : 1 < p ∧ p < 2) :
     ∃ u du_dx du_dy : ℝ → ℝ → ℝ, ∃ C : ℝ,
       0 ≤ C ∧

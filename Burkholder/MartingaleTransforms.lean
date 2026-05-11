@@ -25,7 +25,7 @@ def v (p x y : ℝ) : ℝ :=
   Majorants.v p x y
 
 /-- The package of properties saying that `u` is a Burkholder majorant for exponent `p`. -/
-def IsMajorant (p : ℝ) (u : ℝ → ℝ → ℝ) : Prop :=
+private def IsMajorant (p : ℝ) (u : ℝ → ℝ → ℝ) : Prop :=
   (∀ x y, ∃ d_u_dx d_u_dy : ℝ,
     ∀ h k, h * k ≤ 0 →
       u (x + h) (y + k) ≤ u x y + d_u_dx * h + d_u_dy * k) ∧
@@ -35,26 +35,26 @@ def IsMajorant (p : ℝ) (u : ℝ → ℝ → ℝ) : Prop :=
 
 
 
-noncomputable def u (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+noncomputable private def u (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
   Classical.choose (Majorants.exists_majorant_p_g_1 p hp)
 
-noncomputable def du_dx (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+noncomputable private def du_dx (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
   Classical.choose
     (Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp))
 
-noncomputable def du_dy (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+noncomputable private def du_dy (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
   Classical.choose
     (Classical.choose_spec
       (Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp)))
 
-noncomputable def C (p : ℝ) (hp : p > 1) : ℝ :=
+noncomputable private def C (p : ℝ) (hp : p > 1) : ℝ :=
   Classical.choose
     (Classical.choose_spec
       (Classical.choose_spec
         (Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp))))
 
 
-lemma du_dx_continuousOn (p : ℝ) (hp : p > 1) :
+private lemma du_dx_continuousOn (p : ℝ) (hp : p > 1) :
     ContinuousOn
       (fun z : ℝ × ℝ => Burkholder.du_dx p hp z.1 z.2) Set.univ := by
   rcases
@@ -69,7 +69,7 @@ lemma du_dx_continuousOn (p : ℝ) (hp : p > 1) :
       htangent, hmajor, hnonpos, haxis⟩
   exact hdu_dx_cont
 
-lemma du_dx_growth_bound (p : ℝ) (hp : p > 1) :
+private lemma du_dx_growth_bound (p : ℝ) (hp : p > 1) :
     ∀ x y,
       |Burkholder.du_dx p hp x y|
         ≤ Burkholder.C p hp *
@@ -86,7 +86,7 @@ lemma du_dx_growth_bound (p : ℝ) (hp : p > 1) :
       htangent, hmajor, hnonpos, haxis⟩
   exact hdu_dx_growth
 
-lemma du_dy_continuousOn (p : ℝ) (hp : p > 1) :
+private lemma du_dy_continuousOn (p : ℝ) (hp : p > 1) :
     ContinuousOn
       (fun z : ℝ × ℝ => Burkholder.du_dy p hp z.1 z.2) Set.univ := by
   rcases
@@ -101,7 +101,7 @@ lemma du_dy_continuousOn (p : ℝ) (hp : p > 1) :
       htangent, hmajor, hnonpos, haxis⟩
   exact hdu_dy_cont
 
-lemma du_dy_growth_bound (p : ℝ) (hp : p > 1) :
+private lemma du_dy_growth_bound (p : ℝ) (hp : p > 1) :
     ∀ x y,
       |Burkholder.du_dy p hp x y|
         ≤ Burkholder.C p hp *
@@ -120,7 +120,7 @@ lemma du_dy_growth_bound (p : ℝ) (hp : p > 1) :
 
 
 
-theorem u_isMajorant (p : ℝ) (hp : p > 1) :
+private lemma u_isMajorant (p : ℝ) (hp : p > 1) :
     IsMajorant p (u p hp) := by
   rcases Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp) with
     ⟨du_dx, du_dy, C, hC_nonneg,
@@ -172,12 +172,12 @@ def IsMartingaleTransform (ℱ : Filtration ℕ mΩ) (μ : Measure Ω)
   IsStronglyPredictable ℱ v ∧ Martingale f ℱ μ ∧ g = v ⋆ₘ f
 
 @[simp]
-theorem martingaleTransform_zero (v f : ℕ → Ω → ℝ) :
+private lemma martingaleTransform_zero (v f : ℕ → Ω → ℝ) :
     (v ⋆ₘ f) 0 = v 0 * f 0 := by
   ext ω
   simp [martingaleTransform, martingaleDiff]
 
-theorem martingaleTransform_succ_sub (v f : ℕ → Ω → ℝ) (n : ℕ) :
+private lemma martingaleTransform_succ_sub (v f : ℕ → Ω → ℝ) (n : ℕ) :
     (v ⋆ₘ f) (n + 1) - (v ⋆ₘ f) n =
       v (n + 1) * (f (n + 1) - f n) := by
   ext ω
@@ -279,10 +279,10 @@ multipliers bounded by `1` are bounded on `L^p`, for `1 < p < ∞`.
 This is stated at each finite time `n` for the discrete transform `v ⋆ₘ f`.
 -/
 
-def plusOne (w : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
+private def plusOne (w : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
   fun n ω => w n ω + 1
 
-def minusOne (w : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
+private def minusOne (w : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
   fun n ω => w n ω - 1
 
 
@@ -296,7 +296,7 @@ scoped notation "Y_{" n "}[" w "," f "]" => ((minusOne w) ⋆ₘ f) n
 /--
 Common assumptions for Burkholder-type martingale transform inequalities.
 -/
-structure BurkholderAssumptions (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableSpace Ω] (μ : Measure Ω)
+private structure BurkholderAssumptions (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableSpace Ω] (μ : Measure Ω)
   [IsFiniteMeasure μ] (ℱ : Filtration ℕ mΩ) (w f : ℕ → Ω → ℝ) : Prop where
   hp_one : 1 < p.toReal
   hp_top : p ≠ ∞
@@ -312,7 +312,7 @@ structure BurkholderAssumptions (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableS
 
 
 
-lemma   inequality_for_transform_differences
+private lemma   inequality_for_transform_differences
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f) :
@@ -365,7 +365,7 @@ lemma   inequality_for_transform_differences
             ring
       _ ≤ 0 := by nlinarith
 
-lemma burkholder_martingaleDiff_memLp
+private lemma burkholder_martingaleDiff_memLp
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -376,7 +376,7 @@ lemma burkholder_martingaleDiff_memLp
   | succ n =>
       simpa [martingaleDiff] using (h.hLp (n + 1)).sub (h.hLp n)
 
-lemma burkholder_plusOne_mul_martingaleDiff_memLp
+private lemma burkholder_plusOne_mul_martingaleDiff_memLp
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -397,7 +397,7 @@ lemma burkholder_plusOne_mul_martingaleDiff_memLp
   rw [Real.norm_eq_abs, abs_mul, Real.norm_eq_abs]
   exact mul_le_mul_of_nonneg_right hcoeff (abs_nonneg (martingaleDiff f n ω))
 
-lemma burkholder_minusOne_mul_martingaleDiff_memLp
+private lemma burkholder_minusOne_mul_martingaleDiff_memLp
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -420,7 +420,7 @@ lemma burkholder_minusOne_mul_martingaleDiff_memLp
 
 
 /--Lp integrability of X_n, Y_n, v(X_n,Y_n) -/
-lemma burkholder_X_memLp
+private lemma burkholder_X_memLp
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -429,7 +429,7 @@ lemma burkholder_X_memLp
     memLp_finsetSum' (Finset.range (n + 1))
       (fun i _hi => burkholder_plusOne_mul_martingaleDiff_memLp h i)
 
-lemma burkholder_Y_memLp
+private lemma burkholder_Y_memLp
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -440,7 +440,7 @@ lemma burkholder_Y_memLp
 
 
 
-lemma burkholder_v_XY_integrable
+private lemma burkholder_v_XY_integrable
   {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
   {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
   (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -475,7 +475,7 @@ lemma burkholder_v_XY_integrable
         (Real.rpow (|Burkholder.pStar p.toReal - 1|) p.toReal))
 
 /-- Lp integrability of `u(X_n,Y_n)`. -/
-lemma burkholder_u_Xn_Yn_integrable
+private lemma burkholder_u_Xn_Yn_integrable
   {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
   {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
   (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -540,7 +540,7 @@ lemma burkholder_u_Xn_Yn_integrable
       hu_growth (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
 
 /-- `du_dx(X_n,Y_n)` belongs to `L^q`, where `q = p/(p-1)`. -/
-lemma burkholder_du_dx_Xn_Yn_Lq
+private lemma burkholder_du_dx_Xn_Yn_Lq
   {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
   {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
   (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -667,7 +667,7 @@ lemma burkholder_du_dx_Xn_Yn_Lq
   exact hsum.of_le_mul hdu_meas hbound
 
 /-- `du_dy(X_n,Y_n)` belongs to `L^q`, where `q = p/(p-1)`. -/
-lemma burkholder_du_dy_Xn_Yn_Lq
+private lemma burkholder_du_dy_Xn_Yn_Lq
   {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
   {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
   (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -790,7 +790,7 @@ lemma burkholder_du_dy_Xn_Yn_Lq
 
   exact hsum.of_le_mul hdu_meas hbound
 
-lemma burkholder_du_dx_Xn_Yn_integrable_mul_diff
+private lemma burkholder_du_dx_Xn_Yn_integrable_mul_diff
   {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
   {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
   (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -981,7 +981,7 @@ lemma burkholder_du_dx_Xn_Yn_integrable_mul_diff
         filter_upwards [hXdiff_zero] with ω hω
         simp [hω]
 
-lemma burkholder_du_dy_Xn_Yn_integrable_mul_diff
+private lemma burkholder_du_dy_Xn_Yn_integrable_mul_diff
   {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
   {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
   (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -1173,12 +1173,12 @@ lemma burkholder_du_dy_Xn_Yn_integrable_mul_diff
         simp [hω]
 
 /-- The chosen majorant dominates the Burkholder function `v`. -/
-lemma burkholder_v_le_u (p : ℝ) (hp : p > 1) (x y : ℝ) :
+private lemma burkholder_v_le_u (p : ℝ) (hp : p > 1) (x y : ℝ) :
     Burkholder.v p x y ≤ Burkholder.u p hp x y :=
   (Burkholder.u_isMajorant p hp).2.1 x y
 
 /-- The chosen majorant is nonpositive on the region `x * y ≤ 0`. -/
-lemma burkholder_u_nonpos_of_mul_nonpos (p : ℝ) (hp : p > 1)
+private lemma burkholder_u_nonpos_of_mul_nonpos (p : ℝ) (hp : p > 1)
     {x y : ℝ} (hxy : x * y ≤ 0) :
     Burkholder.u p hp x y ≤ 0 :=
   (Burkholder.u_isMajorant p hp).2.2.1 x y hxy
@@ -1189,7 +1189,7 @@ version of the step
 `u(x + h, y + k) ≤ u(x, y) + u_x(x,y) h + u_y(x,y) k`
 when `h * k <= 0`.
 -/
-lemma burkholder_u_tangent_step (p : ℝ) (hp : p > 1) (x y h k : ℝ)
+private lemma burkholder_u_tangent_step (p : ℝ) (hp : p > 1) (x y h k : ℝ)
     (hhk : h * k ≤  0) :
     ∃ d_u_dx d_u_dy : ℝ,
       Burkholder.u p hp (x + h) (y + k) ≤
@@ -1197,6 +1197,12 @@ lemma burkholder_u_tangent_step (p : ℝ) (hp : p > 1) (x y h k : ℝ)
   rcases (Burkholder.u_isMajorant p hp).1 x y with ⟨d_u_dx, d_u_dy, htangent⟩
   exact ⟨d_u_dx, d_u_dy, htangent h k hhk⟩
 
+/--
+Pointwise choice of the `x`-coefficient in the Burkholder tangent inequality.
+
+Given the transformed pair `(X_n, Y_n)`, this simply evaluates the selected
+partial derivative `du_dx` at that point.
+-/
 noncomputable def burkholder_tangentDx (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
     (_hcross : ∀ ω,
@@ -1206,6 +1212,12 @@ noncomputable def burkholder_tangentDx (p : ℝ) (hp : p > 1)
   fun ω =>
     Burkholder.du_dx p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
 
+/--
+Pointwise choice of the `y`-coefficient in the Burkholder tangent inequality.
+
+This is the companion to `burkholder_tangentDx`, using `du_dy` evaluated at the
+current transformed state `(X_n, Y_n)`.
+-/
 noncomputable def burkholder_tangentDy (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
     (_hcross : ∀ ω,
@@ -1215,7 +1227,7 @@ noncomputable def burkholder_tangentDy (p : ℝ) (hp : p > 1)
   fun ω =>
     Burkholder.du_dy p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω)
 
-lemma burkholder_u_n_nplus1 (p : ℝ) (hp : p > 1)
+private lemma burkholder_u_n_nplus1 (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
     (hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
@@ -1244,7 +1256,7 @@ lemma burkholder_u_n_nplus1 (p : ℝ) (hp : p > 1)
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω)
       (Y_{n+1}[w, f] ω - Y_{n}[w, f] ω) (hcross ω)
 
-lemma burkholder_u_XY_integral_succ_le
+private lemma burkholder_u_XY_integral_succ_le
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f) (n : ℕ) :
@@ -1337,14 +1349,14 @@ lemma burkholder_u_XY_integral_succ_le
       rw [hlinear_zero, add_zero]
 
 /-- Applying `v ≤ u` pointwise to the transform variables `X_n,Y_n`. -/
-lemma burkholder_v_XY_le_u_XY_pointwise (p : ℝ) (hp : p > 1)
+private lemma burkholder_v_XY_le_u_XY_pointwise (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ) (ω : Ω) :
     Burkholder.v p (X_{n}[w, f] ω) (Y_{n}[w, f] ω) ≤
       Burkholder.u p hp (X_{n}[w, f] ω) (Y_{n}[w, f] ω) :=
   burkholder_v_le_u p hp _ _
 
 /-- Applying `v ≤ u` after taking averages. -/
-lemma burkholder_v_XY_le_u_XY (p : ℝ) (hp : p > 1)
+private lemma burkholder_v_XY_le_u_XY (p : ℝ) (hp : p > 1)
     {μ : Measure Ω} {w f : ℕ → Ω → ℝ} (n : ℕ)
     (hv_int : Integrable
       (fun ω => Burkholder.v p (X_{n}[w, f] ω) (Y_{n}[w, f] ω)) μ)
@@ -1360,7 +1372,7 @@ lemma burkholder_v_XY_le_u_XY (p : ℝ) (hp : p > 1)
 
 
 /-- The initial inequality `u(X_0,Y_0) ≤ 0` from `X_0 Y_0 ≤ 0` a.s. -/
-lemma burkholder_u_X0Y0_nonpos_ae (p : ℝ) (hp : p > 1)
+private lemma burkholder_u_X0Y0_nonpos_ae (p : ℝ) (hp : p > 1)
     {μ : Measure Ω} {w f : ℕ → Ω → ℝ}
     (hXY0 : ∀ᵐ ω ∂μ, X_{0}[w, f] ω * Y_{0}[w, f] ω ≤ 0) :
     ∀ᵐ ω ∂μ,
@@ -1370,7 +1382,7 @@ lemma burkholder_u_X0Y0_nonpos_ae (p : ℝ) (hp : p > 1)
 
 /-- Under the Burkholder package of hypotheses, the Burkholder function has
 nonpositive expectation along the transformed pair `(X_n,Y_n)`. -/
-lemma burkholder_integral_v_XY_nonpos
+private lemma burkholder_integral_v_XY_nonpos
     {p : ℝ≥0∞} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ℕ mΩ} {w f : ℕ → Ω → ℝ}
     (h : BurkholderAssumptions p Ω μ ℱ w f)
@@ -1397,6 +1409,16 @@ lemma burkholder_integral_v_XY_nonpos
 
 
 
+/--
+Burkholder's `L^p` inequality for discrete martingale transforms.
+
+If `f` is a martingale and `w` is a strongly predictable
+multiplier uniformly bounded by `1`, then transforming `f` by `w` does not blow
+up its `L^p` size by more than the Burkholder factor `pStar(p)-1`.
+
+The statement is pointwise in time `n` and is written using `eLpNorm`:
+`‖(w ⋆ₘ f)_n‖_p ≤ (pStar(p)-1) * ‖f_n‖_p`.
+-/
 theorem Lp_Burkholder_inequality_martingaleTransform (p : ℝ≥0∞) (Ω : Type*) [mΩ : MeasurableSpace Ω] (μ : Measure Ω)
   [IsFiniteMeasure μ] (ℱ : Filtration ℕ mΩ) (w f : ℕ → Ω → ℝ)
   (hp_one : 1 < p)

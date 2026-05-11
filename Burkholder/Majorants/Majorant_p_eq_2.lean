@@ -19,6 +19,14 @@ noncomputable section
 
 namespace Majorants
 
+/--
+Explicit majorant package in the special case `p = 2`.
+
+At this exponent the construction becomes very concrete: we can take
+`u(x,y) = x*y`, with derivatives `du_dx = y` and `du_dy = x`.
+This theorem checks, one by one, that this choice satisfies the full list of
+majorant requirements (growth, tangency, domination of `v`, and sign behavior).
+-/
 theorem exists_majorant_p_eq_2 (p : ℝ) (hp : p=2) :
      ∃ u du_dx du_dy : ℝ → ℝ → ℝ, ∃ C : ℝ,
       0 ≤ C ∧

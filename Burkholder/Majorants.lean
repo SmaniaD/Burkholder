@@ -24,6 +24,17 @@ namespace Majorants
 
 /- Final result: majorant exists for p > 1 -/
 
+/--
+Main existence theorem for the Burkholder majorant when `p > 1`.
+
+In plain terms: this says we can build a function `u` (with first derivatives)
+that has controlled growth, satisfies the tangent-step inequality used in the
+martingale argument, dominates the base Burkholder function `v`, and is
+nonpositive on the opposite-sign region `x * y ≤ 0`.
+
+The proof dispatches to the specialized constructions in the three regimes
+`p = 2`, `p > 2`, and `1 < p < 2`.
+-/
 theorem exists_majorant_p_g_1 (p : ℝ) (hp : p> 1) :
     ∃ u du_dx du_dy : ℝ → ℝ → ℝ, ∃ C : ℝ,
       0 ≤ C ∧
