@@ -63,7 +63,7 @@ private lemma pStar_eq_q_of_one_lt_of_lt_two (p : ℝ) (hp1 : 1 < p) (hp2 : p < 
   rw [le_div_iff₀ hden_pos]
   nlinarith
 
- private pStar_eq_self_of_two_le (p : ℝ) (hp : 2 ≤ p) : pStar p = p := by
+ private lemma pStar_eq_self_of_two_le (p : ℝ) (hp : 2 ≤ p) : pStar p = p := by
   unfold pStar
   apply max_eq_left
   unfold q
