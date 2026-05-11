@@ -35,19 +35,19 @@ private def IsMajorant (p : ℝ) (u : ℝ → ℝ → ℝ) : Prop :=
 
 
 
-noncomputable private def u (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+private noncomputable def u (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
   Classical.choose (Majorants.exists_majorant_p_g_1 p hp)
 
-noncomputable private def du_dx (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+private noncomputable   def du_dx (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
   Classical.choose
     (Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp))
 
-noncomputable private def du_dy (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
+private noncomputable  def du_dy (p : ℝ) (hp : p > 1) : ℝ → ℝ → ℝ :=
   Classical.choose
     (Classical.choose_spec
       (Classical.choose_spec (Majorants.exists_majorant_p_g_1 p hp)))
 
-noncomputable private def C (p : ℝ) (hp : p > 1) : ℝ :=
+private noncomputable def C (p : ℝ) (hp : p > 1) : ℝ :=
   Classical.choose
     (Classical.choose_spec
       (Classical.choose_spec
