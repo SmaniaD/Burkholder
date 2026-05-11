@@ -2,6 +2,8 @@
 
 [PDF documentation](Documentation/Burkholder_documentation.pdf)
 
+[DocGen documentation](https://smaniad.github.io/Burkholder/Burkholder/MartingaleTransforms.html)
+
 
 ## Overview
 
