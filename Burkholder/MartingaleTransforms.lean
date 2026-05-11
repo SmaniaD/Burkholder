@@ -1203,7 +1203,7 @@ Pointwise choice of the `x`-coefficient in the Burkholder tangent inequality.
 Given the transformed pair `(X_n, Y_n)`, this simply evaluates the selected
 partial derivative `du_dx` at that point.
 -/
-noncomputable def burkholder_tangentDx (p : ℝ) (hp : p > 1)
+private noncomputable def burkholder_tangentDx (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
     (_hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
@@ -1218,7 +1218,7 @@ Pointwise choice of the `y`-coefficient in the Burkholder tangent inequality.
 This is the companion to `burkholder_tangentDx`, using `du_dy` evaluated at the
 current transformed state `(X_n, Y_n)`.
 -/
-noncomputable def burkholder_tangentDy (p : ℝ) (hp : p > 1)
+private noncomputable def burkholder_tangentDy (p : ℝ) (hp : p > 1)
     {w f : ℕ → Ω → ℝ} (n : ℕ)
     (_hcross : ∀ ω,
       (X_{n+1}[w, f] ω - X_{n}[w, f] ω) *
