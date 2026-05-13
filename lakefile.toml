@@ -3,7 +3,7 @@ version = "0.1.0"
 keywords = ["math"]
 defaultTargets = ["Burkholder"]
 
-releaseRepo = "https://github.com/SmaniaD/UnBurkholder"
+releaseRepo = "https://github.com/SmaniaD/Burkholder"
 preferReleaseBuild = true
 
 [leanOptions]
